@@ -189,7 +189,7 @@ nav{
   font-size:clamp(38px,5vw,68px);line-height:.95;
   color:#e6edf3;margin-bottom:22px;
 }
-.st-h span{color:rgba(230,237,243,.2);}
+.st-h span{color:rgba(230,237,243,.55);}
 .st-p{font-size:17px;font-weight:300;color:rgba(230,237,243,.4);line-height:1.75;max-width:680px;margin:0 auto;}
 
 /* ─── PRODUCTS ─── */
@@ -200,7 +200,7 @@ nav{
   font-family:'Barlow Condensed',sans-serif;font-weight:900;
   font-size:clamp(40px,5vw,64px);line-height:.93;color:#e6edf3;margin-bottom:14px;
 }
-.prod-header h2 span{color:rgba(230,237,243,.2);}
+.prod-header h2 span{color:rgba(230,237,243,.55);}
 .prod-header p{font-size:16px;font-weight:300;color:rgba(230,237,243,.4);max-width:520px;line-height:1.7;}
 
 .prod-block{
@@ -540,6 +540,109 @@ body, * {
   display: block !important;
 }
 
+
+.st-h span,
+.prod-header h2 span,
+h2 span {
+  color: rgba(230,237,243,.55) !important;
+}
+
+
+/* ── LIGHT THEME ── */
+body.light {
+  background: #1e2128;
+  color: #d0d6e0;
+}
+body.light::before { display:none; }
+body.light nav {
+  background: rgba(28,31,38,.96) !important;
+  border-bottom-color: rgba(255,255,255,.08) !important;
+}
+body.light .nav-links a { color: rgba(208,214,224,.5) !important; }
+body.light .nav-links a:hover { color: #58a6ff !important; }
+body.light .saber-toggle { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); }
+body.light #saberLabel { color: rgba(208,214,224,.5) !important; }
+body.light .nav-cta { background: linear-gradient(135deg,#238be0,#1a6fbf); }
+
+/* Hero */
+body.light .hero { background: #1e2128; }
+body.light .hero-kicker { color: rgba(88,166,255,.7) !important; }
+body.light .w1 { color: #e8edf5; }
+body.light .hero-sub { color: rgba(208,214,224,.6) !important; }
+body.light .btn-secondary { color: #d0d6e0; border-color: rgba(255,255,255,.15); }
+body.light .btn-secondary:hover { border-color: #58a6ff; color: #58a6ff; }
+body.light .ti { color: rgba(208,214,224,.3) !important; }
+body.light .trust-dot, body.light .td { background: #58a6ff; }
+
+/* Stat bar */
+body.light .statbar { background: rgba(20,23,30,.9); border-color: rgba(255,255,255,.06); }
+body.light .sl { color: rgba(208,214,224,.35); }
+
+/* Statement */
+body.light .statement { background: rgba(24,27,34,.8); }
+body.light .st-h { color: #e8edf5; }
+body.light .st-h span { color: rgba(208,214,224,.5) !important; }
+body.light .st-p { color: rgba(208,214,224,.45); }
+body.light .ey { color: #58a6ff; }
+
+/* Products */
+body.light .products { background: #1a1d24; }
+body.light .prod-block { background: #20232c; border-color: rgba(255,255,255,.07); }
+body.light .prod-block:hover { border-color: rgba(255,255,255,.14); }
+body.light .prod-num { color: rgba(255,255,255,.05); }
+body.light .prod-name { color: #e8edf5; }
+body.light .prod-desc { color: rgba(208,214,224,.38); }
+body.light .prod-head { border-bottom-color: rgba(255,255,255,.06); }
+body.light .prod-info { border-right-color: rgba(255,255,255,.06); }
+body.light .feats li { color: rgba(208,214,224,.45); border-bottom-color: rgba(255,255,255,.05); }
+body.light .price { color: rgba(208,214,224,.25); border-top-color: rgba(255,255,255,.06); }
+body.light .price strong { color: #e8edf5; }
+body.light .prod-header h2 { color: #e8edf5; }
+body.light .prod-header h2 span { color: rgba(208,214,224,.45) !important; }
+body.light .prod-header p { color: rgba(208,214,224,.4); }
+
+/* Pricing */
+body.light .pricing { background: rgba(20,23,30,.9); }
+body.light .sec-h { color: #e8edf5; }
+body.light .sec-sub { color: rgba(208,214,224,.4); }
+body.light table { border-color: rgba(255,255,255,.08); }
+body.light thead tr { background: #20232c; }
+body.light th { border-bottom-color: rgba(255,255,255,.07); color: #e8edf5; }
+body.light th.tc { color: rgba(208,214,224,.25); }
+body.light td { border-bottom-color: rgba(255,255,255,.05); color: rgba(208,214,224,.4); }
+body.light .tt { color: #e8edf5; }
+body.light .tp { color: #e8edf5; }
+body.light .tper { color: rgba(208,214,224,.25); }
+body.light .tnote { color: rgba(208,214,224,.25); }
+body.light .tdash { color: rgba(208,214,224,.15); }
+
+/* FAQ */
+body.light .faq { background: #1a1d24; }
+body.light .fi { border-color: rgba(255,255,255,.08); }
+body.light .fq { color: #e8edf5; }
+body.light .fi:hover .fq { color: #58a6ff; }
+body.light .fplus { color: rgba(208,214,224,.2); }
+body.light .fi.open .fplus { color: #58a6ff; }
+body.light .fa { color: rgba(208,214,224,.4); }
+
+/* CTA band */
+body.light .ctaband { background: rgba(24,27,34,.9); border-color: rgba(255,255,255,.06); }
+body.light .cb-h { color: #e8edf5; }
+body.light .cb-sub { color: rgba(208,214,224,.4); }
+body.light .btn-ghost { color: rgba(208,214,224,.5); border-color: rgba(255,255,255,.12); }
+body.light .btn-ghost:hover { border-color: #58a6ff; color: #58a6ff; }
+
+/* Footer */
+body.light footer { background: #141720; border-top-color: rgba(255,255,255,.06); }
+body.light .ftag { color: rgba(208,214,224,.3); }
+body.light .femail { color: #58a6ff; }
+body.light .fcol h4 { color: rgba(208,214,224,.2); }
+body.light .fcol a { color: rgba(208,214,224,.35); }
+body.light .fcol a:hover { color: #58a6ff; }
+body.light .fcopy { color: rgba(208,214,224,.18); }
+body.light .easter { color: rgba(88,166,255,.3); }
+body.light .easter:hover { color: #58a6ff; }
+
 </style>
 </head>
 <body>
@@ -854,91 +957,103 @@ body, * {
 </footer>
 
 <script>
-// Lightsaber toggle
-var saberOn = true;
-function toggleSaber(){
-  saberOn = !saberOn;
-  var icon = document.getElementById('saberIcon');
-  var label = document.getElementById('saberLabel');
-  if(saberOn){
-    icon.innerHTML = '<rect x="11" y="2" width="2" height="14" rx="1" fill="#ff4d4d"/><rect x="9" y="15" width="6" height="3" rx="1" fill="#888"/><rect x="8" y="18" width="8" height="2" rx="1" fill="#666"/><circle cx="12" cy="8" r="3" fill="rgba(255,77,77,.2)"/>';
-    label.textContent = 'Dark Side';
-  } else {
-    icon.innerHTML = '<rect x="11" y="2" width="2" height="14" rx="1" fill="#00e676"/><rect x="9" y="15" width="6" height="3" rx="1" fill="#888"/><rect x="8" y="18" width="8" height="2" rx="1" fill="#666"/><circle cx="12" cy="8" r="3" fill="rgba(0,230,118,.2)"/>';
-    label.textContent = 'Light Side';
-  }
-  localStorage.setItem('cw-theme', saberOn ? 'dark' : 'light');
+// ── THEME TOGGLE ──
+var isDark = localStorage.getItem('cw-theme') !== 'light';
+
+function toggleTheme() {
+  isDark = !isDark;
+  applyTheme(isDark);
+  localStorage.setItem('cw-theme', isDark ? 'dark' : 'light');
 }
 
-// Scroll reveal
-window.addEventListener('scroll',()=>{
-  document.querySelectorAll('.reveal').forEach(el=>{
-    if(el.getBoundingClientRect().top<window.innerHeight-80)el.classList.add('visible');
+function applyTheme(dark) {
+  var blade = document.getElementById('blade');
+  var bladeGlow = document.getElementById('bladeGlow');
+  var label = document.getElementById('saberLabel');
+  if (dark) {
+    document.body.classList.remove('light');
+    if (blade) blade.setAttribute('fill', '#ff4d4d');
+    if (bladeGlow) bladeGlow.setAttribute('fill', 'rgba(255,77,77,.12)');
+    if (label) label.textContent = 'Dark Side';
+  } else {
+    document.body.classList.add('light');
+    if (blade) blade.setAttribute('fill', '#00e676');
+    if (bladeGlow) bladeGlow.setAttribute('fill', 'rgba(0,230,118,.12)');
+    if (label) label.textContent = 'Light Side';
+  }
+}
+
+// Apply on load
+applyTheme(isDark);
+
+// ── SCROLL REVEAL ──
+window.addEventListener('scroll', function() {
+  document.querySelectorAll('.reveal').forEach(function(el) {
+    if (el.getBoundingClientRect().top < window.innerHeight - 80) {
+      el.classList.add('visible');
+    }
   });
 });
-(function(){
-  document.querySelectorAll('.reveal').forEach(el=>{
-    if(el.getBoundingClientRect().top<window.innerHeight-80)el.classList.add('visible');
+(function() {
+  document.querySelectorAll('.reveal').forEach(function(el) {
+    if (el.getBoundingClientRect().top < window.innerHeight - 80) {
+      el.classList.add('visible');
+    }
   });
 })();
 
-function toggleFaq(el){
-  var was=el.classList.contains('open');
-  document.querySelectorAll('.fi').forEach(i=>i.classList.remove('open'));
-  if(!was)el.classList.add('open');
+// ── FAQ ──
+function toggleFaq(el) {
+  var was = el.classList.contains('open');
+  document.querySelectorAll('.fi').forEach(function(i) { i.classList.remove('open'); });
+  if (!was) el.classList.add('open');
 }
 
-// ── ANIMATED FLOWING LINES ──
+// ── ANIMATED LINES ──
 (function() {
   var canvas = document.getElementById('lineCanvas');
+  if (!canvas) return;
   var ctx = canvas.getContext('2d');
-  var hero = canvas.parentElement;
   var W, H;
   var lines = [];
   var NUM = 22;
 
   function resize() {
-    W = canvas.width = hero.offsetWidth || window.innerWidth;
-    H = canvas.height = hero.offsetHeight || window.innerHeight;
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
   }
-  window.addEventListener('resize', function(){ resize(); initLines(); });
+  window.addEventListener('resize', function() { resize(); initLines(); });
   resize();
 
   var COLORS = [
-    [80, 200, 220],   // cyan
-    [60, 160, 240],   // blue
-    [100, 220, 180],  // teal-green
-    [120, 180, 255],  // light blue
-    [80, 230, 200],   // mint
+    [80, 200, 220],
+    [60, 160, 240],
+    [100, 220, 180],
+    [120, 180, 255],
+    [80, 230, 200],
   ];
 
   function makeLine() {
     var col = COLORS[Math.floor(Math.random() * COLORS.length)];
-    // Start from left edge or far left, end at right edge or far right
     var startY = H * (0.1 + Math.random() * 0.8);
     var endY   = H * (0.1 + Math.random() * 0.8);
-    // Control points — gentle curves, nearly horizontal
     var cp1x = W * (0.15 + Math.random() * 0.35);
     var cp1y = startY + (Math.random() - 0.5) * H * 0.2;
-    var cp2x = W * (0.5 + Math.random() * 0.35);
+    var cp2x = W * (0.5  + Math.random() * 0.35);
     var cp2y = endY   + (Math.random() - 0.5) * H * 0.2;
     return {
-      // Line path
       sx: -60, sy: startY,
       ex: W + 60, ey: endY,
       cp1x: cp1x, cp1y: cp1y,
       cp2x: cp2x, cp2y: cp2y,
-      // Style
       col: col,
       alpha: 0.07 + Math.random() * 0.14,
       width: 0.4 + Math.random() * 0.7,
-      // Glow dot
-      dotPos: Math.random(),     // 0-1 along curve
+      dotPos: Math.random(),
       dotSpeed: 0.00015 + Math.random() * 0.0004,
       dotSize: 2 + Math.random() * 3,
       dotAlpha: 0.6 + Math.random() * 0.4,
-      // Life
-      age: Math.random() * 400,
+      age: Math.random() * 1200,
       maxAge: 1200 + Math.random() * 1600,
     };
   }
@@ -949,7 +1064,6 @@ function toggleFaq(el){
   }
   initLines();
 
-  // Get point on cubic bezier at t
   function bezier(t, p0, p1, p2, p3) {
     var u = 1 - t;
     return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3;
@@ -957,17 +1071,14 @@ function toggleFaq(el){
 
   function draw() {
     ctx.clearRect(0, 0, W, H);
-
     lines.forEach(function(l) {
       l.age++;
       if (l.age > l.maxAge) { Object.assign(l, makeLine()); l.age = 0; }
-
       var p = l.age / l.maxAge;
       var fade = p < 0.06 ? p/0.06 : p > 0.94 ? (1-p)/0.06 : 1;
       var a = l.alpha * fade;
       var r = l.col[0], g = l.col[1], b = l.col[2];
 
-      // Draw the bezier line
       ctx.beginPath();
       ctx.moveTo(l.sx, l.sy);
       ctx.bezierCurveTo(l.cp1x, l.cp1y, l.cp2x, l.cp2y, l.ex, l.ey);
@@ -975,36 +1086,29 @@ function toggleFaq(el){
       ctx.lineWidth = l.width;
       ctx.stroke();
 
-      // Move dot along curve
       l.dotPos += l.dotSpeed;
       if (l.dotPos > 1) l.dotPos = 0;
       var t = l.dotPos;
       var dx = bezier(t, l.sx, l.cp1x, l.cp2x, l.ex);
       var dy = bezier(t, l.sy, l.cp1y, l.cp2y, l.ey);
-
-      // Glow dot
       var da = l.dotAlpha * fade;
       var gr = ctx.createRadialGradient(dx, dy, 0, dx, dy, l.dotSize * 4);
-      gr.addColorStop(0, 'rgba('+r+','+g+','+b+','+(da)+')');
+      gr.addColorStop(0, 'rgba('+r+','+g+','+b+','+da+')');
       gr.addColorStop(0.3, 'rgba('+r+','+g+','+b+','+(da*0.4)+')');
       gr.addColorStop(1, 'rgba('+r+','+g+','+b+',0)');
       ctx.beginPath();
       ctx.arc(dx, dy, l.dotSize * 4, 0, Math.PI*2);
       ctx.fillStyle = gr;
       ctx.fill();
-
-      // Bright center
       ctx.beginPath();
       ctx.arc(dx, dy, l.dotSize * 0.6, 0, Math.PI*2);
       ctx.fillStyle = 'rgba('+r+','+g+','+b+','+(da*1.5)+')';
       ctx.fill();
     });
-
     requestAnimationFrame(draw);
   }
   draw();
 })();
-
 </script>
 </body>
 </html>
