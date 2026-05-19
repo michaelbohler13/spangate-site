@@ -838,7 +838,7 @@ function toggleFaq(el){
   var hero = canvas.parentElement;
   var W, H;
   var lines = [];
-  var NUM = 16;
+  var NUM = 28;
 
   function resize() {
     W = canvas.width = hero.offsetWidth || window.innerWidth;
@@ -873,16 +873,16 @@ function toggleFaq(el){
       cp2x: cp2x, cp2y: cp2y,
       // Style
       col: col,
-      alpha: 0.04 + Math.random() * 0.10,
+      alpha: 0.07 + Math.random() * 0.14,
       width: 0.4 + Math.random() * 0.7,
       // Glow dot
       dotPos: Math.random(),     // 0-1 along curve
-      dotSpeed: 0.0008 + Math.random() * 0.002,
+      dotSpeed: 0.00015 + Math.random() * 0.0004,
       dotSize: 2 + Math.random() * 3,
       dotAlpha: 0.6 + Math.random() * 0.4,
       // Life
       age: Math.random() * 400,
-      maxAge: 400 + Math.random() * 600,
+      maxAge: 1200 + Math.random() * 1600,
     };
   }
 
@@ -906,7 +906,7 @@ function toggleFaq(el){
       if (l.age > l.maxAge) { Object.assign(l, makeLine()); l.age = 0; }
 
       var p = l.age / l.maxAge;
-      var fade = p < 0.12 ? p/0.12 : p > 0.88 ? (1-p)/0.12 : 1;
+      var fade = p < 0.06 ? p/0.06 : p > 0.94 ? (1-p)/0.06 : 1;
       var a = l.alpha * fade;
       var r = l.col[0], g = l.col[1], b = l.col[2];
 
