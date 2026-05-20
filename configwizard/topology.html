@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="shortcut icon" href="/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topology Builder — ConfigWizard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#000; --surface:#111; --surface2:#1a1a1a; --surface3:#222;
+    --border:rgba(255,255,255,0.08); --border-bright:rgba(255,255,255,0.15);
+    --text:#f5f5f7; --text-muted:#a1a1a6; --text-dim:#6e6e73;
+    --accent:#58a6ff; --success:#30d158; --danger:#ff453a; --warning:#ffd60a;
+    --aruba:#ff6b2b; --cisco:#2997ff; --juniper:#30d158;
+    --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,sans-serif;
+  }
+  [data-theme="light"] {
+    --bg:#f5f5f7; --surface:#fff; --surface2:#f0f0f5; --surface3:#e8e8ed;
+    --border:rgba(0,0,0,0.08); --border-bright:rgba(0,0,0,0.15);
+    --text:#1d1d1f; --text-muted:#6e6e73; --text-dim:#aeaeb2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  /* ── Site Nav ── */
+  .site-nav{height:44px;display:flex;align-items:center;padding:0 1.5rem;backdrop-filter:blur(20px);background:rgba(0,0,0,0.8);border-bottom:0.5px solid var(--border);gap:1rem;flex-shrink:0;z-index:100;}
+  .site-nav-logo{font-family:var(--mono);font-size:0.88rem;font-weight:600;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:7px;}
+  .site-nav-logo-mark{width:20px;height:20px;background:var(--accent);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#000;font-weight:700;}
+  .site-nav-links{display:flex;gap:1.5rem;list-style:none;margin-left:1rem;}
+  .site-nav-links a{font-size:0.75rem;color:var(--text-muted);text-decoration:none;font-family:var(--mono);transition:color 0.15s;}
+  .site-nav-links a:hover,.site-nav-links a.active{color:var(--text);}
+  .site-nav-spacer{flex:1;}
+  .site-nav-right{display:flex;align-items:center;gap:10px;}
+  .site-nav-btn{font-size:0.72rem;font-family:var(--mono);padding:4px 12px;border-radius:980px;text-decoration:none;transition:all 0.15s;cursor:pointer;border:0.5px solid var(--border-bright);background:none;color:var(--text-muted);}
+  .site-nav-btn:hover{color:var(--text);}
+  .site-nav-btn.primary{background:var(--accent);color:#000;font-weight:600;border-color:var(--accent);}
+  .site-nav-btn.primary:hover{opacity:0.85;}
+
+  /* ── Toolbar ── */
+  .toolbar{height:48px;display:flex;align-items:center;padding:0 1rem;background:var(--surface);border-bottom:0.5px solid var(--border);gap:8px;flex-shrink:0;}
+  .toolbar-title{font-family:var(--mono);font-size:0.78rem;color:var(--text-muted);margin-right:8px;}
+  .tool-sep{width:0.5px;height:20px;background:var(--border-bright);margin:0 4px;}
+  .tool-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;font-family:var(--mono);font-size:0.72rem;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+  .tool-btn:hover{border-color:var(--border-bright);color:var(--text);}
+  .tool-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+  .tool-btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+  .toolbar-spacer{flex:1;}
+
+  /* ── Device palette ── */
+  .device-palette{width:200px;background:var(--surface);border-right:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+  .palette-section{padding:0.75rem 0.85rem 0.5rem;font-family:var(--mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);}
+  .palette-item{display:flex;align-items:center;gap:10px;padding:8px 0.85rem;cursor:grab;transition:background 0.1s;user-select:none;border-radius:0;}
+  .palette-item:hover{background:var(--surface2);}
+  .palette-item:active{cursor:grabbing;}
+  .device-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+  .di-router{background:rgba(88,166,255,0.15);}
+  .di-switch{background:rgba(48,209,88,0.15);}
+  .di-server{background:rgba(255,214,10,0.12);}
+  .di-ap{background:rgba(255,107,43,0.12);}
+  .di-cloud{background:rgba(161,161,166,0.15);}
+  .palette-label{font-size:0.78rem;color:var(--text-muted);}
+  .palette-sub{font-size:0.65rem;color:var(--text-dim);font-family:var(--mono);}
+
+  /* ── Canvas ── */
+  .canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg);}
+  .canvas-grid{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px);background-size:24px 24px;}
+  #canvas{position:absolute;inset:0;width:100%;height:100%;cursor:default;}
+
+  /* ── Inspector panel ── */
+  .inspector{width:260px;background:var(--surface);border-left:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+  .inspector-header{padding:0.85rem 1rem;border-bottom:0.5px solid var(--border);font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between;}
+  .inspector-title{color:var(--text);font-weight:600;}
+  .inspector-body{padding:1rem;display:flex;flex-direction:column;gap:0.75rem;flex:1;}
+  .insp-field{display:flex;flex-direction:column;gap:4px;}
+  .insp-label{font-family:var(--mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);}
+  .insp-input{background:var(--surface2);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-family:var(--mono);font-size:0.75rem;color:var(--text);outline:none;width:100%;transition:border-color 0.15s;}
+  .insp-input:focus{border-color:var(--accent);}
+  .insp-select{background:var(--surface2);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-family:var(--mono);font-size:0.75rem;color:var(--text);outline:none;width:100%;}
+  .insp-select option{background:var(--surface2);}
+  .insp-btn{padding:7px;border-radius:6px;font-family:var(--mono);font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;width:100%;}
+  .insp-btn-primary{background:var(--accent);color:#000;}
+  .insp-btn-primary:hover{opacity:0.85;}
+  .insp-btn-danger{background:rgba(255,69,58,0.12);color:var(--danger);border:0.5px solid rgba(255,69,58,0.2);}
+  .insp-btn-danger:hover{background:rgba(255,69,58,0.2);}
+  .insp-divider{height:0.5px;background:var(--border);}
+  .insp-empty{text-align:center;padding:2rem 1rem;color:var(--text-dim);font-size:0.75rem;font-family:var(--mono);line-height:1.6;}
+
+  /* ── Link mode cursor ── */
+  .linking-mode #canvas{cursor:crosshair;}
+
+  /* ── Status bar ── */
+  .status-bar{height:24px;background:var(--surface);border-top:0.5px solid var(--border);display:flex;align-items:center;padding:0 1rem;gap:1rem;font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);flex-shrink:0;}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--success);}
+
+  /* ── Connection mode hint ── */
+  .link-hint{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:var(--surface2);border:0.5px solid var(--accent);border-radius:20px;padding:6px 16px;font-family:var(--mono);font-size:0.72rem;color:var(--accent);pointer-events:none;z-index:50;display:none;}
+  .linking-mode .link-hint{display:block;}
+
+  /* ── Toast ── */
+  #toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface2);border:0.5px solid var(--border-bright);color:var(--text);font-family:var(--mono);font-size:0.72rem;padding:6px 16px;border-radius:20px;opacity:0;pointer-events:none;transition:all 0.2s;z-index:200;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  [data-theme="light"] .site-nav-links a { color: #1d1d1f; }
+  [data-theme="light"] .site-nav-links a:hover { color: #000; }
+  [data-theme="light"] .site-nav-logo { color: #1d1d1f; }
+  [data-theme="light"] .site-nav { background: rgba(255,255,255,0.88); border-bottom-color: rgba(0,0,0,0.08); }
+  [data-theme="light"] .site-nav-btn { color: #3d3d3d; border-color: rgba(0,0,0,0.15); }
+  [data-theme="light"] .site-nav-btn:hover { color: #000; }
+  [data-theme="light"] .site-nav-btn.primary { color: #000; border-color: #58a6ff; }
+
+  
+
+  /* ── Light mode — dark warm grey ── */
+  [data-theme="light"] {
+    --bg: #d4d4d2 !important;
+    --bg2: #cacac8 !important;
+    --surface: #e2e2e0 !important;
+    --surface2: #d8d8d6 !important;
+    --surface3: #cecece !important;
+    --border: rgba(0,0,0,0.12) !important;
+    --border-bright: rgba(0,0,0,0.2) !important;
+    --text: #0d0d0d !important;
+    --text-muted: #1a1a1a !important;
+    --text-dim: #333333 !important;
+  }
+  [data-theme="light"] body { background: #d4d4d2 !important; color: #0d0d0d !important; }
+  [data-theme="light"] h1,[data-theme="light"] h2,[data-theme="light"] h3,
+  [data-theme="light"] h4,[data-theme="light"] h5,[data-theme="light"] h6 { color: #0d0d0d !important; }
+  [data-theme="light"] p { color: #1a1a1a !important; }
+  [data-theme="light"] .site-nav,
+  [data-theme="light"] nav { background: rgba(212,212,210,0.95) !important; border-bottom-color: rgba(0,0,0,0.12) !important; }
+  [data-theme="light"] .site-nav-links a,
+  [data-theme="light"] .nav-links a { color: #0d0d0d !important; }
+  [data-theme="light"] .site-nav-links a:hover,
+  [data-theme="light"] .nav-links a:hover { color: #000 !important; }
+  [data-theme="light"] .site-nav-logo,
+  [data-theme="light"] .nav-logo { color: #0d0d0d !important; }
+  [data-theme="light"] .card,
+  [data-theme="light"] .bento-card,
+  [data-theme="light"] .step-card,
+  [data-theme="light"] .step-section { background: #e2e2e0 !important; border-color: rgba(0,0,0,0.12) !important; }
+  [data-theme="light"] .bento-title,
+  [data-theme="light"] .step-title { color: #0d0d0d !important; }
+  [data-theme="light"] .bento-desc,
+  [data-theme="light"] .step-desc,
+  [data-theme="light"] .hero-sub { color: #1a1a1a !important; }
+  [data-theme="light"] textarea,
+  [data-theme="light"] input,
+  [data-theme="light"] select { color: #0d0d0d !important; background: #e2e2e0 !important; border-color: rgba(0,0,0,0.2) !important; }
+  [data-theme="light"] textarea::placeholder,
+  [data-theme="light"] input::placeholder { color: #666 !important; }
+  [data-theme="light"] .section-title { color: #0d0d0d !important; }
+  [data-theme="light"] .section-sub { color: #1a1a1a !important; }
+
+
+  /* ── Theme label always readable ── */
+  [data-theme="light"] #themeLabel,
+  [data-theme="light"] #landingThemeLabel,
+  [data-theme="light"] #dashThemeLabel { color: #0d0d0d !important; }
+  [data-theme="light"] #themeToggle,
+  [data-theme="light"] #landingThemeBtn,
+  [data-theme="light"] #dashThemeBtn { color: #0d0d0d !important; border-color: rgba(0,0,0,0.2) !important; }
+
+</style>
+
+
+<!-- Shared auth -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  const _url='https://tiviipaamwvfjvoscnyk.supabase.co',_anon='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
+  try{
+    const _c=supabase.createClient(_url,_anon);
+    function _r(s){
+      const el=document.getElementById('topoNavRight');
+      if(!el)return;
+      if(s&&s.user){
+        const name=s.user.user_metadata?.full_name||s.user.email||'';
+        const ini=(name.split(' ').map(w=>w[0]).join('').toUpperCase()||'?').slice(0,2);
+        el.innerHTML='<div style="display:flex;align-items:center;gap:8px;"><div style="width:26px;height:26px;border-radius:50%;background:#58a6ff;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;font-family:monospace;">'+ini+'</div><span style="font-size:0.72rem;color:#8b949e;font-family:monospace;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+name+'</span><a href="dashboard.html" style="font-size:0.72rem;font-family:monospace;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.15);color:#8b949e;text-decoration:none;">My Configs</a><button style="font-size:0.72rem;font-family:monospace;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.15);background:none;color:#8b949e;cursor:pointer;" onclick="supabase.createClient(\'https://tiviipaamwvfjvoscnyk.supabase.co\',\'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs\').auth.signOut().then(()=>location.href=\'login.html\')">Sign out</button></div>';
+      }else{
+        el.innerHTML='<a href="login.html" style="font-size:0.72rem;font-family:monospace;padding:5px 14px;border-radius:20px;background:#58a6ff;color:#000;text-decoration:none;font-weight:700;">Sign in</a>';
+      }
+    }
+    _c.auth.getSession().then(r=>_r(r.data.session));
+    _c.auth.onAuthStateChange((_,s)=>_r(s));
+    document.addEventListener('DOMContentLoaded',()=>_c.auth.getSession().then(r=>_r(r.data.session)));
+  }catch(e){}
+})();
+</script>
+<!-- Apply theme immediately to prevent flash -->
+<script>
+(function() {
+  var saved = localStorage.getItem('cw-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+</script>
+</head>
+<body>
+  
+
+<!-- Site Nav -->
+<nav class="site-nav">
+  <a href="index.html" class="site-nav-logo">
+    ConfigWizard
+  </a>
+  <ul class="site-nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="wizard.html">Config Wizard</a></li>
+    <li><a href="dashboard.html">My Configs</a></li>
+    <li><a href="topology.html" class="active">Network Map</a></li>
+    <li><a href="instant-on-wizard.html">Aruba Instant On</a></li>
+    <li><a href="netdoctor.html">NetDoctor</a></li>
+  </ul>
+  <div class="site-nav-spacer"></div>
+  <button class="site-nav-btn" id="themeToggle" onclick="toggleTheme()" style="display:flex;align-items:center;gap:5px;">
+    <span id="themeIcon"></span>
+    <span id="themeLabel">Dark Side</span>
+  </button>
+  <div class="site-nav-right" id="topoNavRight">
+    <!-- Populated by auth check -->
+    <a href="login.html" class="site-nav-btn">My Configs</a>
+    <a href="login.html" class="site-nav-btn primary">Sign in</a>
+  </div>
+</nav>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <span class="toolbar-title">Topology Builder</span>
+  <div class="tool-sep"></div>
+  <button class="tool-btn active" id="btn-select" onclick="setMode('select')">↖ Select</button>
+  <button class="tool-btn" id="btn-link" onclick="setMode('link')">⌇ Connect</button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" onclick="clearCanvas()">⊘ Clear</button>
+  <button class="tool-btn" onclick="proGate('Export JSON','Export your full topology as JSON for backup or import.',exportTopology)">⬡ Export JSON</button>
+  <button class="tool-btn primary" id="btn-gen" onclick="proGate('Generate Configs','Generate production-ready configs for every device on your canvas at once.',generateConfigs)" style="background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;">⚙ Generate Configs</button>
+  <div class="toolbar-spacer"></div>
+  <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);" id="deviceCount">0 devices · 0 links</span>
+</div>
+
+<!-- Main layout -->
+<div style="display:flex;flex:1;overflow:hidden;">
+
+  <!-- Device palette -->
+  <div class="device-palette">
+    <div class="palette-section">Routers</div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'router','aruba')" onclick="addDevice('router','aruba')">
+      <div class="device-icon di-router" style="background:rgba(255,107,43,0.15)"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="36" cy="52" rx="22" ry="7" fill="#ff6b2b" fill-opacity="0.2" stroke="#ff6b2b" stroke-width="2"/>
+      <rect x="14" y="26" width="44" height="26" fill="#ff6b2b" fill-opacity="0.08"/>
+      <line x1="14" y1="26" x2="14" y2="52" stroke="#ff6b2b" stroke-width="2"/>
+      <line x1="58" y1="26" x2="58" y2="52" stroke="#ff6b2b" stroke-width="2"/>
+      <ellipse cx="36" cy="26" rx="22" ry="7" fill="#ff6b2b" fill-opacity="0.25" stroke="#ff6b2b" stroke-width="2"/>
+      <polygon points="36,14 39,22 36,20 33,22" fill="#ff6b2b"/>
+      <polygon points="36,38 39,30 36,32 33,30" fill="#ff6b2b"/>
+      <polygon points="24,26 31,23 29,26 31,29" fill="#ff6b2b"/>
+      <polygon points="48,26 41,23 43,26 41,29" fill="#ff6b2b"/>
+    </svg></div>
+      <div><div class="palette-label">Router</div><div class="palette-sub">Aruba CX</div></div>
+    </div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'router','juniper')" onclick="addDevice('router','juniper')">
+      <div class="device-icon di-router" style="background:rgba(48,209,88,0.15)"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="36" cy="52" rx="22" ry="7" fill="#30d158" fill-opacity="0.2" stroke="#30d158" stroke-width="2"/>
+      <rect x="14" y="26" width="44" height="26" fill="#30d158" fill-opacity="0.08"/>
+      <line x1="14" y1="26" x2="14" y2="52" stroke="#30d158" stroke-width="2"/>
+      <line x1="58" y1="26" x2="58" y2="52" stroke="#30d158" stroke-width="2"/>
+      <ellipse cx="36" cy="26" rx="22" ry="7" fill="#30d158" fill-opacity="0.25" stroke="#30d158" stroke-width="2"/>
+      <polygon points="36,14 39,22 36,20 33,22" fill="#30d158"/>
+      <polygon points="36,38 39,30 36,32 33,30" fill="#30d158"/>
+      <polygon points="24,26 31,23 29,26 31,29" fill="#30d158"/>
+      <polygon points="48,26 41,23 43,26 41,29" fill="#30d158"/>
+    </svg></div>
+      <div><div class="palette-label">Router</div><div class="palette-sub">Juniper JunOS</div></div>
+    </div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'router','cisco')" onclick="addDevice('router','cisco')">
+      <div class="device-icon di-router"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="36" cy="52" rx="22" ry="7" fill="#2997ff" fill-opacity="0.2" stroke="#2997ff" stroke-width="2"/>
+      <rect x="14" y="26" width="44" height="26" fill="#2997ff" fill-opacity="0.08"/>
+      <line x1="14" y1="26" x2="14" y2="52" stroke="#2997ff" stroke-width="2"/>
+      <line x1="58" y1="26" x2="58" y2="52" stroke="#2997ff" stroke-width="2"/>
+      <ellipse cx="36" cy="26" rx="22" ry="7" fill="#2997ff" fill-opacity="0.25" stroke="#2997ff" stroke-width="2"/>
+      <polygon points="36,14 39,22 36,20 33,22" fill="#2997ff"/>
+      <polygon points="36,38 39,30 36,32 33,30" fill="#2997ff"/>
+      <polygon points="24,26 31,23 29,26 31,29" fill="#2997ff"/>
+      <polygon points="48,26 41,23 43,26 41,29" fill="#2997ff"/>
+    </svg></div>
+      <div><div class="palette-label">Router</div><div class="palette-sub">Cisco IOS</div></div>
+    </div>
+
+    <div class="palette-section">Switches</div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'switch','aruba')" onclick="addDevice('switch','aruba')">
+      <div class="device-icon di-switch" style="background:rgba(255,107,43,0.15)"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="10,20 62,20 56,14 4,14" fill="#ff6b2b" fill-opacity="0.15" stroke="#ff6b2b" stroke-width="1.5" stroke-linejoin="round"/>
+      <polygon points="62,20 62,50 56,44 56,14" fill="#ff6b2b" fill-opacity="0.08" stroke="#ff6b2b" stroke-width="1.5" stroke-linejoin="round"/>
+      <rect x="10" y="20" width="52" height="30" rx="2" fill="#ff6b2b" fill-opacity="0.1" stroke="#ff6b2b" stroke-width="1.5"/>
+      <g fill="none" stroke="#ff6b2b" stroke-width="1.2"><rect x="14" y="25" width="5" height="4" rx="1"/><rect x="21" y="25" width="5" height="4" rx="1"/><rect x="28" y="25" width="5" height="4" rx="1"/><rect x="35" y="25" width="5" height="4" rx="1"/><rect x="42" y="25" width="5" height="4" rx="1"/><rect x="49" y="25" width="5" height="4" rx="1"/></g>
+      <g fill="none" stroke="#ff6b2b" stroke-width="1.2"><rect x="14" y="32" width="5" height="4" rx="1"/><rect x="21" y="32" width="5" height="4" rx="1"/><rect x="28" y="32" width="5" height="4" rx="1"/><rect x="35" y="32" width="5" height="4" rx="1"/><rect x="42" y="32" width="5" height="4" rx="1"/><rect x="49" y="32" width="5" height="4" rx="1"/></g>
+      <circle cx="52" cy="43" r="1.5" fill="#ff6b2b" opacity="0.8"/>
+      <circle cx="56" cy="43" r="1.5" fill="#ff6b2b" opacity="0.5"/>
+    </svg></div>
+      <div><div class="palette-label">Switch</div><div class="palette-sub">Aruba CX</div></div>
+    </div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'switch','juniper')" onclick="addDevice('switch','juniper')">
+      <div class="device-icon di-switch" style="background:rgba(48,209,88,0.15)"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="10,20 62,20 56,14 4,14" fill="#30d158" fill-opacity="0.15" stroke="#30d158" stroke-width="1.5" stroke-linejoin="round"/>
+      <polygon points="62,20 62,50 56,44 56,14" fill="#30d158" fill-opacity="0.08" stroke="#30d158" stroke-width="1.5" stroke-linejoin="round"/>
+      <rect x="10" y="20" width="52" height="30" rx="2" fill="#30d158" fill-opacity="0.1" stroke="#30d158" stroke-width="1.5"/>
+      <g fill="none" stroke="#30d158" stroke-width="1.2"><rect x="14" y="25" width="5" height="4" rx="1"/><rect x="21" y="25" width="5" height="4" rx="1"/><rect x="28" y="25" width="5" height="4" rx="1"/><rect x="35" y="25" width="5" height="4" rx="1"/><rect x="42" y="25" width="5" height="4" rx="1"/><rect x="49" y="25" width="5" height="4" rx="1"/></g>
+      <g fill="none" stroke="#30d158" stroke-width="1.2"><rect x="14" y="32" width="5" height="4" rx="1"/><rect x="21" y="32" width="5" height="4" rx="1"/><rect x="28" y="32" width="5" height="4" rx="1"/><rect x="35" y="32" width="5" height="4" rx="1"/><rect x="42" y="32" width="5" height="4" rx="1"/><rect x="49" y="32" width="5" height="4" rx="1"/></g>
+      <circle cx="52" cy="43" r="1.5" fill="#30d158" opacity="0.8"/>
+      <circle cx="56" cy="43" r="1.5" fill="#30d158" opacity="0.5"/>
+    </svg></div>
+      <div><div class="palette-label">Switch</div><div class="palette-sub">Juniper JunOS</div></div>
+    </div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'switch','cisco')" onclick="addDevice('switch','cisco')">
+      <div class="device-icon di-switch"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="10,20 62,20 56,14 4,14" fill="#2997ff" fill-opacity="0.15" stroke="#2997ff" stroke-width="1.5" stroke-linejoin="round"/>
+      <polygon points="62,20 62,50 56,44 56,14" fill="#2997ff" fill-opacity="0.08" stroke="#2997ff" stroke-width="1.5" stroke-linejoin="round"/>
+      <rect x="10" y="20" width="52" height="30" rx="2" fill="#2997ff" fill-opacity="0.1" stroke="#2997ff" stroke-width="1.5"/>
+      <g fill="none" stroke="#2997ff" stroke-width="1.2"><rect x="14" y="25" width="5" height="4" rx="1"/><rect x="21" y="25" width="5" height="4" rx="1"/><rect x="28" y="25" width="5" height="4" rx="1"/><rect x="35" y="25" width="5" height="4" rx="1"/><rect x="42" y="25" width="5" height="4" rx="1"/><rect x="49" y="25" width="5" height="4" rx="1"/></g>
+      <g fill="none" stroke="#2997ff" stroke-width="1.2"><rect x="14" y="32" width="5" height="4" rx="1"/><rect x="21" y="32" width="5" height="4" rx="1"/><rect x="28" y="32" width="5" height="4" rx="1"/><rect x="35" y="32" width="5" height="4" rx="1"/><rect x="42" y="32" width="5" height="4" rx="1"/><rect x="49" y="32" width="5" height="4" rx="1"/></g>
+      <circle cx="52" cy="43" r="1.5" fill="#2997ff" opacity="0.8"/>
+      <circle cx="56" cy="43" r="1.5" fill="#2997ff" opacity="0.5"/>
+    </svg></div>
+      <div><div class="palette-label">Switch</div><div class="palette-sub">Cisco IOS</div></div>
+    </div>
+
+    <div class="palette-section">Infrastructure</div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'server','generic')" onclick="addDevice('server','generic')">
+      <div class="device-icon di-server"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="15" width="52" height="12" rx="2" fill="#ffd60a" fill-opacity="0.12" stroke="#ffd60a" stroke-width="1.5"/>
+      <rect x="10" y="30" width="52" height="12" rx="2" fill="#ffd60a" fill-opacity="0.12" stroke="#ffd60a" stroke-width="1.5"/>
+      <rect x="10" y="45" width="52" height="12" rx="2" fill="#ffd60a" fill-opacity="0.12" stroke="#ffd60a" stroke-width="1.5"/>
+      <circle cx="17" cy="21" r="2.5" fill="#ffd60a"/>
+      <circle cx="17" cy="36" r="2.5" fill="#ffd60a"/>
+      <circle cx="17" cy="51" r="2.5" fill="#ffd60a"/>
+    </svg></div>
+      <div><div class="palette-label">Server</div><div class="palette-sub">Generic host</div></div>
+    </div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'ap','aruba')" onclick="addDevice('ap','aruba')">
+      <div class="device-icon di-ap"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="36" y1="58" x2="36" y2="38" stroke="#ff6b2b" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="28" y1="58" x2="44" y2="58" stroke="#ff6b2b" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="36" cy="36" r="4" fill="#ff6b2b"/>
+      <path d="M26,30 Q36,22 46,30" stroke="#ff6b2b" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.85"/>
+      <path d="M19,23 Q36,13 53,23" stroke="#ff6b2b" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path d="M12,16 Q36,4 60,16" stroke="#ff6b2b" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.35"/>
+    </svg></div>
+      <div><div class="palette-label">Access Point</div><div class="palette-sub">Aruba CX</div></div>
+    </div>
+    <div class="palette-item" draggable="true" ondragstart="startDrag(event,'cloud','generic')" onclick="addDevice('cloud','generic')">
+      <div class="device-icon di-cloud"><svg width="24" height="24" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22 52 Q11 52 11 41 Q11 32 20 30 Q18 20 28 18 Q34 11 44 18 Q54 16 58 26 Q67 26 67 36 Q67 46 57 52 Z"
+        fill="#a1a1a6" fill-opacity="0.15" stroke="#a1a1a6" stroke-width="1.8" stroke-linejoin="round"/>
+    </svg></div>
+      <div><div class="palette-label">Cloud / WAN</div><div class="palette-sub">Internet</div></div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-wrap" id="canvasWrap"
+    ondragover="event.preventDefault()"
+    ondrop="handleDrop(event)">
+    <div class="canvas-grid"></div>
+    <svg id="canvas"
+      onmousemove="onMouseMove(event)"
+      onclick="onCanvasClick(event)"
+      onmousedown="onCanvasDown(event)"
+      onmouseup="onCanvasUp(event)">
+
+      <!-- Link preview line -->
+      <line id="link-preview" x1="0" y1="0" x2="0" y2="0"
+        stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 4"
+        opacity="0" style="pointer-events:none;"/>
+
+      <!-- Links group -->
+      <g id="links-group"></g>
+      <!-- Devices group -->
+      <g id="devices-group"></g>
+    </svg>
+
+    <!-- Empty state -->
+    <div id="empty-hint" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:1rem;">
+      <div style="font-size:2.5rem;opacity:0.15;">⬡</div>
+      <div style="font-family:var(--mono);font-size:0.82rem;color:var(--text-dim);text-align:center;line-height:1.6;">
+        Click a device from the left panel<br>or drag it onto the canvas
+      </div>
+    </div>
+  </div>
+
+  <!-- Inspector -->
+  <div class="inspector" id="inspector">
+    <div class="inspector-header">
+      <span class="inspector-title" id="insp-title">Inspector</span>
+      <span id="insp-type" style="font-size:0.65rem;color:var(--text-dim);"></span>
+    </div>
+    <div class="inspector-body" id="insp-body">
+      <div class="insp-empty">
+        Select a device to edit its properties
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <div class="status-dot"></div>
+  <span id="status-msg">Ready · Click or drag devices to add them to the canvas</span>
+  <span style="margin-left:auto;font-size:0.62rem;" id="mode-indicator">Mode: Select</span>
+</div>
+
+<!-- Link mode hint -->
+<div class="link-hint">Click a device to start a link · Click another to complete it · Esc to cancel</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ── Pro gate ──────────────────────────────────────────────────────────────────
+function isProUser() {
+  // Logged in = Pro until Stripe is integrated
+  try {
+    // Supabase v2 stores session as: sb-[ref]-auth-token
+    const projectRef = 'tiviipaamwvfjvoscnyk';
+    const key = 'sb-' + projectRef + '-auth-token';
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data && data.access_token) return true;
+      if (data && data.session && data.session.access_token) return true;
+    }
+    // Fallback: scan all localStorage keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.includes('supabase') || k.includes('sb-'))) {
+        const v = localStorage.getItem(k);
+        if (v && v.includes('access_token')) return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
+
+function proGate(featureName, featureDesc, fn) {
+  if (isProUser()) { fn(); return; }
+  showProModal(featureName, featureDesc);
+}
+
+function showProModal(title, desc) {
+  let modal = document.getElementById('topoProModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'topoProModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(8,12,16,0.88);display:flex;align-items:center;justify-content:center;padding:2rem;backdrop-filter:blur(8px);';
+    modal.addEventListener('click', e => { if(e.target===modal) modal.style.display='none'; });
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="max-width:420px;width:100%;background:var(--surface);border:0.5px solid rgba(88,166,255,0.25);border-radius:16px;padding:2rem;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:1rem;">🔒</div>
+      <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);margin-bottom:0.5rem;font-family:var(--mono);">✦ Pro Feature</div>
+      <h3 style="font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:0.75rem;">${title}</h3>
+      <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;margin-bottom:1.5rem;">${desc}</p>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        
+        <button onclick="document.getElementById('topoProModal').style.display='none'" style="background:none;border:none;color:var(--text-dim);font-size:0.72rem;cursor:pointer;font-family:var(--mono);padding:4px;">← Continue exploring free</button>
+      </div>
+    </div>`;
+  modal.style.display = 'flex';
+}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const html  = document.documentElement;
+  const isDark = html.getAttribute('data-theme') !== 'light';
+  const next  = isDark ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('cw-theme', next);
+  updateThemeIcon(next);
+  devices.forEach(d => refreshDevice(d.id));
+}
+
+function updateThemeIcon(theme) {
+  const icon  = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  const isDark = theme === 'dark';
+  if (icon)  icon.innerHTML  = isDark ? RED_SABER : GREEN_SABER;
+  if (label) label.textContent = isDark ? 'Dark Side' : 'Light Side';
+}
+
+// Apply saved theme on load
+(function() {
+  const saved = localStorage.getItem('cw-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', function() { updateThemeIcon(saved); });
+})();
+
+
+// ── State ────────────────────────────────────────────────────────────────────
+let devices = [];
+let links   = [];
+let mode    = 'select';      // 'select' | 'link'
+let selectedId = null;
+let linkSource = null;       // device id when drawing a link
+let dragging   = null;       // { id, offsetX, offsetY }
+let dragType   = null;       // for palette drag
+let idCounter  = 0;
+let toastTimer = null;
+
+const DEVICE_ICONS = {}; // unused, kept for reference
+
+function deviceIconSVG(type, color) {
+  const c = color;
+
+  // Pre-build port strings to avoid nested template literal issues
+  const ports1 = '<rect x="15" y="25" width="5" height="4" rx="1"/><rect x="22" y="25" width="5" height="4" rx="1"/><rect x="29" y="25" width="5" height="4" rx="1"/><rect x="36" y="25" width="5" height="4" rx="1"/><rect x="43" y="25" width="5" height="4" rx="1"/><rect x="50" y="25" width="5" height="4" rx="1"/>';
+  const ports2 = '<rect x="15" y="32" width="5" height="4" rx="1"/><rect x="22" y="32" width="5" height="4" rx="1"/><rect x="29" y="32" width="5" height="4" rx="1"/><rect x="36" y="32" width="5" height="4" rx="1"/><rect x="43" y="32" width="5" height="4" rx="1"/><rect x="50" y="32" width="5" height="4" rx="1"/>';
+
+  const icons = {
+    router: '<g>'
+      + '<ellipse cx="36" cy="52" rx="22" ry="7" fill="' + c + '" fill-opacity="0.15" stroke="' + c + '" stroke-width="1.5"/>'
+      + '<rect x="14" y="26" width="44" height="26" fill="' + c + '" fill-opacity="0.08"/>'
+      + '<line x1="14" y1="26" x2="14" y2="52" stroke="' + c + '" stroke-width="1.5"/>'
+      + '<line x1="58" y1="26" x2="58" y2="52" stroke="' + c + '" stroke-width="1.5"/>'
+      + '<ellipse cx="36" cy="26" rx="22" ry="7" fill="' + c + '" fill-opacity="0.2" stroke="' + c + '" stroke-width="1.5"/>'
+      + '<g fill="' + c + '" stroke="none">'
+      + '<polygon points="36,14 39,21 36,19 33,21"/>'
+      + '<polygon points="36,38 39,31 36,33 33,31"/>'
+      + '<polygon points="24,26 31,23 29,26 31,29"/>'
+      + '<polygon points="48,26 41,23 43,26 41,29"/>'
+      + '</g></g>',
+
+    switch: '<g>'
+      + '<polygon points="10,20 62,20 56,14 4,14" fill="' + c + '" fill-opacity="0.12" stroke="' + c + '" stroke-width="1.5" stroke-linejoin="round"/>'
+      + '<polygon points="62,20 62,50 56,44 56,14" fill="' + c + '" fill-opacity="0.08" stroke="' + c + '" stroke-width="1.5" stroke-linejoin="round"/>'
+      + '<rect x="10" y="20" width="52" height="30" rx="2" fill="' + c + '" fill-opacity="0.1" stroke="' + c + '" stroke-width="1.5"/>'
+      + '<g fill="none" stroke="' + c + '" stroke-width="1.2">' + ports1 + '</g>'
+      + '<g fill="none" stroke="' + c + '" stroke-width="1.2">' + ports2 + '</g>'
+      + '<circle cx="52" cy="42" r="1.5" fill="' + c + '" opacity="0.8"/>'
+      + '<circle cx="56" cy="42" r="1.5" fill="' + c + '" opacity="0.5"/>'
+      + '</g>',
+
+    server: '<g fill="none" stroke="' + c + '" stroke-width="1.5" stroke-linecap="round">'
+      + '<rect x="10" y="15" width="52" height="12" rx="2" fill="' + c + '" fill-opacity="0.1"/>'
+      + '<rect x="10" y="30" width="52" height="12" rx="2" fill="' + c + '" fill-opacity="0.1"/>'
+      + '<rect x="10" y="45" width="52" height="12" rx="2" fill="' + c + '" fill-opacity="0.1"/>'
+      + '<circle cx="17" cy="21" r="2.5" fill="' + c + '"/>'
+      + '<circle cx="17" cy="36" r="2.5" fill="' + c + '"/>'
+      + '<circle cx="17" cy="51" r="2.5" fill="' + c + '"/>'
+      + '<line x1="24" y1="21" x2="50" y2="21"/>'
+      + '<line x1="24" y1="36" x2="50" y2="36"/>'
+      + '<line x1="24" y1="51" x2="50" y2="51"/>'
+      + '</g>',
+
+    ap: '<g fill="none" stroke="' + c + '" stroke-linecap="round">'
+      + '<line x1="36" y1="58" x2="36" y2="38" stroke-width="2.5"/>'
+      + '<line x1="28" y1="58" x2="44" y2="58" stroke-width="2.5"/>'
+      + '<circle cx="36" cy="36" r="4" fill="' + c + '" stroke="none"/>'
+      + '<path d="M26,30 Q36,22 46,30" stroke-width="2" opacity="0.85"/>'
+      + '<path d="M19,23 Q36,13 53,23" stroke-width="2" opacity="0.6"/>'
+      + '<path d="M12,16 Q36,4 60,16" stroke-width="1.5" opacity="0.35"/>'
+      + '</g>',
+
+    cloud: '<g stroke="' + c + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M22 52 Q11 52 11 41 Q11 32 20 30 Q18 20 28 18 Q34 11 44 18 Q54 16 58 26 Q67 26 67 36 Q67 46 57 52 Z" fill="' + c + '" fill-opacity="0.1"/>'
+      + '<line x1="30" y1="44" x2="42" y2="44" stroke-width="1.5" opacity="0.6"/>'
+      + '<line x1="27" y1="38" x2="45" y2="38" stroke-width="1.5" opacity="0.6"/>'
+      + '</g>',
+  };
+  return icons[type] || icons.switch;
+}
+
+const VENDOR_COLORS = {
+  cisco: '#2997ff', aruba: '#ff6b2b', juniper: '#30d158', generic: '#a1a1a6'
+};
+const DEVICE_W = 72;
+const DEVICE_H = 72;
+
+// ── Mode ─────────────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  linkSource = null;
+  document.getElementById('btn-select').classList.toggle('active', m === 'select');
+  document.getElementById('btn-link').classList.toggle('active', m === 'link');
+  document.getElementById('canvasWrap').classList.toggle('linking-mode', m === 'link');
+  document.getElementById('mode-indicator').textContent = `Mode: ${m === 'link' ? 'Connect' : 'Select'}`;
+  hideLinkPreview();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { setMode('select'); clearSelection(); }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && document.activeElement.tagName !== 'INPUT') {
+    deleteDevice(selectedId);
+  }
+});
+
+// ── Device management ────────────────────────────────────────────────────────
+function addDevice(type, vendor, x, y) {
+  const wrap = document.getElementById('canvasWrap');
+  const cx = x ?? (wrap.clientWidth  / 2 + (Math.random() - 0.5) * 200);
+  const cy = y ?? (wrap.clientHeight / 2 + (Math.random() - 0.5) * 120);
+  const num = devices.filter(d => d.type === type).length + 1;
+  const names = { router:'router', switch:'sw', firewall:'fw', server:'srv', ap:'ap', cloud:'cloud' };
+  const id = 'dev_' + (++idCounter);
+  const device = {
+    id, type, vendor,
+    hostname: `${names[type]}-${String(num).padStart(2,'0')}`,
+    mgmtIP: '',
+    x: Math.round(cx - DEVICE_W/2),
+    y: Math.round(cy - DEVICE_H/2),
+    vlans: '',
+    notes: ''
+  };
+  devices.push(device);
+  renderDevice(device);
+  hideEmptyHint();
+  updateCounts();
+  selectDevice(id);
+  showToast(`Added ${type} (${vendor})`);
+}
+
+function deleteDevice(id) {
+  devices = devices.filter(d => d.id !== id);
+  links   = links.filter(l => l.from !== id && l.to !== id);
+  document.getElementById(id)?.remove();
+  renderAllLinks();
+  updateCounts();
+  clearSelection();
+  if (devices.length === 0) showEmptyHint();
+  showToast('Device removed');
+}
+
+function renderDevice(dev) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.id = dev.id;
+  g.setAttribute('transform',`translate(${dev.x},${dev.y})`);
+  g.style.cursor = 'pointer';
+  g.innerHTML = deviceSVG(dev);
+  g.addEventListener('click',  e => { e.stopPropagation(); onDeviceClick(dev.id); });
+  g.addEventListener('mousedown', e => { if (mode === 'select') startDragDevice(e, dev.id); });
+  document.getElementById('devices-group').appendChild(g);
+}
+
+function deviceSVG(dev) {
+  const color = VENDOR_COLORS[dev.vendor] || '#a1a1a6';
+  const isSelected = dev.id === selectedId;
+  const isLinkSrc  = dev.id === linkSource;
+  const borderColor = isLinkSrc ? '#ffd60a' : isSelected ? color : 'rgba(128,128,128,0.3)';
+  const borderW = isSelected || isLinkSrc ? 2 : 1;
+  const bgOpacity = isSelected ? 0.2 : isLinkSrc ? 0.28 : 0.1;
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const textColor = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)';
+  // Return plain SVG elements (no nested <svg> tag — already inside an SVG canvas)
+  return '<rect x="0" y="0" width="' + DEVICE_W + '" height="' + DEVICE_H + '" rx="12"'
+    + ' fill="' + color + '" fill-opacity="' + bgOpacity + '"'
+    + ' stroke="' + borderColor + '" stroke-width="' + borderW + '"/>'
+    + deviceIconSVG(dev.type, color)
+    + '<text x="' + (DEVICE_W/2) + '" y="' + (DEVICE_H - 11) + '" text-anchor="middle"'
+    + ' font-size="9" font-family="JetBrains Mono,monospace" fill="' + textColor + '"'
+    + ' font-weight="600">' + dev.hostname + '</text>'
+    + '<text x="' + (DEVICE_W/2) + '" y="' + (DEVICE_H - 2) + '" text-anchor="middle"'
+    + ' font-size="7.5" font-family="JetBrains Mono,monospace" fill="' + color + '"'
+    + ' font-weight="500">' + dev.vendor + '</text>';
+}
+
+function refreshDevice(id) {
+  const dev = devices.find(d => d.id === id);
+  if (!dev) return;
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = deviceSVG(dev);
+}
+
+// ── Drag devices on canvas ────────────────────────────────────────────────────
+function startDragDevice(e, id) {
+  if (mode !== 'select') return;
+  e.stopPropagation();
+  const dev = devices.find(d => d.id === id);
+  if (!dev) return;
+  const svg = document.getElementById('canvas');
+  const pt  = svgPoint(svg, e.clientX, e.clientY);
+  dragging = { id, ox: pt.x - dev.x, oy: pt.y - dev.y };
+}
+
+function onCanvasDown(e) {
+  if (e.target === document.getElementById('canvas') || e.target.classList.contains('canvas-grid')) {
+    if (mode === 'select') clearSelection();
+  }
+}
+
+function onMouseMove(e) {
+  const svg = document.getElementById('canvas');
+  const pt  = svgPoint(svg, e.clientX, e.clientY);
+
+  if (dragging) {
+    const dev = devices.find(d => d.id === dragging.id);
+    if (!dev) return;
+    dev.x = Math.round(pt.x - dragging.ox);
+    dev.y = Math.round(pt.y - dragging.oy);
+    const el = document.getElementById(dev.id);
+    if (el) el.setAttribute('transform', `translate(${dev.x},${dev.y})`);
+    renderAllLinks();
+    return;
+  }
+
+  if (mode === 'link' && linkSource) {
+    const src = devices.find(d => d.id === linkSource);
+    if (!src) return;
+    const preview = document.getElementById('link-preview');
+    preview.setAttribute('x1', src.x + DEVICE_W/2);
+    preview.setAttribute('y1', src.y + DEVICE_H/2);
+    preview.setAttribute('x2', pt.x);
+    preview.setAttribute('y2', pt.y);
+    preview.setAttribute('opacity','1');
+  }
+}
+
+function onCanvasUp(e) {
+  dragging = null;
+}
+
+function onCanvasClick(e) {
+  if (mode === 'link' && linkSource) {
+    linkSource = null;
+    hideLinkPreview();
+  }
+}
+
+// ── Drag from palette ─────────────────────────────────────────────────────────
+function startDrag(e, type, vendor) {
+  dragType = { type, vendor };
+  e.dataTransfer.setData('text/plain', JSON.stringify({ type, vendor }));
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const svg  = document.getElementById('canvas');
+  const pt   = svgPoint(svg, e.clientX, e.clientY);
+  const data = dragType || JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+  if (data.type) addDevice(data.type, data.vendor, pt.x, pt.y);
+  dragType = null;
+}
+
+// ── Linking ───────────────────────────────────────────────────────────────────
+function onDeviceClick(id) {
+  if (mode === 'link') {
+    if (!linkSource) {
+      linkSource = id;
+      refreshDevice(id);
+      setStatus(`Linking from ${devices.find(d=>d.id===id)?.hostname} — click target device`);
+    } else if (linkSource === id) {
+      linkSource = null;
+      refreshDevice(id);
+      hideLinkPreview();
+    } else {
+      const exists = links.find(l =>
+        (l.from===linkSource&&l.to===id)||(l.from===id&&l.to===linkSource));
+      if (!exists) {
+        const src = devices.find(d=>d.id===linkSource);
+        const dst = devices.find(d=>d.id===id);
+        links.push({ id:'link_'+(++idCounter), from:linkSource, to:id,
+          label:`${src?.hostname}↔${dst?.hostname}` });
+        renderAllLinks();
+        updateCounts();
+        showToast('Link created');
+      } else {
+        showToast('Link already exists');
+      }
+      const prevSrc = linkSource;
+      linkSource = null;
+      refreshDevice(prevSrc);
+      refreshDevice(id);
+      hideLinkPreview();
+      setStatus('Ready');
+    }
+  } else {
+    selectDevice(id);
+  }
+}
+
+// ── Selection ─────────────────────────────────────────────────────────────────
+function selectDevice(id) {
+  const prev = selectedId;
+  selectedId = id;
+  if (prev) refreshDevice(prev);
+  refreshDevice(id);
+  renderInspector(id);
+}
+
+function clearSelection() {
+  const prev = selectedId;
+  selectedId = null;
+  if (prev) refreshDevice(prev);
+  renderInspectorEmpty();
+}
+
+// ── Links ─────────────────────────────────────────────────────────────────────
+function renderAllLinks() {
+  const g = document.getElementById('links-group');
+  g.innerHTML = '';
+  links.forEach(link => {
+    const src = devices.find(d => d.id === link.from);
+    const dst = devices.find(d => d.id === link.to);
+    if (!src || !dst) return;
+    const x1 = src.x + DEVICE_W/2, y1 = src.y + DEVICE_H/2;
+    const x2 = dst.x + DEVICE_W/2, y2 = dst.y + DEVICE_H/2;
+    const midX = (x1+x2)/2, midY = (y1+y2)/2;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+    line.setAttribute('stroke','rgba(88,166,255,0.5)');
+    line.setAttribute('stroke-width','1.5');
+    line.style.cursor = 'pointer';
+    line.addEventListener('click', e => { e.stopPropagation(); deleteLink(link.id); });
+    g.appendChild(line);
+
+    // Link dot at midpoint
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx',midX); circle.setAttribute('cy',midY);
+    circle.setAttribute('r','3');
+    circle.setAttribute('fill','rgba(88,166,255,0.6)');
+    circle.style.cursor = 'pointer';
+    circle.addEventListener('click', e => { e.stopPropagation(); deleteLink(link.id); });
+    g.appendChild(circle);
+  });
+}
+
+function deleteLink(id) {
+  links = links.filter(l => l.id !== id);
+  renderAllLinks();
+  updateCounts();
+  showToast('Link removed');
+}
+
+function hideLinkPreview() {
+  const p = document.getElementById('link-preview');
+  p.setAttribute('opacity','0');
+}
+
+// ── Inspector ─────────────────────────────────────────────────────────────────
+function renderInspector(id) {
+  const dev = devices.find(d => d.id === id);
+  if (!dev) return;
+  document.getElementById('insp-title').textContent = dev.hostname;
+  document.getElementById('insp-type').textContent = `${dev.type} · ${dev.vendor}`;
+  const connectedLinks = links.filter(l => l.from === id || l.to === id);
+  const connectedDevices = connectedLinks.map(l => {
+    const otherId = l.from === id ? l.to : l.from;
+    return devices.find(d => d.id === otherId)?.hostname || '?';
+  });
+
+  document.getElementById('insp-body').innerHTML = `
+    <div class="insp-field">
+      <div class="insp-label">Hostname</div>
+      <input class="insp-input" value="${esc(dev.hostname)}"
+        oninput="updateDevice('${id}','hostname',this.value)">
+    </div>
+    <div class="insp-field">
+      <div class="insp-label">Vendor</div>
+      <select class="insp-select" onchange="updateDevice('${id}','vendor',this.value)">
+        <option value="cisco"   ${dev.vendor==='cisco'  ?'selected':''}>Cisco IOS</option>
+        <option value="aruba"   ${dev.vendor==='aruba'  ?'selected':''}>Aruba CX</option>
+        <option value="juniper" ${dev.vendor==='juniper'?'selected':''}>Juniper JunOS</option>
+        <option value="generic" ${dev.vendor==='generic'?'selected':''}>Generic</option>
+      </select>
+    </div>
+    <div class="insp-field">
+      <div class="insp-label">Management IP</div>
+      <input class="insp-input" placeholder="10.0.0.1" value="${esc(dev.mgmtIP)}"
+        oninput="updateDevice('${id}','mgmtIP',this.value)">
+    </div>
+    <div class="insp-field">
+      <div class="insp-label">VLANs</div>
+      <input class="insp-input" placeholder="10,20,30" value="${esc(dev.vlans)}"
+        oninput="updateDevice('${id}','vlans',this.value)">
+    </div>
+    <div class="insp-field">
+      <div class="insp-label">Notes</div>
+      <input class="insp-input" placeholder="Location, purpose…" value="${esc(dev.notes)}"
+        oninput="updateDevice('${id}','notes',this.value)">
+    </div>
+    <div class="insp-divider"></div>
+    <div class="insp-field">
+      <div class="insp-label">Connections (${connectedLinks.length})</div>
+      <div style="font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);line-height:1.8;">
+        ${connectedDevices.length ? connectedDevices.join('<br>') : '<span style="color:var(--text-dim)">No links yet</span>'}
+      </div>
+    </div>
+    <div class="insp-divider"></div>
+    <button class="insp-btn insp-btn-primary" onclick="openInWizard('${id}')">
+      ⚙ Open in Wizard
+    </button>
+    ${dev.configText ? `<details style="margin-top:6px;"><summary style="font-family:var(--mono);font-size:0.68rem;color:var(--text-muted);cursor:pointer;padding:4px 0;">View config from wizard</summary><pre style="font-family:var(--mono);font-size:0.62rem;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:8px;margin-top:6px;max-height:160px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;line-height:1.6;">${dev.configText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,1200)}</pre></details>` : ''}
+    <button class="insp-btn insp-btn-danger" onclick="deleteDevice('${id}')">
+      ✕ Remove Device
+    </button>
+  `;
+}
+
+function renderInspectorEmpty() {
+  document.getElementById('insp-title').textContent = 'Inspector';
+  document.getElementById('insp-type').textContent  = '';
+  document.getElementById('insp-body').innerHTML = `
+    <div class="insp-empty">
+      Select a device<br>to edit its properties
+    </div>
+  `;
+}
+
+function updateDevice(id, field, value) {
+  const dev = devices.find(d => d.id === id);
+  if (!dev) return;
+  dev[field] = value;
+  refreshDevice(id);
+}
+
+function openInWizard(id) {
+  const dev = devices.find(d => d.id === id);
+  if (!dev) return;
+  const params = new URLSearchParams({
+    hostname: dev.hostname,
+    vendor:   dev.vendor,
+    mgmtIP:   dev.mgmtIP || '',
+    vlans:    dev.vlans  || '',
+    from:     'topology'
+  });
+  window.location.href = `wizard.html?${params}`;
+}
+
+// ── Generate all configs ──────────────────────────────────────────────────────
+function generateConfigs() {
+  if (devices.length === 0) { showToast('Add devices first'); return; }
+  const panel = document.getElementById('insp-body');
+  document.getElementById('insp-title').textContent = 'Generated Configs';
+  document.getElementById('insp-type').textContent  = `${devices.length} devices`;
+  panel.innerHTML = devices.map(dev => {
+    const connectedLinks  = links.filter(l => l.from === dev.id || l.to === dev.id);
+    const connectedNames  = connectedLinks.map(l => {
+      const oid = l.from === dev.id ? l.to : l.from;
+      return devices.find(d => d.id === oid)?.hostname || '?';
+    });
+    const config = quickConfig(dev, connectedNames);
+    return `
+      <div style="margin-bottom:1rem;">
+        <div style="font-family:var(--mono);font-size:0.68rem;color:var(--accent);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+          <span>${esc(dev.hostname)}</span>
+          <button onclick="copyText(${JSON.stringify(config)})"
+            style="background:none;border:0.5px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:var(--mono);font-size:0.6rem;padding:2px 6px;cursor:pointer;">
+            Copy
+          </button>
+        </div>
+        <pre style="background:var(--surface2);border-radius:6px;padding:8px;font-size:0.62rem;font-family:var(--mono);color:var(--text-muted);line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto;">${esc(config)}</pre>
+        <a href="wizard.html?hostname=${encodeURIComponent(dev.hostname)}&vendor=${dev.vendor}&mgmtIP=${encodeURIComponent(dev.mgmtIP)}&vlans=${encodeURIComponent(dev.vlans)}&from=topology"
+          style="display:block;margin-top:4px;font-family:var(--mono);font-size:0.65rem;color:var(--accent);text-decoration:none;">
+          ⚙ Full wizard →
+        </a>
+      </div>
+    `;
+  }).join('<div style="height:0.5px;background:var(--border);margin:0.5rem 0;"></div>');
+  showToast('Configs generated');
+}
+
+function quickConfig(dev, connectedTo) {
+  const ts = new Date().toISOString().split('T')[0];
+  const lines = [];
+  if (dev.vendor === 'cisco') {
+    lines.push(`! ${dev.hostname} — Cisco IOS`);
+    lines.push(`! Generated ${ts} from Topology Builder`);
+    lines.push(`!`);
+    lines.push(`hostname ${dev.hostname}`);
+    if (dev.mgmtIP) {
+      lines.push(`!`);
+      lines.push(`interface Vlan1`);
+      lines.push(` ip address ${dev.mgmtIP} 255.255.255.0`);
+      lines.push(` no shutdown`);
+    }
+    if (dev.vlans) {
+      lines.push(`!`);
+      dev.vlans.split(',').map(v=>v.trim()).filter(Boolean).forEach(v => {
+        lines.push(`vlan ${v}`);
+        lines.push(` name VLAN_${v}`);
+      });
+    }
+    if (connectedTo.length) {
+      lines.push(`!`);
+      lines.push(`! Connected to: ${connectedTo.join(', ')}`);
+    }
+    lines.push(`!`);
+    lines.push(`! Open in wizard for full config →`);
+  } else if (dev.vendor === 'aruba') {
+    lines.push(`! ${dev.hostname} — Aruba CX`);
+    lines.push(`! Generated ${ts} from Topology Builder`);
+    lines.push(`!`);
+    lines.push(`hostname ${dev.hostname}`);
+    if (dev.mgmtIP) {
+      lines.push(`!`);
+      lines.push(`interface vlan 1`);
+      lines.push(`    ip address ${dev.mgmtIP}/24`);
+      lines.push(`    no shutdown`);
+    }
+    if (dev.vlans) {
+      lines.push(`!`);
+      dev.vlans.split(',').map(v=>v.trim()).filter(Boolean).forEach(v => {
+        lines.push(`vlan ${v}`);
+        lines.push(`    name VLAN_${v}`);
+      });
+    }
+    if (connectedTo.length) {
+      lines.push(`!`);
+      lines.push(`! Connected to: ${connectedTo.join(', ')}`);
+    }
+    lines.push(`!`);
+    lines.push(`! Open in wizard for full config →`);
+  } else if (dev.vendor === 'juniper') {
+    lines.push(`# ${dev.hostname} — Juniper JunOS`);
+    lines.push(`# Generated ${ts} from Topology Builder`);
+    lines.push(`system {`);
+    lines.push(`    host-name ${dev.hostname};`);
+    lines.push(`}`);
+    if (connectedTo.length) {
+      lines.push(`# Connected to: ${connectedTo.join(', ')}`);
+    }
+  } else {
+    lines.push(`# ${dev.hostname} (${dev.type})`);
+    lines.push(`# Vendor: ${dev.vendor}`);
+    if (dev.mgmtIP) lines.push(`# Mgmt IP: ${dev.mgmtIP}`);
+    if (connectedTo.length) lines.push(`# Connected to: ${connectedTo.join(', ')}`);
+  }
+  return lines.join('\n');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function svgPoint(svg, x, y) {
+  const pt = svg.createSVGPoint();
+  pt.x = x; pt.y = y;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+function showEmptyHint()  { document.getElementById('empty-hint').style.display = 'flex'; }
+function hideEmptyHint()  { document.getElementById('empty-hint').style.display = 'none'; }
+
+function updateCounts() {
+  document.getElementById('deviceCount').textContent =
+    `${devices.length} device${devices.length!==1?'s':''} · ${links.length} link${links.length!==1?'s':''}`;
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function clearCanvas() {
+  if (devices.length === 0) return;
+  if (!confirm('Clear all devices and links?')) return;
+  devices = []; links = [];
+  document.getElementById('devices-group').innerHTML = '';
+  document.getElementById('links-group').innerHTML  = '';
+  selectedId = null; linkSource = null;
+  updateCounts();
+  showEmptyHint();
+  renderInspectorEmpty();
+}
+
+function exportTopology() {
+  if (devices.length === 0) { showToast('Nothing to export'); return; }
+  const data = JSON.stringify({ devices, links }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `topology-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── TODO stubs (medium/full features) ────────────────────────────────────────
+// MEDIUM:
+//   - Port labeling on each end of a link (click link → edit ports)
+//   - VLAN propagation: trunk links auto-carry VLANs between devices
+//   - IP addressing: auto-assign /30 subnets to point-to-point links
+// FULL:
+//   - Auto IP assignment across the whole topology
+//   - Routing protocol detection (OSPF area assignment)
+//   - Topology validation (loops, orphaned devices, duplicate IPs)
+//   - Export ALL configs as a zip file
+//   - Save/load topology to Supabase profile
+
+// ── LOAD DEVICES FROM WIZARD QUEUE ───────────────────────────────────────────
+const NETMAP_QUEUE_KEY = 'ncw-netmap-queue';
+
+function loadWizardQueue() {
+  let queue = [];
+  try { queue = JSON.parse(localStorage.getItem(NETMAP_QUEUE_KEY) || '[]'); } catch(e) { return; }
+  if (!queue.length) return;
+
+  const wrap  = document.getElementById('canvasWrap');
+  const W     = wrap.clientWidth  || 800;
+  const H     = wrap.clientHeight || 500;
+  const cols  = Math.ceil(Math.sqrt(queue.length));
+  const spacingX = Math.min(160, (W - 100) / cols);
+  const spacingY = 160;
+  const startX = Math.max(60, (W - cols * spacingX) / 2);
+  const startY = 80;
+
+  queue.forEach((dev, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x   = startX + col * spacingX;
+    const y   = startY + row * spacingY;
+
+    // Give each device a new unique id
+    const id = 'dev_' + (++idCounter);
+    const device = {
+      id,
+      type:     dev.type     || 'switch',
+      vendor:   dev.vendor   || 'cisco',
+      hostname: dev.hostname || `device-${i+1}`,
+      mgmtIP:   dev.mgmtIP  || '',
+      vlans:    dev.vlans   || '',
+      notes:    '',
+      x:        Math.round(x),
+      y:        Math.round(y),
+      configText: dev.configText || ''
+    };
+    devices.push(device);
+    renderDevice(device);
+  });
+
+  hideEmptyHint();
+  updateCounts();
+
+  // Show "Back to Wizard" banner
+  const banner = document.createElement('div');
+  banner.style.cssText = `
+    position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+    background:var(--surface2);border:1px solid var(--accent);
+    border-radius:10px;padding:10px 20px;z-index:500;
+    display:flex;align-items:center;gap:12px;
+    font-family:var(--mono);font-size:0.75rem;color:var(--text);
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  `;
+  banner.innerHTML = `
+    <span style="color:var(--accent);">✓</span>
+    <span><strong>${queue.length}</strong> device${queue.length!==1?'s':''} loaded from Config Wizard</span>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1rem;padding:0;">✕</button>
+    <a href="wizard.html" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:4px 12px;font-family:var(--mono);font-size:0.72rem;font-weight:600;cursor:pointer;text-decoration:none;">+ Add more in Wizard</a>
+    <button onclick="clearWizardQueue()" style="background:none;border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);cursor:pointer;">Clear queue</button>
+  `;
+  document.body.appendChild(banner);
+
+  showToast(`Loaded ${queue.length} device${queue.length!==1?'s':''} from wizard`);
+}
+
+function clearWizardQueue() {
+  localStorage.removeItem(NETMAP_QUEUE_KEY);
+  showToast('Queue cleared');
+  document.querySelector('[style*="loaded from Config Wizard"]')?.parentElement?.remove();
+}
+
+// Also update inspector to show config from wizard queue
+const origRenderInspector = window.pf_render;
+function getDeviceConfig(id) {
+  const dev = devices.find(d => d.id === id);
+  return dev?.configText || null;
+}
+
+// Run on load
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('from') === 'wizard') {
+    setTimeout(loadWizardQueue, 100);
+  } else {
+    // Always check if there's a queue waiting
+    try {
+      const queue = JSON.parse(localStorage.getItem(NETMAP_QUEUE_KEY) || '[]');
+      if (queue.length > 0) setTimeout(loadWizardQueue, 100);
+    } catch(e) {}
+  }
+});
+</script>
+
+<!-- Feedback button -->
+<div id="feedbackBtn" style="display:none;position:fixed;bottom:1.5rem;right:1.5rem;z-index:490;">
+  <button onclick="document.getElementById('feedbackModal').style.display='flex'" 
+    style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--accent);color:#000;border:none;border-radius:980px;font-family:monospace;font-size:0.72rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(88,166,255,0.3);transition:all 0.2s;"
+    onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+    ✦ Feedback
+  </button>
+</div>
+
+<!-- Feedback modal -->
+<div id="feedbackModal" style="display:none;position:fixed;inset:0;z-index:1001;background:rgba(8,12,16,0.88);align-items:center;justify-content:center;padding:2rem;backdrop-filter:blur(8px);">
+  <div style="max-width:420px;width:100%;background:var(--surface);border:0.5px solid rgba(88,166,255,0.25);border-radius:16px;padding:2rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <div>
+        <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);font-family:monospace;margin-bottom:3px;">ConfigWizard</div>
+        <h3 style="font-size:1.2rem;font-weight:700;color:var(--text);margin:0;">Share your feedback</h3>
+      </div>
+      <button onclick="document.getElementById('feedbackModal').style.display='none'" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.2rem;padding:4px;">✕</button>
+    </div>
+    <!-- Star rating -->
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.72rem;color:var(--text-muted);font-family:monospace;margin-bottom:8px;">How would you rate ConfigWizard?</div>
+      <div id="starRow" style="display:flex;gap:6px;">
+        <span class="fb-star" data-val="1" onclick="setRating(1)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+        <span class="fb-star" data-val="2" onclick="setRating(2)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+        <span class="fb-star" data-val="3" onclick="setRating(3)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+        <span class="fb-star" data-val="4" onclick="setRating(4)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+        <span class="fb-star" data-val="5" onclick="setRating(5)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+      </div>
+    </div>
+    <!-- Text feedback -->
+    <textarea id="feedbackText" placeholder="What can we improve? What do you love? What's missing?" 
+      style="width:100%;height:100px;background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:8px;padding:10px;color:var(--text);font-family:monospace;font-size:0.75rem;resize:vertical;box-sizing:border-box;outline:none;margin-bottom:1rem;"></textarea>
+    <div style="display:flex;gap:8px;">
+      <button onclick="submitFeedback()" style="flex:1;padding:10px;background:var(--accent);color:#000;border:none;border-radius:980px;font-family:monospace;font-size:0.78rem;font-weight:700;cursor:pointer;">Send feedback</button>
+      <button onclick="document.getElementById('feedbackModal').style.display='none'" style="padding:10px 16px;background:var(--surface2);border:0.5px solid var(--border);border-radius:980px;font-family:monospace;font-size:0.78rem;color:var(--text-muted);cursor:pointer;">Cancel</button>
+    </div>
+    <div id="feedbackSuccess" style="display:none;text-align:center;padding:1rem 0;font-size:0.82rem;color:var(--success);font-family:monospace;">✓ Thanks for your feedback!</div>
+  </div>
+</div>
+
+<script>
+var _fbRating = 0;
+function setRating(val) {
+  _fbRating = val;
+  document.querySelectorAll('.fb-star').forEach(function(s) {
+    s.style.opacity = parseInt(s.getAttribute('data-val')) <= val ? '1' : '0.3';
+    s.style.color   = parseInt(s.getAttribute('data-val')) <= val ? '#ffd60a' : '';
+  });
+}
+function submitFeedback() {
+  var text = document.getElementById('feedbackText').value.trim();
+  if (!text && !_fbRating) { return; }
+  // Save to Supabase feedback table
+  try {
+    var _url  = 'https://tiviipaamwvfjvoscnyk.supabase.co';
+    var _anon = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
+    var _c = supabase.createClient(_url, _anon);
+    _c.auth.getSession().then(function(r) {
+      var uid = r.data.session ? r.data.session.user.id : null;
+      _c.from('feedback').insert([{
+        user_id:  uid,
+        rating:   _fbRating || null,
+        message:  text,
+        page:     window.location.pathname.split('/').pop() || 'unknown',
+        created_at: new Date().toISOString()
+      }]).then(function() {
+        document.getElementById('feedbackSuccess').style.display = 'block';
+        document.getElementById('feedbackText').value = '';
+        _fbRating = 0;
+        document.querySelectorAll('.fb-star').forEach(function(s){ s.style.opacity='0.4'; s.style.color=''; });
+        setTimeout(function(){ document.getElementById('feedbackModal').style.display='none'; document.getElementById('feedbackSuccess').style.display='none'; }, 2000);
+      });
+    });
+  } catch(e) { console.warn('Feedback error:', e); }
+}
+// Show feedback button only if logged in
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var key = 'sb-tiviipaamwvfjvoscnyk-auth-token';
+    var raw = localStorage.getItem(key);
+    var loggedIn = false;
+    if (raw) { var d = JSON.parse(raw); if (d && d.access_token) loggedIn = true; }
+    if (!loggedIn) {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.includes('sb-')) { var v = localStorage.getItem(k); if (v && v.includes('access_token')) { loggedIn = true; break; } }
+      }
+    }
+    if (loggedIn) { var btn = document.getElementById('feedbackBtn'); if (btn) btn.style.display = 'block'; }
+  } catch(e) {}
+});
+</script>
+</body>
+</html>
