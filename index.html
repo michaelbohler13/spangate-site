@@ -562,6 +562,87 @@ body { background: #0d1117 !important; color:#ffffff; }
 .ctaband { background: rgba(22,27,34,.85) !important; }
 footer { background: rgba(1,4,9,.9) !important; }
 
+
+/* ── VISUAL POLISH ── */
+.hero-h1 span {
+  text-shadow: 0 0 40px rgba(33,139,255,.3);
+}
+
+
+  to { filter: drop-shadow(0 0 20px rgba(0,212,255,.8)); }
+}
+.prod-block {
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.prod-block:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(33,139,255,.15);
+}
+.btn-primary {
+  box-shadow: 0 4px 20px rgba(33,139,255,.3);
+  transition: all .3s ease;
+}
+.btn-primary:hover {
+  box-shadow: 0 6px 30px rgba(33,139,255,.5);
+  transform: translateY(-2px);
+}
+nav {
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+.prod-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--prod-color), transparent);
+  opacity: 0;
+  transition: opacity .3s;
+}
+.prod-block:hover::before {
+  opacity: 1;
+}
+table {
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+}
+.fi {
+  transition: all .3s ease;
+}
+.fi:hover {
+  background: rgba(33,139,255,.03);
+  border-left: 3px solid #58a6ff;
+  padding-left: 37px;
+}
+
+
+.hero-h1 span {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+.w1 {
+  background: linear-gradient(120deg, #ffffff 0%, #e0e6f0 50%, #ffffff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.w2 {
+  background: linear-gradient(120deg, #00d4ff 0%, #3d6aff 50%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.w3 {
+  background: linear-gradient(120deg, #3d6aff 0%, #8b3fff 50%, #3d6aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
 </style>
 </head>
 <body>
@@ -790,7 +871,7 @@ footer { background: rgba(1,4,9,.9) !important; }
             <td><span class="tp">$199</span><span class="tper">/mo</span><span class="tnote">Up to 5,000 assets</span></td>
           </tr>
           <tr>
-            <td><span class="tt">District</span></td>
+            <td><span class="tt">Enterprise</span></td>
             <td><span class="tdash">—</span></td>
             <td><span class="tp">$799</span><span class="tper">/mo</span><span class="tnote">Up to 1,000 devices</span></td>
             <td><span class="tp">$399</span><span class="tper">/mo</span><span class="tnote">Up to 10,000 assets</span></td>
