@@ -783,6 +783,188 @@ table {
   cursor: not-allowed;
 }
 
+
+/* ── RESPONSIVE DESIGN ── */
+@media (max-width: 1200px) {
+  .prod-cards {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    max-width: 600px;
+  }
+  .prod-card:hover {
+    transform: translateY(-4px) scale(1.01);
+  }
+}
+
+@media (max-width: 768px) {
+  /* Nav */
+  nav {
+    padding: 0 24px;
+    height: auto;
+    min-height: 60px;
+    flex-wrap: wrap;
+  }
+  .nav-logo {
+    flex: 1;
+  }
+  .nav-links {
+    display: none;
+  }
+  .nav-cta {
+    margin-left: 0;
+  }
+  
+  /* Hero */
+  .hero {
+    padding: 80px 24px 60px;
+  }
+  .hero-kicker {
+    font-size: 10px;
+    letter-spacing: 3px;
+  }
+  .hero-h1 span {
+    font-size: clamp(40px, 10vw, 68px) !important;
+  }
+  .hero-sub {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .hero-ctas {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  .hero-ctas button,
+  .hero-ctas a {
+    width: 100%;
+  }
+  .trust {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .ti {
+    font-size: 12px;
+  }
+  
+  /* Stat bar */
+  .statbar {
+    padding: 30px 24px;
+  }
+  .stats {
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  .stat {
+    flex: 1 1 calc(50% - 12px);
+    min-width: 140px;
+  }
+  .sv {
+    font-size: 32px;
+  }
+  
+  /* Statement */
+  .statement {
+    padding: 80px 24px;
+  }
+  .st-h {
+    font-size: 32px;
+  }
+  .st-p {
+    font-size: 17px;
+  }
+  
+  /* Products */
+  .products {
+    padding: 80px 24px;
+  }
+  .prod-header h2 {
+    font-size: 32px;
+  }
+  .prod-cards {
+    gap: 20px;
+  }
+  .prod-card {
+    padding: 32px 24px;
+  }
+  .prod-num {
+    font-size: 56px;
+  }
+  .prod-name {
+    font-size: 24px;
+  }
+  
+  /* Pricing */
+  .pricing {
+    padding: 80px 24px;
+  }
+  .sec-h {
+    font-size: 32px;
+  }
+  table {
+    font-size: 13px;
+  }
+  th, td {
+    padding: 12px 8px;
+  }
+  .tp {
+    font-size: 20px;
+  }
+  
+  /* FAQ */
+  .faq {
+    padding: 80px 24px;
+  }
+  .fq {
+    font-size: 16px;
+  }
+  
+  /* CTA band */
+  .ctaband {
+    padding: 80px 24px;
+  }
+  .cb-h {
+    font-size: 32px;
+  }
+  
+  /* Footer */
+  footer {
+    padding: 60px 24px 24px;
+  }
+  .fcols {
+    flex-direction: column;
+    gap: 32px;
+  }
+  .fcol {
+    flex: 1 1 100%;
+  }
+  .fbot {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-h1 span {
+    font-size: clamp(32px, 9vw, 56px) !important;
+  }
+  .stat {
+    flex: 1 1 100%;
+  }
+  .st-h {
+    font-size: 28px;
+  }
+  .cb-h {
+    font-size: 28px;
+  }
+  table {
+    font-size: 12px;
+  }
+  th, td {
+    padding: 10px 6px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -893,7 +1075,7 @@ table {
         <li>Runs on Pi, VM, or desktop</li>
       </ul>
       <div class="prod-price">
-        <strong>from $99/mo</strong>
+        <strong>starting at $99/mo</strong>
         <span>50–1,000 devices</span>
       </div>
       <button class="prod-cta" disabled>Launching Q3 2026</button>
@@ -914,7 +1096,7 @@ table {
         <li>Custom fields & tags</li>
       </ul>
       <div class="prod-price">
-        <strong>from $49/mo</strong>
+        <strong>starting at $49/mo</strong>
         <span>250–10,000 assets</span>
       </div>
       <button class="prod-cta" disabled>Launching 2027</button>
