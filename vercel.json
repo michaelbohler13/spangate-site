@@ -1,4 +1,9 @@
 {
+  "rewrites": [
+    { "source": "/configwizard", "destination": "/configwizard/index.html" },
+    { "source": "/netmonitor", "destination": "/netmonitor/index.html" },
+    { "source": "/assettracker", "destination": "/assettracker/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
