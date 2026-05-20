@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="shortcut icon" href="/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConfigWizard — Network Configuration, Perfected</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000000;
+    --bg2: #0a0a0a;
+    --surface: #0d0d0d;
+    --surface2: #1a1a1a;
+    --surface3: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border-bright: rgba(255,255,255,0.15);
+    --text: #f5f5f7;
+    --text-muted: #a1a1a6;
+    --text-dim: #6e6e73;
+    --accent: #58a6ff;
+    --accent-glow: rgba(88,166,255,0.15);
+    --aruba: #ff6b2b;
+    --cisco: #2997ff;
+    --juniper: #30d158;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); overflow-x: hidden; }
+
+  /* ── Subtle radial glow ── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80vw;
+    height: 80vh;
+    background: radial-gradient(ellipse at center, rgba(88,166,255,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: rgba(0,0,0,0.72);
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .nav-logo {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-logo-mark {
+    width: 22px; height: 22px;
+    background: var(--accent);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+    color: #000;
+    font-weight: 700;
+    font-family: var(--mono);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.75rem;
+    margin-left: 2.5rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-spacer { flex: 1; }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+
+  .nav-signin {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+    transition: color 0.15s;
+  }
+  .nav-signin:hover { color: var(--text); }
+
+  .nav-cta {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text);
+    background: rgba(255,255,255,0.1);
+    border: 0.5px solid rgba(255,255,255,0.15);
+    border-radius: 980px;
+    padding: 5px 14px;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+    transition: all 0.15s;
+    backdrop-filter: blur(10px);
+  }
+  .nav-cta:hover { background: rgba(255,255,255,0.15); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 7rem 2rem 5rem;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.25rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.1s forwards;
+  }
+
+  .hero-title {
+    font-size: clamp(3.2rem, 7vw, 6rem);
+    font-weight: 600;
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.2s forwards;
+  }
+
+  .hero-title em {
+    font-style: normal;
+    background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.5) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-rainbow {
+    background: linear-gradient(
+      90deg,
+      #58a6ff 0%,
+      #2997ff 20%,
+      #30d158 45%,
+      #3fb950 55%,
+      #f85149 80%,
+      #ff453a 100%
+    );
+    background-size: 300% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmerText 5s ease-in-out infinite alternate;
+  }
+  @keyframes shimmerText {
+    from { background-position: 0% center; }
+    to   { background-position: 100% center; }
+  }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-muted);
+    max-width: 520px;
+    letter-spacing: -0.01em;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 3.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.4s forwards;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 22px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 980px;
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: scale(1.02); }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 22px;
+    background: transparent;
+    color: var(--accent);
+    border: none;
+    border-radius: 980px;
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { color: var(--text); }
+  .btn-secondary::after { content: ' →'; }
+
+  /* ── Vendor chips ── */
+  .vendor-chips {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.5s forwards;
+  }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 980px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--text-muted);
+  }
+  .chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .chip-dot.aruba { background: var(--aruba); }
+  .chip-dot.cisco { background: var(--cisco); }
+  .chip-dot.juniper { background: var(--juniper); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── WINDOW MOCKUP ── */
+  .window-wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.6s forwards;
+  }
+
+  .window {
+    background: var(--surface);
+    border: 0.5px solid var(--border-bright);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 0.5px rgba(255,255,255,0.06),
+      0 50px 100px rgba(0,0,0,0.8),
+      0 0 80px rgba(88,166,255,0.04);
+  }
+
+  .window-bar {
+    height: 38px;
+    background: var(--surface2);
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 6px;
+  }
+  .wb { width: 10px; height: 10px; border-radius: 50%; }
+  .wb-r { background: #ff5f57; }
+  .wb-y { background: #ffbd2e; }
+  .wb-g { background: #28c840; }
+  .window-bar-title {
+    flex: 1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+  }
+
+  .window-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wc-left {
+    padding: 1.5rem;
+    border-right: 0.5px solid var(--border);
+  }
+
+  .wc-step {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  .wc-field { margin-bottom: 1rem; }
+  .wc-label {
+    display: block;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .wc-val {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .wc-vendor-row {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 6px;
+    margin-bottom: 1rem;
+  }
+  .wvc {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 7px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+  .wvc.active-aruba { border-color: var(--aruba); color: var(--aruba); background: rgba(255,107,43,0.08); }
+  .wvc.dim { opacity: 0.4; }
+
+  .wc-right {
+    padding: 1.5rem;
+    background: var(--bg);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    line-height: 1.8;
+  }
+  .cc { color: #3d3d3d; }
+  .ck { color: #ff7b72; }
+  .cv { color: #79c0ff; }
+  .ci { color: #ffa657; }
+  .cs { color: #a5d6ff; }
+  .cursor { display: inline-block; width: 5px; height: 12px; background: var(--accent); animation: blink 1.2s step-end infinite; vertical-align: middle; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ── DIVIDER ── */
+  .divider { border: none; border-top: 0.5px solid var(--border); position: relative; z-index: 1; }
+
+  /* ── SECTION ── */
+  .section { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 5rem 2rem; }
+  .section-center { text-align: center; }
+
+  .section-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+  .section-sub {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto 3rem;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── STAT ROW ── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .stat-cell {
+    background: var(--surface);
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label { font-size: 0.78rem; color: var(--text-dim); letter-spacing: -0.01em; }
+
+  /* ── FEATURES BENTO ── */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    gap: 12px;
+  }
+
+  .bento-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .bento-card:hover { border-color: var(--border-bright); }
+
+  .bento-card.wide { grid-column: span 2; }
+  .bento-card.tall { grid-row: span 2; }
+
+  .bento-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+  }
+  .bi-blue   { background: rgba(88,166,255,0.1);  }
+  .bi-green  { background: rgba(48,209,88,0.1);   }
+  .bi-orange { background: rgba(255,107,43,0.1);  }
+  .bi-purple { background: rgba(191,144,255,0.1); }
+  .bi-cyan   { background: rgba(41,151,255,0.1);  }
+  .bi-white  { background: rgba(255,255,255,0.06);}
+
+  .bento-title {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    line-height: 1.2;
+  }
+  .bento-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+    letter-spacing: -0.01em;
+  }
+
+  /* Mini config preview inside bento */
+  .mini-config {
+    margin-top: 1rem;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  /* AI badge */
+  .ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    background: rgba(191,144,255,0.1);
+    border: 0.5px solid rgba(191,144,255,0.2);
+    border-radius: 980px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #bf90ff;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Version history preview */
+  .version-list { display: flex; flex-direction: column; gap: 6px; margin-top: 1rem; }
+  .version-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--surface2);
+    border-radius: 6px;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+  .version-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-bright); flex-shrink: 0; }
+  .version-dot.current { background: var(--accent); }
+  .version-num { color: var(--accent); font-weight: 600; }
+  .version-spacer { flex: 1; }
+  .version-diff-add { color: var(--juniper); }
+  .version-diff-rem { color: var(--aruba); font-size: 0.62rem; }
+
+  /* ── HOW IT WORKS ── */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 0;
+    position: relative;
+  }
+  .steps::before {
+    content: '';
+    position: absolute;
+    top: 22px;
+    left: 12%;
+    right: 12%;
+    height: 0.5px;
+    background: var(--border-bright);
+  }
+  .step { text-align: center; padding: 0 1rem; position: relative; z-index: 1; }
+  .step-num {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 0.5px solid var(--border-bright);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0 auto 1.25rem;
+  }
+  .step-title { font-size: 0.88rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 0.4rem; color: var(--text); }
+  .step-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; letter-spacing: -0.01em; }
+
+  /* ── CTA ── */
+  .cta-wrap {
+    position: relative;
+    z-index: 1;
+    padding: 5rem 2rem 7rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cta-box {
+    background: var(--surface);
+    border: 0.5px solid var(--border-bright);
+    border-radius: 20px;
+    padding: 4rem 3rem;
+    max-width: 580px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-box::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px; height: 200px;
+    background: radial-gradient(ellipse, rgba(88,166,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-title {
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .cta-sub {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+    margin-bottom: 2rem;
+  }
+  .cta-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 0.5px solid var(--border);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 100%;
+  }
+  .footer-left { font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+  .footer-links { display: flex; gap: 1.5rem; list-style: none; }
+  .footer-links a { font-size: 0.72rem; color: var(--text-dim); text-decoration: none; transition: color 0.15s; }
+  .footer-links a:hover { color: var(--text-muted); }
+
+  /* ── REVEAL ── */
+  
+  
+
+  @media (max-width: 768px) {
+    .bento { grid-template-columns: 1fr; }
+    .bento-card.wide { grid-column: span 1; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .window-content { grid-template-columns: 1fr; }
+    .wc-right { display: none; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 480px) {
+    .steps { grid-template-columns: 1fr; }
+    .steps::before { display: none; }
+    nav { padding: 0 1.25rem; }
+  }
+
+
+  /* ── Canvas ribbon waves ── */
+  .hero { position: relative; overflow: hidden; }
+  .hero > *:not(.hero-waves) { position: relative; z-index: 1; }
+  .hero-waves {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #ribbonCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── LIGHT MODE — full override ── */
+  [data-theme="light"] body { background: #d4d4d2; color: #0d0d0d; }
+  [data-theme="light"] body::before { background: radial-gradient(ellipse at center, rgba(88,166,255,0.06) 0%, transparent 70%); }
+  [data-theme="light"] .hero-title { color: #0d0d0d; }
+  [data-theme="light"] .hero-eyebrow { color: #444444; border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.04); }
+  [data-theme="light"] .hero-sub { color: #1a1a1a; }
+  [data-theme="light"] .btn-secondary { background: rgba(0,0,0,0.06); color: #0d0d0d; border-color: rgba(0,0,0,0.15); }
+  [data-theme="light"] .chip { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.1); color: #1a1a1a; }
+  [data-theme="light"] .bento-card { background: #ffffff; border-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .bento-title { color: #0d0d0d; }
+  [data-theme="light"] .bento-desc { color: #1a1a1a; }
+  [data-theme="light"] .mini-config { background: #f0f0ee; border-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .section-label { color: #444444; }
+  [data-theme="light"] .section-title { color: #0d0d0d; }
+  [data-theme="light"] .section-sub { color: #1a1a1a; }
+  [data-theme="light"] .step-card { background: #ffffff; border-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .step-title { color: #0d0d0d; }
+  [data-theme="light"] .step-desc { color: #1a1a1a; }
+  [data-theme="light"] .window-bar { background: #e8e8e6; border-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .window-content { background: #f5f5f3; }
+  [data-theme="light"] hr.divider { border-color: rgba(0,0,0,0.08); }
+  [data-theme="light"] .version-list { background: #f0f0ee; border-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .version-row { border-color: rgba(0,0,0,0.06); color: #1a1a1a; }
+
+  [data-theme="light"] nav { background: rgba(242,242,240,0.92); border-bottom-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .nav-links a { color: #0d0d0d; }
+  [data-theme="light"] .nav-links a:hover { color: #000; }
+  [data-theme="light"] .nav-logo { color: #0d0d0d; }
+  [data-theme="light"] .nav-signin { color: #1a1a1a; }
+  [data-theme="light"] .nav-signin:hover { color: #000; }
+  [data-theme="light"] .nav-cta { background: rgba(0,0,0,0.06); color: #0d0d0d; border-color: rgba(0,0,0,0.12); }
+  [data-theme="light"] .nav-cta:hover { background: rgba(0,0,0,0.1); }
+  [data-theme="light"] .site-nav { background: rgba(242,242,240,0.92); border-bottom-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .site-nav-links a { color: #0d0d0d; }
+  [data-theme="light"] .site-nav-links a:hover, [data-theme="light"] .site-nav-links a.active { color: #000; }
+  [data-theme="light"] .site-nav-logo { color: #0d0d0d; }
+  [data-theme="light"] .site-nav-btn { color: #1a1a1a; border-color: rgba(0,0,0,0.15); }
+  [data-theme="light"] .site-nav-btn:hover { color: #000; }
+  [data-theme="light"] .site-nav-btn.primary { color: #000; border-color: #58a6ff; }
+  /* ── Pro Preview Cards ── */
+  .pro-preview-card {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 0.5px solid var(--border-bright);
+    background: var(--surface);
+    height: 320px;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .pro-preview-card:hover { transform: translateY(-3px); border-color: rgba(88,166,255,0.3); }
+  .pro-preview-animation {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .pro-preview-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 0%, transparent 35%, var(--surface) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.25rem;
+    backdrop-filter: blur(0px);
+  }
+  .pro-lock-badge {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: rgba(88,166,255,0.15);
+    border: 0.5px solid rgba(88,166,255,0.3);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+  .pro-preview-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 5px;
+    letter-spacing: -0.01em;
+  }
+  .pro-preview-desc {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.5;
+    margin-bottom: 0.85rem;
+  }
+  .pro-upgrade-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 16px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 980px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    font-family: var(--mono);
+    width: fit-content;
+    transition: opacity 0.15s;
+  }
+  .pro-upgrade-btn:hover { opacity: 0.85; }
+
+  /* NetDoctor anim */
+  .nd-anim-wrap { padding: 1rem; }
+  .nd-vendor-row { display: flex; gap: 6px; margin-bottom: 10px; }
+  .nd-vendor-pill { font-size: 0.62rem; font-family: var(--mono); padding: 3px 8px; border-radius: 4px; border: 0.5px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); }
+  .nd-active { border-color: #58a6ff; color: #58a6ff; background: rgba(88,166,255,0.1); }
+  .nd-cmd-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  .nd-cmd-item { font-size: 0.65rem; font-family: var(--mono); color: #58a6ff; padding: 3px 8px; background: rgba(88,166,255,0.06); border-radius: 4px; border-left: 2px solid #58a6ff; opacity: 0; transform: translateX(-10px); transition: all 0.3s; }
+  .nd-cmd-item.show { opacity: 1; transform: translateX(0); }
+  .nd-output-box { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px; min-height: 50px; font-size: 0.62rem; font-family: var(--mono); color: rgba(255,255,255,0.5); }
+  .nd-cursor::after { content: '|'; animation: blink 1s infinite; color: #58a6ff; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Instant On anim */
+  .io-anim-wrap { padding: 1rem; }
+  .io-step-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.3); margin-bottom: 8px; font-family: var(--mono); }
+  .io-biz-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .io-biz-pill { font-size: 0.62rem; font-family: var(--mono); padding: 4px 10px; border-radius: 6px; border: 0.5px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); transition: all 0.3s; }
+  .io-biz-active { border-color: #ff6b2b; color: #ff6b2b; background: rgba(255,107,43,0.1); }
+  .io-ssid-row { display: flex; flex-direction: column; gap: 6px; }
+  .io-ssid-card { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; border: 0.5px solid rgba(255,255,255,0.08); }
+  .io-ssid-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .io-ssid-name { font-size: 0.68rem; font-family: var(--mono); color: rgba(255,255,255,0.8); }
+  .io-ssid-sub { font-size: 0.58rem; color: rgba(255,255,255,0.3); }
+
+  /* Wizard anim */
+  .wiz-anim-wrap { padding: 1rem; }
+  .wiz-step-row { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+  .wiz-step-pill { font-size: 0.58rem; font-family: var(--mono); padding: 3px 8px; border-radius: 4px; border: 0.5px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); transition: all 0.3s; }
+  .wiz-step-active { border-color: #58a6ff; color: #58a6ff; background: rgba(88,166,255,0.1); }
+  .wiz-config-preview { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+  .wiz-config-line { height: 10px; border-radius: 3px; background: rgba(255,255,255,0.06); transition: all 0.4s; }
+  .wiz-config-line.lit { background: linear-gradient(90deg, rgba(88,166,255,0.4), rgba(88,166,255,0.1)); }
+
+  @media(max-width:700px) {
+    .pro-preview-card { height: 260px; }
+    [style*="grid-template-columns:repeat(2,1fr)"] { grid-template-columns: 1fr !important; }
+  }
+
+  /* ── Light mode — dark warm grey ── */
+  [data-theme="light"] {
+    --bg: #d4d4d2 !important;
+    --bg2: #cacac8 !important;
+    --surface: #e2e2e0 !important;
+    --surface2: #d8d8d6 !important;
+    --surface3: #cecece !important;
+    --border: rgba(0,0,0,0.12) !important;
+    --border-bright: rgba(0,0,0,0.2) !important;
+    --text: #0d0d0d !important;
+    --text-muted: #1a1a1a !important;
+    --text-dim: #333333 !important;
+  }
+  [data-theme="light"] body { background: #d4d4d2 !important; color: #0d0d0d !important; }
+  [data-theme="light"] h1,[data-theme="light"] h2,[data-theme="light"] h3,
+  [data-theme="light"] h4,[data-theme="light"] h5,[data-theme="light"] h6 { color: #0d0d0d !important; }
+  [data-theme="light"] p { color: #1a1a1a !important; }
+  [data-theme="light"] .site-nav,
+  [data-theme="light"] nav { background: rgba(212,212,210,0.95) !important; border-bottom-color: rgba(0,0,0,0.12) !important; }
+  [data-theme="light"] .site-nav-links a,
+  [data-theme="light"] .nav-links a { color: #0d0d0d !important; }
+  [data-theme="light"] .site-nav-links a:hover,
+  [data-theme="light"] .nav-links a:hover { color: #000 !important; }
+  [data-theme="light"] .site-nav-logo,
+  [data-theme="light"] .nav-logo { color: #0d0d0d !important; }
+  [data-theme="light"] .card,
+  [data-theme="light"] .bento-card,
+  [data-theme="light"] .step-card,
+  [data-theme="light"] .step-section { background: #e2e2e0 !important; border-color: rgba(0,0,0,0.12) !important; }
+  [data-theme="light"] .bento-title,
+  [data-theme="light"] .step-title { color: #0d0d0d !important; }
+  [data-theme="light"] .bento-desc,
+  [data-theme="light"] .step-desc,
+  [data-theme="light"] .hero-sub { color: #1a1a1a !important; }
+  [data-theme="light"] textarea,
+  [data-theme="light"] input,
+  [data-theme="light"] select { color: #0d0d0d !important; background: #e2e2e0 !important; border-color: rgba(0,0,0,0.2) !important; }
+  [data-theme="light"] textarea::placeholder,
+  [data-theme="light"] input::placeholder { color: #666 !important; }
+  [data-theme="light"] .section-title { color: #0d0d0d !important; }
+  [data-theme="light"] .section-sub { color: #1a1a1a !important; }
+
+
+  /* ── Light mode preview cards ── */
+  [data-theme="light"] .pro-preview-title { color: #0d0d0d !important; }
+  [data-theme="light"] .pro-preview-desc  { color: #1a1a1a !important; }
+  [data-theme="light"] .nd-vendor-pill    { color: #1a1a1a !important; border-color: rgba(0,0,0,0.2) !important; }
+  [data-theme="light"] .nd-active         { color: #58a6ff !important; }
+  [data-theme="light"] .nd-cmd-item       { color: #0550ae !important; background: rgba(88,166,255,0.08) !important; }
+  [data-theme="light"] .nd-output-box     { color: #1a1a1a !important; background: rgba(0,0,0,0.04) !important; border-color: rgba(0,0,0,0.1) !important; }
+  [data-theme="light"] .io-step-label     { color: #444 !important; }
+  [data-theme="light"] .io-biz-pill       { color: #1a1a1a !important; border-color: rgba(0,0,0,0.15) !important; }
+  [data-theme="light"] .io-ssid-name      { color: #0d0d0d !important; }
+  [data-theme="light"] .io-ssid-sub       { color: #555 !important; }
+  [data-theme="light"] .io-ssid-card      { background: rgba(0,0,0,0.04) !important; border-color: rgba(0,0,0,0.1) !important; }
+  [data-theme="light"] .wiz-step-pill     { color: #555 !important; border-color: rgba(0,0,0,0.15) !important; }
+  [data-theme="light"] .wiz-step-active   { color: #0550ae !important; }
+  [data-theme="light"] .wiz-config-line   { background: rgba(0,0,0,0.08) !important; }
+  [data-theme="light"] .wiz-config-line.lit { background: linear-gradient(90deg,rgba(88,166,255,0.4),rgba(88,166,255,0.1)) !important; }
+  [data-theme="light"] .pro-lock-badge    { color: #0550ae !important; background: rgba(88,166,255,0.1) !important; }
+
+
+  #landingThemeBtn { transition: all 0.15s; }
+  #landingThemeBtn:hover { opacity: 0.8; }
+  [data-theme="dark"]  #landingThemeBtn { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); }
+  [data-theme="light"] #landingThemeBtn { border-color: rgba(0,0,0,0.15); color: #3d3d3d; }
+
+
+  /* ── Theme label always readable ── */
+  [data-theme="light"] #themeLabel,
+  [data-theme="light"] #landingThemeLabel,
+  [data-theme="light"] #dashThemeLabel { color: #0d0d0d !important; }
+  [data-theme="light"] #themeToggle,
+  [data-theme="light"] #landingThemeBtn,
+  [data-theme="light"] #dashThemeBtn { color: #0d0d0d !important; border-color: rgba(0,0,0,0.2) !important; }
+
+</style>
+
+<script>
+// ── Pro Preview Animations ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+
+  // Network Map canvas animation
+  (function() {
+    const canvas = document.getElementById('netmapCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const devices = [
+      { x:0.2, y:0.35, label:'core-sw-01', color:'#2997ff', type:'switch' },
+      { x:0.55, y:0.2,  label:'router-01',  color:'#ff6b2b', type:'router' },
+      { x:0.75, y:0.55, label:'dist-sw-01', color:'#2997ff', type:'switch' },
+      { x:0.35, y:0.7,  label:'server-01',  color:'#ffd60a', type:'server' },
+      { x:0.8,  y:0.8,  label:'ap-01',      color:'#30d158', type:'ap'     },
+    ];
+    const links = [[0,1],[0,2],[0,3],[2,4]];
+    let W, H, t = 0, visibleDevices = 0, visibleLinks = 0;
+    let lastDeviceTime = 0, lastLinkTime = 0;
+
+    function resize() {
+      const el = canvas.parentElement;
+      W = canvas.width  = el.offsetWidth;
+      H = canvas.height = el.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function drawDevice(d, alpha) {
+      const x = d.x * W, y = d.y * H;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(x, y, 18, 0, Math.PI*2);
+      ctx.fillStyle = d.color + '22';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, 18, 0, Math.PI*2);
+      ctx.strokeStyle = d.color;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = d.color;
+      ctx.font = '8px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(d.label, x, y + 30);
+      ctx.globalAlpha = 1;
+    }
+
+    function drawLink(a, b, alpha) {
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(a.x*W, a.y*H);
+      ctx.lineTo(b.x*W, b.y*H);
+      ctx.strokeStyle = '#58a6ff';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    function animate(ts) {
+      ctx.clearRect(0, 0, W, H);
+      t = ts;
+
+      // Reveal devices one by one
+      if (ts - lastDeviceTime > 800 && visibleDevices < devices.length) {
+        visibleDevices++;
+        lastDeviceTime = ts;
+      }
+      // Reveal links after all devices
+      if (visibleDevices >= devices.length && ts - lastLinkTime > 600 && visibleLinks < links.length) {
+        visibleLinks++;
+        lastLinkTime = ts;
+      }
+      // Reset after full cycle
+      if (visibleLinks >= links.length && ts - lastLinkTime > 3000) {
+        visibleDevices = 0; visibleLinks = 0; lastDeviceTime = ts; lastLinkTime = ts;
+      }
+
+      links.slice(0, visibleLinks).forEach(([a,b]) => drawLink(devices[a], devices[b], 1));
+      devices.slice(0, visibleDevices).forEach(d => drawDevice(d, 1));
+
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  })();
+
+  // NetDoctor animation
+  (function() {
+    const cmds = ['show version','show interface','show spanning-tree','show vlan','show logging'];
+    const list = document.getElementById('ndCmdList');
+    const cursor = document.getElementById('ndCursor');
+    if (!list || !cursor) return;
+    let i = 0;
+    list.innerHTML = cmds.map(c => '<div class="nd-cmd-item">' + c + '</div>').join('');
+    const items = list.querySelectorAll('.nd-cmd-item');
+
+    function addCmd() {
+      if (i < items.length) { items[i].classList.add('show'); i++; setTimeout(addCmd, 700); }
+      else {
+        cursor.textContent = 'Analyzing output... building AI prompt';
+        setTimeout(() => {
+          cursor.textContent = '✓ Prompt ready — open your AI';
+          setTimeout(() => { i = 0; items.forEach(el => el.classList.remove('show')); cursor.textContent = ''; setTimeout(addCmd, 1000); }, 2500);
+        }, 1500);
+      }
+    }
+    setTimeout(addCmd, 800);
+  })();
+
+  // Instant On animation
+  (function() {
+    const bizTypes = ['Café','Retail','Hotel','Office','Gym'];
+    const ssids = [
+      ['Cafe_Staff','Cafe_Guest'],
+      ['Retail_POS','Customer_WiFi'],
+      ['Hotel_Staff','Hotel_Guest'],
+      ['Corp_Network','Guest_WiFi'],
+      ['Staff_Net','Members_WiFi'],
+    ];
+    const row = document.getElementById('ioBizRow');
+    const s1  = document.getElementById('ioSSID1');
+    const s2  = document.getElementById('ioSSID2');
+    if (!row || !s1 || !s2) return;
+
+    row.innerHTML = bizTypes.map(b => '<div class="io-biz-pill">' + b + '</div>').join('');
+    const pills = row.querySelectorAll('.io-biz-pill');
+    let active = 0;
+
+    function cycle() {
+      pills.forEach(p => p.classList.remove('io-biz-active'));
+      pills[active].classList.add('io-biz-active');
+      s1.textContent = ssids[active][0];
+      s2.textContent = ssids[active][1];
+      active = (active + 1) % bizTypes.length;
+      setTimeout(cycle, 2000);
+    }
+    cycle();
+  })();
+
+  // Wizard animation
+  (function() {
+    const steps = ['Platform','Device','Identity','VLANs','Features','802.1X','ACLs','AI Review'];
+    const configs = [
+      ['hostname core-sw-01', 'ip domain-name netconfig.io', 'crypto key generate rsa', 'ip ssh version 2', 'service password-encryption'],
+      ['interface vlan 10', '  ip address 10.0.1.1 255.255.255.0', 'dot1x system-auth-control', 'radius-server host 10.0.0.1', 'aaa new-model'],
+    ];
+    const row = document.getElementById('wizStepRow');
+    const lines = [1,2,3,4,5].map(i => document.getElementById('wizLine' + i));
+    if (!row || !lines[0]) return;
+
+    row.innerHTML = steps.map(s => '<div class="wiz-step-pill">' + s + '</div>').join('');
+    const pills = row.querySelectorAll('.wiz-step-pill');
+    let activeStep = 0, configSet = 0;
+
+    function cycleStep() {
+      pills.forEach(p => p.classList.remove('wiz-step-active'));
+      pills[activeStep].classList.add('wiz-step-active');
+      // Animate config lines
+      lines.forEach((l,i) => {
+        setTimeout(() => { if(l) l.classList.add('lit'); }, i * 120);
+      });
+      setTimeout(() => { lines.forEach(l => { if(l) l.classList.remove('lit'); }); }, 1200);
+      activeStep = (activeStep + 1) % steps.length;
+      setTimeout(cycleStep, 1800);
+    }
+    cycleStep();
+  })();
+
+});
+</script>
+<!-- Shared auth -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  const _url='https://tiviipaamwvfjvoscnyk.supabase.co',_anon='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
+  try{
+    const _c=supabase.createClient(_url,_anon);
+    function _r(s){
+      const el=document.getElementById('landingNavRight');
+      if(!el)return;
+      if(s&&s.user){
+        const name=s.user.user_metadata?.full_name||s.user.email||'';
+        const ini=(name.split(' ').map(w=>w[0]).join('').toUpperCase()||'?').slice(0,2);
+        el.innerHTML='<div style="display:flex;align-items:center;gap:8px;"><div style="width:26px;height:26px;border-radius:50%;background:#58a6ff;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;font-family:monospace;">'+ini+'</div><span style="font-size:0.72rem;color:#8b949e;font-family:monospace;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+name+'</span><a href="dashboard.html" style="font-size:0.72rem;font-family:monospace;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.15);color:#8b949e;text-decoration:none;">My Configs</a><button style="font-size:0.72rem;font-family:monospace;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.15);background:none;color:#8b949e;cursor:pointer;" onclick="supabase.createClient(\'https://tiviipaamwvfjvoscnyk.supabase.co\',\'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs\').auth.signOut().then(()=>location.href=\'login.html\')">Sign out</button></div>';
+      }else{
+        el.innerHTML='<a href="login.html" style="font-size:0.72rem;font-family:monospace;padding:5px 14px;border-radius:20px;background:#58a6ff;color:#000;text-decoration:none;font-weight:700;">Sign in</a>';
+      }
+    }
+    _c.auth.getSession().then(r=>_r(r.data.session));
+    _c.auth.onAuthStateChange((_,s)=>_r(s));
+    document.addEventListener('DOMContentLoaded',()=>_c.auth.getSession().then(r=>_r(r.data.session)));
+  }catch(e){}
+})();
+</script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    ConfigWizard
+  </a>
+  <a href="/" style="font-size:0.85rem;color:#8b949e;text-decoration:none;margin-left:1.5rem;padding:6px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.color=\'#ffffff\';this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.color=\'#8b949e\';this.style.background=\'transparent\'">← Home</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="wizard.html">Config Wizard</a></li>
+    <li><a href="topology.html">Network Map</a></li>
+    <li><a href="instant-on-wizard.html">Aruba Instant On</a></li>
+    <li><a href="netdoctor.html">NetDoctor</a></li>
+  </ul>
+  <div class="nav-spacer"></div>
+  <div class="nav-right">
+    
+    <span id="landingNavRight"><a href="login.html" class="nav-signin">Sign in</a></span>
+    <a href="login.html" class="nav-cta">Get started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" style="min-height:85vh;padding:120px 2rem 80px;position:relative;">
+  <div class="hero-waves" aria-hidden="true">
+    <canvas id="ribbonCanvas"></canvas>
+  </div>
+  
+  <div style="max-width:1100px;margin:0 auto;position:relative;z-index:2;">
+    <!-- Main headline area -->
+    <div style="text-align:center;margin-bottom:4rem;">
+      <div style="display:inline-block;padding:8px 16px;background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.2);border-radius:20px;font-size:0.75rem;font-weight:600;color:#58a6ff;letter-spacing:0.5px;margin-bottom:1.5rem;">CONFIGWIZARD PLATFORM</div>
+      <h1 style="font-size:clamp(2.5rem,6vw,4.5rem);font-weight:700;letter-spacing:-0.04em;line-height:1.05;margin-bottom:1.5rem;">
+        Network Configuration,<br><span id="perfectedText" style="background:linear-gradient(120deg, #00d4ff 0%, #3d6aff 50%, #00d4ff 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientShift 8s ease infinite;">Perfected</span>
+      </h1>
+      <p style="font-size:1.2rem;color:#8b949e;max-width:650px;margin:0 auto 0.75rem;line-height:1.7;font-weight:400;">
+        Generate production-ready configs for Cisco, Aruba, and Juniper in minutes. AI review, diagnostics, and network mapping — all in one place.
+      </p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:2rem;margin-top:1.5rem;font-size:0.875rem;color:#58a6ff;font-weight:500;">
+        <span style="display:flex;align-items:center;gap:6px;">✓ 3 Vendors</span>
+        <span style="display:flex;align-items:center;gap:6px;">✓ AI Review</span>
+        <span style="display:flex;align-items:center;gap:6px;">✓ Version History</span>
+      </div>
+    </div>
+    
+    <!-- Tools section -->
+    <div style="background:rgba(13,17,23,0.6);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2.5rem;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="text-align:center;margin-bottom:2rem;">
+        <h2 style="font-size:1.5rem;font-weight:600;color:#fff;margin-bottom:0.5rem;">Choose Your Tool</h2>
+        <p style="font-size:0.95rem;color:#6e6e73;">Four powerful tools for complete network management</p>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;">
+        <a href="wizard.html" class="tool-card" data-color="blue" style="background:linear-gradient(135deg, rgba(88,166,255,0.12), rgba(88,166,255,0.04));border:1.5px solid rgba(88,166,255,0.25);border-radius:14px;padding:1.75rem;text-decoration:none;color:#fff;text-align:left;transition:all 0.3s cubic-bezier(0.25,0.8,0.25,1);display:block;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;width:80px;height:80px;background:radial-gradient(circle, rgba(88,166,255,0.15), transparent);opacity:0;transition:opacity 0.3s;"></div>
+          <div style="font-size:2.5rem;margin-bottom:0.75rem;filter:drop-shadow(0 2px 8px rgba(88,166,255,0.3));">⚙️</div>
+          <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;letter-spacing:-0.01em;">Config Wizard</div>
+          <div style="font-size:0.875rem;color:#8b949e;line-height:1.5;">9-step guided configuration builder with AI security review</div>
+        </a>
+        
+        <a href="topology.html" class="tool-card" data-color="teal" style="background:linear-gradient(135deg, rgba(42,138,120,0.12), rgba(42,138,120,0.04));border:1.5px solid rgba(42,138,120,0.25);border-radius:14px;padding:1.75rem;text-decoration:none;color:#fff;text-align:left;transition:all 0.3s cubic-bezier(0.25,0.8,0.25,1);display:block;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;width:80px;height:80px;background:radial-gradient(circle, rgba(42,138,120,0.15), transparent);opacity:0;transition:opacity 0.3s;"></div>
+          <div style="font-size:2.5rem;margin-bottom:0.75rem;filter:drop-shadow(0 2px 8px rgba(42,138,120,0.3));">🗺️</div>
+          <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;letter-spacing:-0.01em;">Network Map</div>
+          <div style="font-size:0.875rem;color:#8b949e;line-height:1.5;">Drag-and-drop visual topology builder with config export</div>
+        </a>
+        
+        <a href="netdoctor.html" class="tool-card" data-color="purple" style="background:linear-gradient(135deg, rgba(139,63,255,0.12), rgba(139,63,255,0.04));border:1.5px solid rgba(139,63,255,0.25);border-radius:14px;padding:1.75rem;text-decoration:none;color:#fff;text-align:left;transition:all 0.3s cubic-bezier(0.25,0.8,0.25,1);display:block;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;width:80px;height:80px;background:radial-gradient(circle, rgba(139,63,255,0.15), transparent);opacity:0;transition:opacity 0.3s;"></div>
+          <div style="font-size:2.5rem;margin-bottom:0.75rem;filter:drop-shadow(0 2px 8px rgba(139,63,255,0.3));">🩺</div>
+          <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;letter-spacing:-0.01em;">NetDoctor</div>
+          <div style="font-size:0.875rem;color:#8b949e;line-height:1.5;">AI-powered network diagnostics and troubleshooting</div>
+        </a>
+        
+        <a href="instant-on-wizard.html" class="tool-card" data-color="orange" style="background:linear-gradient(135deg, rgba(255,107,43,0.12), rgba(255,107,43,0.04));border:1.5px solid rgba(255,107,43,0.25);border-radius:14px;padding:1.75rem;text-decoration:none;color:#fff;text-align:left;transition:all 0.3s cubic-bezier(0.25,0.8,0.25,1);display:block;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;width:80px;height:80px;background:radial-gradient(circle, rgba(255,107,43,0.15), transparent);opacity:0;transition:opacity 0.3s;"></div>
+          <div style="font-size:2.5rem;margin-bottom:0.75rem;filter:drop-shadow(0 2px 8px rgba(255,107,43,0.3));">📡</div>
+          <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;letter-spacing:-0.01em;">Aruba Instant On</div>
+          <div style="font-size:0.875rem;color:#8b949e;line-height:1.5;">Small business WiFi configuration wizard</div>
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <style>
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .tool-card:hover {
+      transform: scale(1.06) translateY(-6px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .tool-card:hover > div:first-child {
+      opacity: 1;
+    }
+    .tool-card[data-color="blue"]:hover {
+      border-color: #58a6ff;
+      box-shadow: 0 20px 60px rgba(88,166,255,0.4);
+    }
+    .tool-card[data-color="teal"]:hover {
+      border-color: #2a8a78;
+      box-shadow: 0 20px 60px rgba(42,138,120,0.4);
+    }
+    .tool-card[data-color="purple"]:hover {
+      border-color: #8b3fff;
+      box-shadow: 0 20px 60px rgba(139,63,255,0.4);
+    }
+    .tool-card[data-color="orange"]:hover {
+      border-color: #ff6b2b;
+      box-shadow: 0 20px 60px rgba(255,107,43,0.4);
+    }
+  </style>
+</section>
+
+<!-- WINDOW MOCKUP -->
+<div class="window-wrap">
+  <div class="window">
+    <div class="window-bar">
+      <div class="wb wb-r"></div>
+      <div class="wb wb-y"></div>
+      <div class="wb wb-g"></div>
+      <div class="window-bar-title">ConfigWizard — core-sw-01 — Step 3 of 9</div>
+    </div>
+    <div class="window-content">
+      <div class="wc-left">
+        <div class="wc-step">Identity</div>
+        <div class="wc-field">
+          <span class="wc-label">Hostname</span>
+          <div class="wc-val">core-sw-01</div>
+        </div>
+        <div class="wc-field">
+          <span class="wc-label">Vendor</span>
+          <div class="wc-vendor-row">
+            <div class="wvc active-aruba">AOS</div>
+            <div class="wvc dim">IOS</div>
+            <div class="wvc dim">JNS</div>
+          </div>
+        </div>
+        <div class="wc-field">
+          <span class="wc-label">Management IP</span>
+          <div class="wc-val">10.0.0.10 / 255.255.255.0</div>
+        </div>
+        <div class="wc-field">
+          <span class="wc-label">Default Gateway</span>
+          <div class="wc-val">10.0.0.1</div>
+        </div>
+      </div>
+      <div class="wc-right">
+        <div class="cc">! core-sw-01 — Aruba CX</div>
+        <div class="cc">! Generated 2026-05-12</div>
+        <div>&nbsp;</div>
+        <div><span class="ck">hostname</span> <span class="cv">core-sw-01</span></div>
+        <div><span class="ck">ip dns domain-name</span> <span class="cv">corp.local</span></div>
+        <div>&nbsp;</div>
+        <div class="cc">! --- Management ---</div>
+        <div><span class="ck">interface</span> <span class="cv">vlan 1</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">ip address</span> <span class="ci">10.0.0.10/24</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;no shutdown</div>
+        <div><span class="ck">ip route</span> <span class="ci">0.0.0.0/0</span> <span class="ci">10.0.0.1</span></div>
+        <div>&nbsp;</div>
+        <div class="cc">! --- NTP ---</div>
+        <div><span class="ck">ntp server</span> <span class="ci">10.0.0.5</span> iburst</div>
+        <div>&nbsp;</div>
+        <div class="cc">! --- VLANs ---</div>
+        <div><span class="ck">vlan</span> <span class="cv">10</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;name <span class="cs">MGMT</span></div>
+        <div><span class="cursor"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- STATS -->
+<div style="position:relative;z-index:1;">
+  <div class="section" style="padding-top:3.5rem;padding-bottom:3.5rem;">
+    <div class="stat-row reveal">
+      <div class="stat-cell">
+        <div class="stat-num">3</div>
+        <div class="stat-label">Supported vendors</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">9</div>
+        <div class="stat-label">Guided steps</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">∞</div>
+        <div class="stat-label">Saved profiles</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">AI</div>
+        <div class="stat-label">Powered review</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- FEATURES -->
+<section id="features" style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">Features</div>
+      <h2 class="section-title">Built for how<br>engineers actually work.</h2>
+      <p class="section-sub">Everything from first config to deployed device, in one place.</p>
+    </div>
+
+    <div class="bento">
+
+      <!-- Card 1: Wizard — wide + tall -->
+      <div class="bento-card wide reveal" style="grid-row:span 2;">
+        <div class="bento-icon bi-blue">⚙</div>
+        <div class="bento-title">9-step guided wizard</div>
+        <div class="bento-desc">Walk through every aspect of your network config — vendor selection, device identity, VLAN design, security features, 802.1X authentication, ACL builder, and Layer 3 uplinks. The live preview updates in real time as you type so you always see exactly what will be deployed.</div>
+        <div class="mini-config" style="margin-top:1rem;">
+          <span class="ck">hostname</span> <span class="cv">core-sw-01</span><br>
+          <span class="ck">interface</span> <span class="cv">vlan 10</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">ip address</span> <span class="ci">10.0.1.1/24</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;name <span class="cs">MGMT</span><br>
+          <span class="ck">vlan</span> <span class="cv">20</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;name <span class="cs">USERS</span><br>
+          <span class="ck">dot1x</span> system-auth-control<br>
+          <span class="ck">aaa</span> new-model
+        </div>
+        <a href="wizard.html" style="display:inline-flex;align-items:center;gap:5px;margin-top:1rem;font-size:0.78rem;color:var(--accent);text-decoration:none;font-weight:600;">Open Config Wizard →</a>
+      </div>
+
+      <!-- Card 2: AI Review -->
+      <div class="bento-card reveal">
+        <div class="ai-badge">✦ AI powered</div>
+        <div class="bento-title">Instant AI security review</div>
+        <div class="bento-desc">Paste your config into any AI — the built-in prompt builder writes the perfect security audit request. Works with Claude, ChatGPT, Grok and more.</div>
+      </div>
+
+      <!-- Card 3: Profiles -->
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-orange">⬡</div>
+        <div class="bento-title">Saved profiles</div>
+        <div class="bento-desc">Every device saved by name. Load any profile back into the wizard with one click.</div>
+      </div>
+
+      <!-- Card 4: Version history -->
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-purple">↺</div>
+        <div class="bento-title">Version history</div>
+        <div class="bento-desc">Full diff tracking on every save. Restore any previous version instantly.</div>
+        <div class="version-list">
+          <div class="version-row"><div class="version-dot current"></div><span class="version-num">v4</span><span>Added 802.1X</span><span class="version-spacer"></span><span class="version-diff-add">+12</span></div>
+          <div class="version-row"><div class="version-dot"></div><span class="version-num">v3</span><span>VLAN update</span><span class="version-spacer"></span><span class="version-diff-add">+6</span><span class="version-diff-rem">-2</span></div>
+          <div class="version-row"><div class="version-dot"></div><span class="version-num">v2</span><span>OSPF config</span><span class="version-spacer"></span><span class="version-diff-add">+8</span></div>
+          <div class="version-row"><div class="version-dot"></div><span class="version-num">v1</span><span>Initial deploy</span><span class="version-spacer"></span><span class="version-diff-add">+24</span></div>
+        </div>
+      </div>
+
+      <!-- Card 5: 802.1X -->
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-cyan">⬡</div>
+        <div class="bento-title">802.1X & port security</div>
+        <div class="bento-desc">Full RADIUS, MAB fallback, and static port security. Guest VLANs, critical VLANs, violation actions.</div>
+      </div>
+
+      <!-- Card 6: ACL Builder -->
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-white">⎋</div>
+        <div class="bento-title">Visual ACL builder</div>
+        <div class="bento-desc">Build named ACLs inline. Correct Cisco, Aruba, and Juniper syntax generated automatically.</div>
+      </div>
+
+      <!-- Card 7: Network Map — normal -->
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-blue">⬡</div>
+        <div class="bento-title">Network Map</div>
+        <div class="bento-desc">Drag and drop routers and switches onto a visual canvas. Draw links between devices and generate configs per device automatically.</div>
+        <a href="topology.html" style="display:inline-flex;align-items:center;gap:5px;margin-top:0.75rem;font-size:0.78rem;color:var(--accent);text-decoration:none;font-weight:600;">Open Network Map →</a>
+      </div>
+
+      <!-- Card 8: Aruba Instant On — wide + tall -->
+      <div class="bento-card wide reveal" style="grid-row:span 2;background:rgba(255,107,43,0.05);border-color:rgba(255,107,43,0.2);">
+        <div class="bento-icon bi-orange">📡</div>
+        <div class="bento-title">Aruba Instant On — Small business WiFi</div>
+        <div class="bento-desc">Not a network engineer? No problem. Our simplified wizard guides small business owners through setting up Aruba Instant On access points in plain English. Pick your business type — café, retail, hotel, office — name your networks, set passwords, and download your config. No CLI knowledge required. Just answers to simple questions.</div>
+        <a href="instant-on-wizard.html" style="display:inline-flex;align-items:center;gap:5px;margin-top:1rem;font-size:0.78rem;color:#ff6b2b;text-decoration:none;font-weight:600;">Try Instant On setup →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PRO FEATURES PREVIEW -->
+<section id="pro-features" style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">✦ Pro</div>
+      <h2 class="section-title">Everything a network<br>engineer needs.</h2>
+      <p class="section-sub">Upgrade to Pro and unlock the full platform — Network Map, NetDoctor, Aruba Instant On, full Config Wizard and more.</p>
+      <div style="display:inline-flex;align-items:center;gap:8px;margin-top:0.5rem;padding:8px 20px;background:rgba(88,166,255,0.08);border:0.5px solid rgba(88,166,255,0.25);border-radius:20px;font-size:0.8rem;color:var(--accent);font-weight:600;">
+        $9.99/month · billed annually at $119.88/year
+      </div>
+    </div>
+
+    <!-- 4 animated preview cards -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:2rem;" class="">
+
+      <!-- Network Map Preview -->
+      <div class="pro-preview-card" onclick="window.location.href='login.html'">
+        <div class="pro-preview-animation" id="anim-netmap">
+          <canvas id="netmapCanvas" style="width:100%;height:100%;"></canvas>
+        </div>
+        <div class="pro-preview-overlay">
+          <div class="pro-lock-badge">🔒 Pro</div>
+          <div class="pro-preview-title">Network Map</div>
+          <div class="pro-preview-desc">Drag and drop Cisco-style devices onto a visual canvas. Connect them, inspect configs, generate all configs at once.</div>
+          <a href="login.html" class="pro-upgrade-btn">Upgrade to Pro →</a>
+        </div>
+      </div>
+
+      <!-- NetDoctor Preview -->
+      <div class="pro-preview-card" onclick="window.location.href='login.html'">
+        <div class="pro-preview-animation" id="anim-netdoctor">
+          <div class="nd-anim-wrap">
+            <div class="nd-vendor-row">
+              <div class="nd-vendor-pill nd-active">Cisco</div>
+              <div class="nd-vendor-pill">Aruba CX</div>
+              <div class="nd-vendor-pill">Juniper</div>
+            </div>
+            <div class="nd-cmd-list" id="ndCmdList"></div>
+            <div class="nd-output-box">
+              <span class="nd-cursor" id="ndCursor"></span>
+            </div>
+          </div>
+        </div>
+        <div class="pro-preview-overlay">
+          <div class="pro-lock-badge">🔒 Pro</div>
+          <div class="pro-preview-title">NetDoctor</div>
+          <div class="pro-preview-desc">Run diagnostic commands, paste the output, build a perfect AI prompt. Diagnose any network issue in minutes.</div>
+          <a href="login.html" class="pro-upgrade-btn">Upgrade to Pro →</a>
+        </div>
+      </div>
+
+      <!-- Aruba Instant On Preview -->
+      <div class="pro-preview-card" onclick="window.location.href='login.html'">
+        <div class="pro-preview-animation">
+          <div class="io-anim-wrap">
+            <div class="io-step-label">Business type</div>
+            <div class="io-biz-row" id="ioBizRow"></div>
+            <div class="io-ssid-row">
+              <div class="io-ssid-card">
+                <div class="io-ssid-dot" style="background:#58a6ff;"></div>
+                <div>
+                  <div class="io-ssid-name" id="ioSSID1">Staff_Network</div>
+                  <div class="io-ssid-sub">Private · WPA3</div>
+                </div>
+              </div>
+              <div class="io-ssid-card">
+                <div class="io-ssid-dot" style="background:#30d158;"></div>
+                <div>
+                  <div class="io-ssid-name" id="ioSSID2">Guest_WiFi</div>
+                  <div class="io-ssid-sub">Isolated · WPA2</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pro-preview-overlay">
+          <div class="pro-lock-badge">🔒 Pro</div>
+          <div class="pro-preview-title">Aruba Instant On</div>
+          <div class="pro-preview-desc">Plain English WiFi setup for any business. Pick your type, name your networks, download your config. No CLI needed.</div>
+          <a href="login.html" class="pro-upgrade-btn">Upgrade to Pro →</a>
+        </div>
+      </div>
+
+      <!-- Full Config Wizard Preview -->
+      <div class="pro-preview-card" onclick="window.location.href='login.html'">
+        <div class="pro-preview-animation">
+          <div class="wiz-anim-wrap">
+            <div class="wiz-step-row" id="wizStepRow"></div>
+            <div class="wiz-config-preview">
+              <div class="wiz-config-line" id="wizLine1"></div>
+              <div class="wiz-config-line" id="wizLine2"></div>
+              <div class="wiz-config-line" id="wizLine3"></div>
+              <div class="wiz-config-line" id="wizLine4"></div>
+              <div class="wiz-config-line" id="wizLine5"></div>
+            </div>
+          </div>
+        </div>
+        <div class="pro-preview-overlay">
+          <div class="pro-lock-badge">🔒 Pro</div>
+          <div class="pro-preview-title">Full Config Wizard</div>
+          <div class="pro-preview-desc">All 9 steps — 802.1X, ACL builder, L3 uplinks, OSPF, version history, AI security review. Full enterprise config.</div>
+          <a href="login.html" class="pro-upgrade-btn">Upgrade to Pro →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- TWO PRODUCTS -->
+<section style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">Two tools, one platform</div>
+      <h2 class="section-title">Enterprise power.<br>Small business simplicity.</h2>
+      <p class="section-sub">Whether you're configuring a data center or setting up café WiFi — we've got a wizard for that.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="">
+      <div style="background:var(--surface);border:0.5px solid var(--border-bright);border-radius:14px;padding:2rem;">
+        <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.75rem;">For network engineers</div>
+        <div style="font-size:1.3rem;font-weight:600;letter-spacing:-0.02em;margin-bottom:0.5rem;">Config Wizard</div>
+        <div style="font-size:0.85rem;color:var(--text-muted);line-height:1.6;margin-bottom:1.25rem;">Full 9-step wizard for Cisco, Aruba CX, and Juniper. 802.1X, ACLs, L3 uplinks, OSPF, BGP, version history, AI review.</div>
+        <a href="wizard.html" style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--accent);color:#000;border-radius:980px;font-size:0.8rem;font-weight:600;text-decoration:none;">Open Config Wizard →</a>
+      </div>
+      <div style="background:rgba(255,107,43,0.06);border:0.5px solid rgba(255,107,43,0.25);border-radius:14px;padding:2rem;">
+        <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,107,43,0.6);margin-bottom:0.75rem;">For small businesses</div>
+        <div style="font-size:1.3rem;font-weight:600;letter-spacing:-0.02em;margin-bottom:0.5rem;">Aruba Instant On</div>
+        <div style="font-size:0.85rem;color:var(--text-muted);line-height:1.6;margin-bottom:1.25rem;">Simplified WiFi setup for cafés, retail, hotels, offices. Plain English. No CLI. Pick your business type and go.</div>
+        <a href="instant-on-wizard.html" style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:#ff6b2b;color:#fff;border-radius:980px;font-size:0.8rem;font-weight:600;text-decoration:none;">Open Instant On Setup →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works" style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">How it works</div>
+      <h2 class="section-title">From zero to<br>deployed in four steps.</h2>
+      <p class="section-sub" style="margin-bottom:3.5rem;">No manual CLI required to start. Experts will feel right at home.</p>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Pick your vendor</div>
+        <div class="step-desc">Cisco, Aruba CX or Juniper JunOS. Every field adapts automatically.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Answer questions</div>
+        <div class="step-desc">Identity, VLANs, security, uplinks. Config builds live as you type.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">AI review</div>
+        <div class="step-desc">One click security audit. Critical issues surfaced before deploy.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-title">Save & deploy</div>
+        <div class="step-desc">Download, copy, or save to your profile. Done.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-box reveal">
+    <h2 class="cta-title">Stop writing configs<br>by hand.</h2>
+    <p class="cta-sub"> and build your first config in under five minutes. </p>
+    <div class="cta-actions">
+      <a href="login.html" class="btn-primary">Create </a>
+      <a href="wizard.html" class="btn-secondary">Try free wizard</a>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- FAQ -->
+<section>
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">FAQ</div>
+      <h2 class="section-title">Common questions</h2>
+    </div>
+
+    <div style="max-width:720px;margin:2rem auto 0;display:flex;flex-direction:column;gap:12px;" class="">
+
+      <details style="background:var(--card-bg);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;">
+        <summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <span>Is ConfigWizard free to use?</span>
+          <span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">▼</span>
+        </summary>
+        <div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">
+          Yes — the basic Config Wizard is completely free with no account required. Pro features including the full wizard, Network Map, NetDoctor, Aruba Instant On, saved profiles and version history require a subscription at $9.99/month billed annually at $119.88/year.
+        </div>
+      </details>
+
+      <details style="background:var(--card-bg);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;">
+        <summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <span>Which vendors are supported?</span>
+          <span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">▼</span>
+        </summary>
+        <div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">
+          ConfigWizard supports <strong style="color:var(--text);">Cisco IOS/IOS-XE</strong>, <strong style="color:var(--text);">Aruba CX (AOS-CX)</strong> and <strong style="color:var(--text);">Juniper JunOS</strong> across all tools. Aruba Instant On is also supported for small business WiFi setup.
+        </div>
+      </details>
+
+      <details style="background:var(--card-bg);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;">
+        <summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <span>Where are my saved configs stored?</span>
+          <span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">▼</span>
+        </summary>
+        <div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">
+          Your configs are stored securely in the cloud with row-level security — only you can ever see your own data. No other user or admin can access your saved profiles or configs.
+        </div>
+      </details>
+
+      <details style="background:var(--card-bg);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;">
+        <summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <span>How does the AI security review work?</span>
+          <span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">▼</span>
+        </summary>
+        <div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">
+          ConfigWizard builds a professional security audit prompt from your config automatically. Copy it with one click and paste into Claude, ChatGPT, Grok, Copilot or Gemini. The AI returns findings with exact fix commands. No API key required — works with the AI you already use.
+        </div>
+      </details>
+
+      <details style="background:var(--card-bg);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;">
+        <summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <span>Is my network data private?</span>
+          <span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">▼</span>
+        </summary>
+        <div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">
+          Yes. Your configs are only visible to you. We never sell, share or analyze your network data. When you use the AI review feature your config goes directly to your chosen AI — it never passes through our servers.
+        </div>
+      </details>
+
+      <details style="background:var(--card-bg);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;">
+        <summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <span>Can I cancel my subscription?</span>
+          <span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">▼</span>
+        </summary>
+        <div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">
+          Yes. Cancel any time before your annual renewal date and you won't be charged again. Your Pro access continues until the end of your paid period.
+        </div>
+      </details>
+
+      <details style="background:var(--card-bg);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;">
+        <summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <span>What if I need help or have a feature request?</span>
+          <span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">▼</span>
+        </summary>
+        <div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">
+          Use the feedback button inside the app or email us directly. We read every message and respond to all Pro users. Feature requests from real engineers drive our roadmap.
+        </div>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    ConfigWizard © 2026
+  </div>
+  <ul class="footer-links">
+    <li><a href="login.html">Sign in</a></li>
+    <li><a href="wizard.html">Config Wizard</a></li>
+    <li><a href="topology.html">Network Map</a></li>
+    <li><a href="instant-on-wizard.html">Aruba Instant On</a></li>
+    <li><a href="netdoctor.html">NetDoctor</a></li>
+    <li><a href="dashboard.html">My Configs</a></li>
+  </ul>
+</footer>
+
+<script>
+
+// Landing page theme
+
+function _updateLandingIcon(theme) {
+  const icon  = document.getElementById('landingThemeIcon');
+  const label = document.getElementById('landingThemeLabel');
+  const btn   = document.getElementById('landingThemeBtn');
+  const isDark = theme === 'dark';
+  if (icon)  icon.innerHTML  = isDark ? '<svg width="32" height="14" viewBox="0 0 32 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;">\n  <rect x="1" y="5.5" width="20" height="3" rx="1.5" fill="#ff2222"/>\n  <rect x="1" y="6" width="20" height="2" rx="1" fill="white" opacity="0.5"/>\n  <ellipse cx="1.5" cy="7" rx="1.5" ry="1.5" fill="#ff2222"/>\n  <rect x="0" y="4" width="22" height="6" rx="3" fill="#ff0000" opacity="0.2"/>\n  <rect x="20" y="2" width="2" height="10" rx="1" fill="#aaaaaa"/>\n  <rect x="21" y="3" width="1" height="8" rx="0.5" fill="#cccccc"/>\n  <rect x="22" y="4.5" width="9" height="5" rx="1.5" fill="#666666"/>\n  <rect x="23" y="5" width="7" height="4" rx="1" fill="#888888"/>\n  <line x1="25" y1="5" x2="25" y2="9" stroke="#555" stroke-width="0.5"/>\n  <line x1="27" y1="5" x2="27" y2="9" stroke="#555" stroke-width="0.5"/>\n  <line x1="29" y1="5" x2="29" y2="9" stroke="#555" stroke-width="0.5"/>\n  <rect x="30.5" y="5" width="1.5" height="4" rx="0.75" fill="#999"/>\n</svg>' : '<svg width="32" height="14" viewBox="0 0 32 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;">\n  <rect x="1" y="5.5" width="20" height="3" rx="1.5" fill="#00cc33"/>\n  <rect x="1" y="6" width="20" height="2" rx="1" fill="white" opacity="0.5"/>\n  <ellipse cx="1.5" cy="7" rx="1.5" ry="1.5" fill="#00cc33"/>\n  <rect x="0" y="4" width="22" height="6" rx="3" fill="#00ff44" opacity="0.2"/>\n  <rect x="20" y="2" width="2" height="10" rx="1" fill="#aaaaaa"/>\n  <rect x="21" y="3" width="1" height="8" rx="0.5" fill="#cccccc"/>\n  <rect x="22" y="4.5" width="9" height="5" rx="1.5" fill="#666666"/>\n  <rect x="23" y="5" width="7" height="4" rx="1" fill="#888888"/>\n  <line x1="25" y1="5" x2="25" y2="9" stroke="#555" stroke-width="0.5"/>\n  <line x1="27" y1="5" x2="27" y2="9" stroke="#555" stroke-width="0.5"/>\n  <line x1="29" y1="5" x2="29" y2="9" stroke="#555" stroke-width="0.5"/>\n  <rect x="30.5" y="5" width="1.5" height="4" rx="0.75" fill="#999"/>\n</svg>';
+  if (label) label.textContent = isDark ? 'Dark Side' : 'Light Side';
+  if (btn) btn.setAttribute('data-theme-btn', isDark ? 'dark' : 'light');
+}
+(function(){
+  const saved = localStorage.getItem('cw-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', function() { _updateLandingIcon(saved); });
+})();
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 60);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+
+<!-- Feedback button -->
+<div id="feedbackBtn" style="display:none;position:fixed;bottom:1.5rem;right:1.5rem;z-index:490;">
+  <button onclick="document.getElementById('feedbackModal').style.display='flex'" 
+    style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--accent);color:#000;border:none;border-radius:980px;font-family:monospace;font-size:0.72rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(88,166,255,0.3);transition:all 0.2s;"
+    onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+    ✦ Feedback
+  </button>
+</div>
+
+<!-- Feedback modal -->
+<div id="feedbackModal" style="display:none;position:fixed;inset:0;z-index:1001;background:rgba(8,12,16,0.88);align-items:center;justify-content:center;padding:2rem;backdrop-filter:blur(8px);">
+  <div style="max-width:420px;width:100%;background:var(--surface);border:0.5px solid rgba(88,166,255,0.25);border-radius:16px;padding:2rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <div>
+        <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);font-family:monospace;margin-bottom:3px;">ConfigWizard</div>
+        <h3 style="font-size:1.2rem;font-weight:700;color:var(--text);margin:0;">Share your feedback</h3>
+      </div>
+      <button onclick="document.getElementById('feedbackModal').style.display='none'" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.2rem;padding:4px;">✕</button>
+    </div>
+    <!-- Star rating -->
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.72rem;color:var(--text-muted);font-family:monospace;margin-bottom:8px;">How would you rate ConfigWizard?</div>
+      <div id="starRow" style="display:flex;gap:6px;">
+        <span class="fb-star" data-val="1" onclick="setRating(1)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+        <span class="fb-star" data-val="2" onclick="setRating(2)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+        <span class="fb-star" data-val="3" onclick="setRating(3)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+        <span class="fb-star" data-val="4" onclick="setRating(4)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+        <span class="fb-star" data-val="5" onclick="setRating(5)" style="font-size:1.6rem;cursor:pointer;opacity:0.4;transition:all 0.15s;">★</span>
+      </div>
+    </div>
+    <!-- Text feedback -->
+    <textarea id="feedbackText" placeholder="What can we improve? What do you love? What's missing?" 
+      style="width:100%;height:100px;background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:8px;padding:10px;color:var(--text);font-family:monospace;font-size:0.75rem;resize:vertical;box-sizing:border-box;outline:none;margin-bottom:1rem;"></textarea>
+    <div style="display:flex;gap:8px;">
+      <button onclick="submitFeedback()" style="flex:1;padding:10px;background:var(--accent);color:#000;border:none;border-radius:980px;font-family:monospace;font-size:0.78rem;font-weight:700;cursor:pointer;">Send feedback</button>
+      <button onclick="document.getElementById('feedbackModal').style.display='none'" style="padding:10px 16px;background:var(--surface2);border:0.5px solid var(--border);border-radius:980px;font-family:monospace;font-size:0.78rem;color:var(--text-muted);cursor:pointer;">Cancel</button>
+    </div>
+    <div id="feedbackSuccess" style="display:none;text-align:center;padding:1rem 0;font-size:0.82rem;color:var(--success);font-family:monospace;">✓ Thanks for your feedback!</div>
+  </div>
+</div>
+
+<script>
+var _fbRating = 0;
+function setRating(val) {
+  _fbRating = val;
+  document.querySelectorAll('.fb-star').forEach(function(s) {
+    s.style.opacity = parseInt(s.getAttribute('data-val')) <= val ? '1' : '0.3';
+    s.style.color   = parseInt(s.getAttribute('data-val')) <= val ? '#ffd60a' : '';
+  });
+}
+function submitFeedback() {
+  var text = document.getElementById('feedbackText').value.trim();
+  if (!text && !_fbRating) { return; }
+  // Save to Supabase feedback table
+  try {
+    var _url  = 'https://tiviipaamwvfjvoscnyk.supabase.co';
+    var _anon = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
+    var _c = supabase.createClient(_url, _anon);
+    _c.auth.getSession().then(function(r) {
+      var uid = r.data.session ? r.data.session.user.id : null;
+      _c.from('feedback').insert([{
+        user_id:  uid,
+        rating:   _fbRating || null,
+        message:  text,
+        page:     window.location.pathname.split('/').pop() || 'unknown',
+        created_at: new Date().toISOString()
+      }]).then(function() {
+        document.getElementById('feedbackSuccess').style.display = 'block';
+        document.getElementById('feedbackText').value = '';
+        _fbRating = 0;
+        document.querySelectorAll('.fb-star').forEach(function(s){ s.style.opacity='0.4'; s.style.color=''; });
+        setTimeout(function(){ document.getElementById('feedbackModal').style.display='none'; document.getElementById('feedbackSuccess').style.display='none'; }, 2000);
+      });
+    });
+  } catch(e) { console.warn('Feedback error:', e); }
+}
+// Show feedback button only if logged in
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var key = 'sb-tiviipaamwvfjvoscnyk-auth-token';
+    var raw = localStorage.getItem(key);
+    var loggedIn = false;
+    if (raw) { var d = JSON.parse(raw); if (d && d.access_token) loggedIn = true; }
+    if (!loggedIn) {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.includes('sb-')) { var v = localStorage.getItem(k); if (v && v.includes('access_token')) { loggedIn = true; break; } }
+      }
+    }
+    if (loggedIn) { var btn = document.getElementById('feedbackBtn'); if (btn) btn.style.display = 'block'; }
+  } catch(e) {}
+});
+</script>
+</body>
+</html>
