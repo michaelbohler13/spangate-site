@@ -643,6 +643,146 @@ table {
   50% { background-position: 100% 50%; }
 }
 
+
+/* ── PRODUCTS ── */
+.products {
+  position: relative;
+  z-index: 1;
+  padding: 100px 60px;
+  background: #0d1117 !important;
+}
+.prod-header {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 60px;
+}
+.prod-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.prod-card {
+  background: rgba(22,27,34,.85);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 40px;
+  position: relative;
+  transition: all .4s cubic-bezier(.25,.8,.25,1);
+  overflow: hidden;
+}
+.prod-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-color);
+  opacity: 0;
+  transition: opacity .3s;
+}
+.prod-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: var(--card-color);
+  box-shadow: 0 20px 60px rgba(0,0,0,.4), 0 0 40px var(--card-color, rgba(33,139,255,.2));
+}
+.prod-card:hover::before {
+  opacity: 1;
+}
+.prod-card-header {
+  margin-bottom: 20px;
+}
+.prod-num {
+  font-size: 72px;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(255,255,255,.03);
+  display: block;
+  margin-bottom: -10px;
+}
+.prod-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--card-color);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.prod-name {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  margin: 12px 0;
+}
+.prod-desc {
+  color: rgba(255,255,255,.7);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.prod-features {
+  list-style: none;
+  margin: 0 0 24px 0;
+  padding: 0;
+}
+.prod-features li {
+  color: rgba(255,255,255,.65);
+  font-size: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  position: relative;
+  padding-left: 20px;
+}
+.prod-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--card-color);
+  font-weight: 700;
+}
+.prod-price {
+  padding: 20px 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+  margin-bottom: 20px;
+}
+.prod-price strong {
+  display: block;
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.prod-price span {
+  color: rgba(255,255,255,.45);
+  font-size: 13px;
+}
+.prod-cta {
+  display: block;
+  width: 100%;
+  padding: 14px 24px;
+  background: var(--card-color);
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all .3s;
+  font-size: 15px;
+}
+.prod-cta:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--card-color);
+}
+.prod-cta:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
 </style>
 </head>
 <body>
@@ -710,125 +850,74 @@ table {
 </section>
 
 <!-- PRODUCTS -->
-<section class="products" id="products">
-  <div class="products-inner">
-    <div class="prod-header reveal">
-      <div class="ey">The Platform</div>
-      <h2>THREE TOOLS.<br><span>ONE PLATFORM.</span></h2>
-      <p>Buy what you need. Every product works standalone or alongside the others.</p>
+<section class="products reveal">
+  <div class="prod-header">
+    <h2 class="sec-h">The Platform<br><span>THREE TOOLS. ONE PLATFORM.</span></h2>
+    <p>Mix and match. Build your perfect stack. Cancel anytime.</p>
+  </div>
+  
+  <div class="prod-cards">
+    <div class="prod-card" style="--card-color:#4a7fa5;">
+      <div class="prod-card-header">
+        <span class="prod-num">01</span>
+        <span class="prod-badge">LIVE NOW</span>
+        <h3 class="prod-name">ConfigWizard</h3>
+      </div>
+      <p class="prod-desc">Generate production-ready network configs for Cisco, Aruba, and Juniper in minutes. AI security review built in.</p>
+      <ul class="prod-features">
+        <li>9-step guided wizard</li>
+        <li>Cisco IOS-XE, Aruba CX, Juniper JunOS</li>
+        <li>Version history & profiles</li>
+        <li>AI review (Claude, ChatGPT, Grok)</li>
+        <li>NetDoctor diagnostics</li>
+      </ul>
+      <div class="prod-price">
+        <strong>$9.99/mo</strong>
+        <span>billed annually</span>
+      </div>
+      <a href="https://netconfig-app.vercel.app" class="prod-cta">Launch ConfigWizard →</a>
     </div>
 
-    <div class="prod-block cw-block reveal">
-      <div class="prod-head">
-        <div class="prod-num">01</div>
-        <div class="prod-head-text">
-          <span class="prod-badge badge-live">Live Now</span>
-          <div class="prod-name">ConfigWizard</div>
-          <p class="prod-desc">Generate production-ready network configs for Cisco, Aruba, and Juniper in minutes. AI security review built in.</p>
-        </div>
+    <div class="prod-card" style="--card-color:#2a8a78;">
+      <div class="prod-card-header">
+        <span class="prod-num">02</span>
+        <span class="prod-badge">COMING SOON</span>
+        <h3 class="prod-name">Network Monitor</h3>
       </div>
-      <div class="prod-body">
-        <div class="prod-info">
-          <ul class="feats">
-            <li><span class="fc fc-cw">✓</span>9-step guided config wizard</li>
-            <li><span class="fc fc-cw">✓</span>AI review — Claude, ChatGPT, Grok</li>
-            <li><span class="fc fc-cw">✓</span>NetDoctor diagnostic tool</li>
-            <li><span class="fc fc-cw">✓</span>Visual network topology map</li>
-            <li><span class="fc fc-cw">✓</span>Aruba Instant On setup</li>
-          </ul>
-          <div class="price"><strong>$9.99</strong> /mo · billed $119.88/yr</div>
-        </div>
-        <div class="prod-screen">
-          <div class="sbar"><div class="sd sdr"></div><div class="sd sdy"></div><div class="sd sdg"></div><div class="stitle">ConfigWizard — core-sw-01 — Step 4 of 9</div></div>
-          <div class="code cw-code"><span class="cm">! core-sw-01 — Aruba CX · ConfigWizard</span>
-
-<span class="ck">hostname</span> <span class="cv">core-sw-01</span>
-<span class="ck">ip dns domain-name</span> <span class="cs">corp.local</span>
-
-<span class="cm">! --- VLANs ---</span>
-<span class="ck">vlan</span> <span class="cv">10</span>
-  <span class="ck">name</span> <span class="cs">MGMT</span>
-<span class="ck">vlan</span> <span class="cv">20</span>
-  <span class="ck">name</span> <span class="cs">USERS</span>
-
-<span class="cm">! --- 802.1X ---</span>
-<span class="ck">dot1x system-auth-control</span>
-<span class="ck">aaa new-model</span></div>
-        </div>
+      <p class="prod-desc">Lightweight agent monitors up/down status and backs up configs weekly. Detect unauthorized changes instantly.</p>
+      <ul class="prod-features">
+        <li>ICMP ping monitoring (60s intervals)</li>
+        <li>Weekly config backups via SSH</li>
+        <li>Change detection & alerts</li>
+        <li>30-day config retention</li>
+        <li>Runs on Pi, VM, or desktop</li>
+      </ul>
+      <div class="prod-price">
+        <strong>from $99/mo</strong>
+        <span>50–1,000 devices</span>
       </div>
+      <button class="prod-cta" disabled>Launching Q3 2026</button>
     </div>
 
-    <div class="prod-block nm-block reveal">
-      <div class="prod-head">
-        <div class="prod-num">02</div>
-        <div class="prod-head-text">
-          <span class="prod-badge badge-build">Building Now</span>
-          <div class="prod-name">Network Monitor</div>
-          <p class="prod-desc">Deploy a lightweight agent on a Raspberry Pi or VM. Live device status, config backups, and instant change alerts.</p>
-        </div>
+    <div class="prod-card" style="--card-color:#a07840;">
+      <div class="prod-card-header">
+        <span class="prod-num">03</span>
+        <span class="prod-badge">PLANNED</span>
+        <h3 class="prod-name">Asset Tracker</h3>
       </div>
-      <div class="prod-body">
-        <div class="prod-info">
-          <ul class="feats">
-            <li><span class="fc fc-nm">✓</span>ICMP ping every 60 seconds</li>
-            <li><span class="fc fc-nm">✓</span>Weekly config backup via SSH</li>
-            <li><span class="fc fc-nm">✓</span>Config change detection &amp; alerts</li>
-            <li><span class="fc fc-nm">✓</span>Pi Zero, Pi 4, Pi 5, or VM/Desktop</li>
-            <li><span class="fc fc-nm">✓</span>Credentials never leave your site</li>
-          </ul>
-          <div class="price">From <strong>$99</strong> /mo · up to 50 devices</div>
-        </div>
-        <div class="prod-screen">
-          <div class="sbar"><div class="sd sdr"></div><div class="sd sdy"></div><div class="sd sdg"></div><div class="stitle">NetMonitor Agent — Pi 4 — 142 devices</div></div>
-          <div class="code nm-code"><span class="cm"># SpanGate Network Monitor v1.0</span>
-
-<span class="ck">device</span> <span class="cv">core-sw-01</span>    <span class="cs">● UP</span>   2ms
-<span class="ck">device</span> <span class="cv">dist-sw-02</span>    <span class="cs">● UP</span>   4ms
-<span class="ck">device</span> <span class="cv">access-sw-11</span>  <span style="color:#ff5555;">● DOWN</span>  timeout
-
-<span class="cm"># Config change detected</span>
-<span class="ck">host</span> <span class="cv">core-sw-01</span>
-  <span class="cs">+ vlan 30 name CAMERA</span>
-  <span style="color:#ff5555;">- vlan 30 name IoT</span>
-
-<span class="ck">alert</span> → <span class="cs">admin@company.com</span> ✓</div>
-        </div>
+      <p class="prod-desc">IT asset inventory with QR code labels, warranty tracking, and E-Rate export for Texas school districts.</p>
+      <ul class="prod-features">
+        <li>CSV import & bulk upload</li>
+        <li>QR code generation for labels</li>
+        <li>Warranty date alerts</li>
+        <li>E-Rate export (Texas schools)</li>
+        <li>Custom fields & tags</li>
+      </ul>
+      <div class="prod-price">
+        <strong>from $49/mo</strong>
+        <span>250–10,000 assets</span>
       </div>
-    </div>
-
-    <div class="prod-block at-block reveal">
-      <div class="prod-head">
-        <div class="prod-num">03</div>
-        <div class="prod-head-text">
-          <span class="prod-badge badge-soon">Coming Soon</span>
-          <div class="prod-name">Asset Tracker</div>
-          <p class="prod-desc">Complete IT asset inventory with QR code tagging, warranty alerts, and flexible export for IT and finance teams.</p>
-        </div>
-      </div>
-      <div class="prod-body">
-        <div class="prod-info">
-          <ul class="feats">
-            <li><span class="fc fc-at">✓</span>CSV import &amp; QR code generation</li>
-            <li><span class="fc fc-at">✓</span>Warranty expiration alerts</li>
-            <li><span class="fc fc-at">✓</span>Multi-location inventory views</li>
-            <li><span class="fc fc-at">✓</span>IT + finance-friendly dashboard</li>
-            <li><span class="fc fc-at">✓</span>Flexible asset export</li>
-          </ul>
-          <div class="price">From <strong>$49</strong> /mo · up to 250 assets</div>
-        </div>
-        <div class="prod-screen">
-          <div class="sbar"><div class="sd sdr"></div><div class="sd sdy"></div><div class="sd sdg"></div><div class="stitle">Asset Tracker — 1,247 assets · 12 locations</div></div>
-          <div class="code at-code"><span class="cm"># SpanGate Asset Tracker</span>
-
-<span class="ck">asset</span> <span class="cv">SW-0042</span>
-  <span class="ck">model</span>    <span class="cs">Aruba 2930F-48G</span>
-  <span class="ck">location</span> <span class="cs">Building A / Room 104</span>
-  <span class="ck">warranty</span> <span style="color:#ff5555;">expires 2025-09-01 ⚠</span>
-
-<span class="ck">qr-tag</span>  <span class="cv">SW-0042.png</span> ✓ ready
-<span class="ck">export</span>  <span class="cs">inventory_2026.csv</span> ✓</div>
-        </div>
-      </div>
+      <button class="prod-cta" disabled>Launching 2027</button>
     </div>
   </div>
 </section>
