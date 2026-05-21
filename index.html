@@ -54,7 +54,7 @@ body{background:#0d1117;
   padding-top:0;
 }
 
-/* ─── STRING GRID BACKGROUND (same as ConfigWizard) ─── */
+/* ─── STRING GRID BACKGROUND (same as Config Wizard) ─── */
 body::before{display:none;}
 
 /* ─── NAV ─── */
@@ -562,6 +562,118 @@ body { background: #0d1117 !important; color:#ffffff; }
 .ctaband { background: rgba(22,27,34,.85) !important; }
 footer { background: rgba(1,4,9,.9) !important; }
 
+/* ─── PRODUCT ORBS — top left, fade on scroll ─── */
+.quickbar {
+  position: fixed;
+  left: 20px;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 490;
+  transition: opacity .4s ease, transform .4s ease;
+}
+.quickbar.orbs-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+}
+.ql {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  padding: 6px 12px 6px 6px;
+  border-radius: 40px;
+  border: 1px solid var(--orb-color);
+  background: rgba(13,17,23,.7);
+  backdrop-filter: blur(10px);
+  transition: background .25s, box-shadow .25s, transform .3s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+  width: 34px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ql:hover {
+  width: auto;
+  background: var(--orb-color-12);
+  box-shadow: 0 0 20px var(--orb-color-20), 0 4px 14px rgba(0,0,0,.4);
+  transform: translateX(4px);
+}
+.ql-orb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--orb-color-12);
+  border: 1px solid var(--orb-color);
+  position: relative;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.ql-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orb-color);
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  border: 1.5px solid #0d1117;
+}
+.ql-live .ql-dot {
+  animation: dotPulse 2s ease-in-out infinite;
+}
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--orb-color-40); }
+  50%       { box-shadow: 0 0 0 3px transparent; }
+}
+.ql-live::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 40px;
+  border: 1px solid var(--orb-color);
+  opacity: 0;
+  animation: pillPulse 2.5s ease-out infinite;
+}
+@keyframes pillPulse {
+  0%   { inset: 0px; opacity: .4; }
+  100% { inset: -8px; opacity: 0; }
+}
+.ql-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+.ql:hover .ql-label {
+  opacity: 1;
+  pointer-events: all;
+}
+.ql-label-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .02em;
+  line-height: 1;
+}
+.ql-label-status {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--orb-color);
+}
+.ql-live     { --orb-color:#4a7fa5; --orb-color-40:rgba(74,127,165,.4); --orb-color-20:rgba(74,127,165,.2); --orb-color-12:rgba(74,127,165,.12); }
+.ql-building { --orb-color:#2a8a78; --orb-color-40:rgba(42,138,120,.4); --orb-color-20:rgba(42,138,120,.2); --orb-color-12:rgba(42,138,120,.12); }
+.ql-planned  { --orb-color:#a07840; --orb-color-40:rgba(160,120,64,.4);  --orb-color-20:rgba(160,120,64,.2);  --orb-color-12:rgba(160,120,64,.12); }
+@media (max-width: 768px) { .quickbar { display: none; } }
+
 
 /* ── VISUAL POLISH ── */
 .hero-h1 span {
@@ -1003,7 +1115,24 @@ table {
     <button class="btn-primary" onclick="location.href='https://netconfig-app.vercel.app'">Start Free Trial</button>
     <button class="btn-secondary" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">Explore Platform →</button>
   </div>
-  <div class="trust">
+
+<!-- PRODUCT ORBS — fixed left rail -->
+<div class="quickbar" id="heroOrbs">
+  <a href="https://netconfig-app.vercel.app" class="ql ql-live">
+    <div class="ql-orb"><span>⚙️</span><span class="ql-dot"></span></div>
+    <div class="ql-label"><span class="ql-label-name">Config Wizard</span><span class="ql-label-status">Live</span></div>
+  </a>
+  <a href="https://spangate.com/netmonitor" class="ql ql-building">
+    <div class="ql-orb"><span>📡</span><span class="ql-dot"></span></div>
+    <div class="ql-label"><span class="ql-label-name">Network Monitor</span><span class="ql-label-status">Building</span></div>
+  </a>
+  <a href="https://spangate.com/assetwizard" class="ql ql-planned">
+    <div class="ql-orb"><span>🏷️</span><span class="ql-dot"></span></div>
+    <div class="ql-label"><span class="ql-label-name">Asset Tracker</span><span class="ql-label-status">Planned</span></div>
+  </a>
+</div>
+
+<!-- HERO -->
     <div class="ti"><div class="td"></div>No setup call</div>
     <div class="ti"><div class="td"></div>100% self-serve</div>
     <div class="ti"><div class="td"></div>Credentials stay on-site</div>
@@ -1043,7 +1172,7 @@ table {
       <div class="prod-card-header">
         <span class="prod-num">01</span>
         <span class="prod-badge">LIVE NOW</span>
-        <h3 class="prod-name">ConfigWizard</h3>
+        <h3 class="prod-name">Config Wizard</h3>
       </div>
       <p class="prod-desc">Generate production-ready network configs for Cisco, Aruba, and Juniper in minutes. AI security review built in.</p>
       <ul class="prod-features">
@@ -1057,7 +1186,7 @@ table {
         <strong>$9.99/mo</strong>
         <span>billed annually at $119.88/year</span>
       </div>
-      <a href="/configwizard/index.html" class="prod-cta">Launch ConfigWizard →</a>
+      <a href="/configwizard/index.html" class="prod-cta">Launch Config Wizard →</a>
     </div>
 
     <div class="prod-card" style="--card-color:#2a8a78;">
@@ -1117,7 +1246,7 @@ table {
         <thead>
           <tr>
             <th class="tc">Tier</th>
-            <th class="tcw">ConfigWizard</th>
+            <th class="tcw">Config Wizard</th>
             <th class="tnm">Network Monitor</th>
             <th class="tat">Asset Tracker</th>
           </tr>
@@ -1150,7 +1279,7 @@ table {
         </tbody>
       </table>
     </div>
-    <p style="text-align:center;font-size:12px;color:rgba(255,255,255,.15);margin-top:14px;">ConfigWizard billed annually · Network Monitor &amp; Asset Tracker month-to-month, cancel anytime</p>
+    <p style="text-align:center;font-size:12px;color:rgba(255,255,255,.15);margin-top:14px;">Config Wizard billed annually · Network Monitor &amp; Asset Tracker month-to-month, cancel anytime</p>
   </div>
 </section>
 
@@ -1163,9 +1292,9 @@ table {
       <div class="fi" onclick="toggleFaq(this)"><div class="fq">Do my network credentials ever leave the building?<span class="fplus">+</span></div><div class="fa">No. SSH credentials are encrypted locally using your own API key. Only the encrypted blob and config text reach the cloud — credentials never leave your site.</div></div>
       <div class="fi" onclick="toggleFaq(this)"><div class="fq">What hardware does Network Monitor run on?<span class="fplus">+</span></div><div class="fa">Raspberry Pi Zero 2W (up to 25 devices), Pi 4 4GB (up to 150), Pi 5 8GB (up to 500), or any Linux VM or Windows desktop. One-command install on Linux/Pi.</div></div>
       <div class="fi" onclick="toggleFaq(this)"><div class="fq">What network vendors are supported?<span class="fplus">+</span></div><div class="fa">Cisco IOS/IOS-XE, Aruba CX (AOS-CX), and Juniper JunOS — the three most widely deployed vendors in enterprise and mid-market networks.</div></div>
-      <div class="fi" onclick="toggleFaq(this)"><div class="fq">Can I buy just one product?<span class="fplus">+</span></div><div class="fa">Yes — all three products are completely à la carte. Buy ConfigWizard only, Network Monitor only, or mix and match. Never forced into a bundle.</div></div>
+      <div class="fi" onclick="toggleFaq(this)"><div class="fq">Can I buy just one product?<span class="fplus">+</span></div><div class="fa">Yes — all three products are completely à la carte. Buy Config Wizard only, Network Monitor only, or mix and match. Never forced into a bundle.</div></div>
       <div class="fi" onclick="toggleFaq(this)"><div class="fq">Do I need to talk to sales or schedule a setup call?<span class="fplus">+</span></div><div class="fa">Never. SpanGate is 100% self-serve. Sign up, start using it, scale at your own pace. No sales calls, no onboarding, no contracts to negotiate.</div></div>
-      <div class="fi" onclick="toggleFaq(this)"><div class="fq">Is there a free tier?<span class="fplus">+</span></div><div class="fa">Yes. ConfigWizard's first three wizard steps are free with no account required. Network Monitor and Asset Tracker are paid only but month-to-month — cancel anytime.</div></div>
+      <div class="fi" onclick="toggleFaq(this)"><div class="fq">Is there a free tier?<span class="fplus">+</span></div><div class="fa">Yes. Config Wizard's first three wizard steps are free with no account required. Network Monitor and Asset Tracker are paid only but month-to-month — cancel anytime.</div></div>
       <div class="fi" onclick="toggleFaq(this)"><div class="fq">Where is my data stored?<span class="fplus">+</span></div><div class="fa">Securely in the cloud with row-level security — only you can see your own configs and asset records. No other user or admin can access your data.</div></div>
     </div>
   </div>
@@ -1174,7 +1303,7 @@ table {
 <!-- CTA BAND -->
 <div class="ctaband reveal">
   <h2 class="cb-h">STOP DOING IT<br><span class="g">BY HAND.</span></h2>
-  <p class="cb-sub">Get started with ConfigWizard free — no credit card, no setup call.</p>
+  <p class="cb-sub">Get started with Config Wizard free — no credit card, no setup call.</p>
   <div class="cb-btns">
     <button class="btn-primary" onclick="location.href='https://netconfig-app.vercel.app'">Start Free Trial</button>
     <button class="btn-ghost" onclick="location.href='https://netconfig-app.vercel.app/wizard.html'">Try the Wizard Free</button>
@@ -1193,7 +1322,7 @@ table {
       <div class="fcols">
         <div class="fcol">
           <h4>Products</h4>
-          <a href="/configwizard/index.html">ConfigWizard</a>
+          <a href="/configwizard/index.html">Config Wizard</a>
           <a href="https://spangate.com/netmonitor">Network Monitor</a>
           <a href="https://spangate.com/assetwizard">Asset Tracker</a>
         </div>
@@ -1347,6 +1476,19 @@ function toggleFaq(el) {
     requestAnimationFrame(draw);
   }
   draw();
+})();
+
+// ── HERO ORBS: fade out when user scrolls down ──
+(function() {
+  var orbs = document.getElementById('heroOrbs');
+  if (!orbs) return;
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 80) {
+      orbs.classList.add('orbs-hidden');
+    } else {
+      orbs.classList.remove('orbs-hidden');
+    }
+  }, { passive: true });
 })();
 </script>
 </body>
