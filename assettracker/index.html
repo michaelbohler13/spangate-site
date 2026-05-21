@@ -84,14 +84,15 @@
 
   .nav-logo {
     font-size: 0.9rem; font-weight: 700;
-    color: var(--text); margin-right: auto;
+    color: var(--text); margin-right: 2rem;
     letter-spacing: -0.01em;
+    flex-shrink: 0;
   }
   .nav-logo span { color: var(--accent); }
 
   .nav-links {
     display: flex; align-items: center; gap: 0;
-    margin-right: 1.5rem;
+    margin-right: auto;
   }
   .nav-links a {
     font-size: 0.82rem; font-weight: 500;
@@ -109,16 +110,10 @@
     font-size: 0.75rem; font-weight: 600;
     color: var(--green);
     display: flex; align-items: center; gap: 6px;
-    padding: 5px 12px;
-    border: 1px solid rgba(48,209,88,0.25);
-    border-radius: 6px;
-    background: rgba(48,209,88,0.06);
-    transition: background 0.15s, border-color 0.15s;
+    padding: 5px 4px;
+    transition: opacity 0.15s;
   }
-  .nav-my-assets:hover {
-    background: rgba(48,209,88,0.12);
-    border-color: rgba(48,209,88,0.45);
-  }
+  .nav-my-assets:hover { opacity: 0.75; }
   .nav-my-assets::before {
     content: '';
     width: 7px; height: 7px;
@@ -126,6 +121,7 @@
     border-radius: 50%;
     box-shadow: 0 0 6px var(--green);
     animation: pulse 2s infinite;
+    flex-shrink: 0;
   }
 
   .nav-signin {
@@ -787,7 +783,7 @@
       <a href="#pricing">Pricing</a>
     </div>
     <div class="nav-right">
-      <a href="./assets.html" class="nav-my-assets">● My Asset Tracking</a>
+      <a href="./assets.html" class="nav-my-assets">My Asset Tracking</a>
       <a href="./login.html" class="nav-signin">Sign in</a>
       <a href="./signup.html" class="nav-cta">Get started</a>
     </div>
