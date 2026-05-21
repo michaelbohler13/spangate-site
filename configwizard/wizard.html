@@ -96,36 +96,83 @@
   [data-theme="light"] #themeToggle .theme-icon { transform: rotate(180deg); }
 
   /* ── Shared Site Nav ── */
-  .site-nav {
+  /* ── TWO-TIER NAV ── */
+  nav {
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 200;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    padding: 0 1.5rem;
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
-    background: rgba(13,17,23,0.88);
+    background: rgba(0,0,0,0.72);
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  /* Top tier - Product navigation */
+  .nav-top {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    gap: 1.5rem;
     border-bottom: 0.5px solid rgba(255,255,255,0.06);
-    gap: 1rem;
-    flex-shrink: 0;
   }
-  .site-nav-logo {
-    font-family: var(--mono); font-size: 0.88rem; font-weight: 600;
-    color: var(--text); text-decoration: none;
-    display: flex; align-items: center; gap: 7px; letter-spacing: -0.01em;
+  .nav-top a {
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: #8b949e;
+    text-decoration: none;
+    padding: 4px 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
   }
-  .site-nav-logo-mark {
-    width: 20px; height: 20px; background: var(--accent-active); border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.6rem; color: #000; font-weight: 700;
+  .nav-top a:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.05);
   }
-  .site-nav-links { display: flex; gap: 1.5rem; list-style: none; margin-left: 1rem; }
-  .site-nav-links a { font-size: 0.75rem; color: var(--text-muted); text-decoration: none; font-family: var(--mono); transition: color 0.15s; }
-  .site-nav-links a:hover, .site-nav-links a.active { color: var(--text); }
-  .site-nav-spacer { flex: 1; }
-  .site-nav-right { display: flex; align-items: center; gap: 10px; }
+  .nav-top a.active {
+    color: #58a6ff;
+    background: rgba(88,166,255,0.08);
+  }
+
+  /* Bottom tier - Tool navigation */
+  .nav-bottom {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+  }
+
+  .nav-logo {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.75rem;
+    margin-left: 2.5rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--accent-active); }
+
+  .nav-spacer { flex: 1; }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  
   .site-nav-btn {
     font-size: 0.72rem; font-family: var(--mono); padding: 4px 12px;
     border-radius: 980px; text-decoration: none; transition: all 0.15s;
@@ -136,7 +183,8 @@
   .site-nav-btn.primary { background: var(--accent-active); color: #000; font-weight: 600; border-color: var(--accent-active); }
   .site-nav-btn.primary:hover { opacity: 0.85; }
   .site-nav-divider { width: 0.5px; height: 16px; background: rgba(255,255,255,0.1); }
-  @media(max-width:600px) { .site-nav-links { display: none; } }
+  
+  @media(max-width:600px) { .nav-links { display: none; } }
 
   header { display: none; }
 
@@ -169,7 +217,7 @@
     grid-template-columns: 460px 1fr 300px;
     flex: 1;
     min-height: 0;
-    height: calc(100vh - 44px);
+    height: calc(100vh - 84px);
   }
 
   .wizard-pane {
@@ -1132,22 +1180,35 @@ window._wizAuth = (function() {
 </head>
 <body>
 
-<nav class="site-nav">
-  <a href="index.html" class="site-nav-logo">ConfigWizard
-  </a>
-  <ul class="site-nav-links">
-    <li><a href="index.html">Home</a></li>
-    <li><a href="wizard.html" class="active">Config Wizard</a></li>
-    <li><a href="dashboard.html">My Configs</a></li>
-    <li><a href="topology.html">Network Map</a></li>
-    <li><a href="instant-on-wizard.html">Aruba Instant On</a></li>
-    <li><a href="netdoctor.html">NetDoctor</a></li>
-  </ul>
-  <div class="site-nav-spacer"></div>
-  <div class="site-nav-right">
-    <div id="activeVendorBadge" class="vendor-badge"></div>
-    <div class="site-nav-divider"></div>
-    <div id="wizNavRight"><a href="login.html" class="site-nav-btn primary">Sign in</a></div>
+<!-- TWO-TIER NAV -->
+<nav>
+  <!-- Top tier: Product navigation -->
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <a href="./index.html" class="active">ConfigWizard</a>
+    <a href="../netmonitor/">NetMonitor</a>
+    <a href="../assettracker/">AssetTracker</a>
+  </div>
+  
+  <!-- Bottom tier: ConfigWizard tools -->
+  <div class="nav-bottom">
+    <a href="index.html" class="nav-logo">
+      ConfigWizard
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="wizard.html" class="active">Config Wizard</a></li>
+      <li><a href="dashboard.html">My Configs</a></li>
+      <li><a href="topology.html">Network Map</a></li>
+      <li><a href="instant-on-wizard.html">Aruba Instant On</a></li>
+      <li><a href="netdoctor.html">NetDoctor</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <div id="activeVendorBadge" class="vendor-badge"></div>
+      <div class="site-nav-divider"></div>
+      <div id="wizNavRight"><a href="login.html" class="site-nav-btn primary">Sign in</a></div>
+    </div>
   </div>
 </nav>
 
