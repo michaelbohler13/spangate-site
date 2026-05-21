@@ -3,125 +3,599 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NetMonitor — Coming Soon | SpanGate Technology</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Network Monitor — Real-Time Network Visibility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --bg: #0d1117; --bg2: #0a0a0a; --surface: #0d0d0d; --surface2: #1a1a1a; --surface3: #222222;
+    --border: rgba(255,255,255,0.08); --border-bright: rgba(255,255,255,0.15);
+    --text: #f5f5f7; --text-muted: #a1a1a6; --text-dim: #6e6e73;
+    --accent: #00d4b8; --teal: #2a8a78;
+    --cisco: #2997ff; --aruba: #ff6b2b; --juniper: #30d158;
+    --mono: 'JetBrains Mono', monospace; --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: #0d1117;
-    color: #ffffff;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); overflow-x: hidden; }
+  body::before { content:''; position:fixed; top:-30vh; left:50%; transform:translateX(-50%); width:80vw; height:80vh; background:radial-gradient(ellipse at center, rgba(0,212,184,0.04) 0%, transparent 70%); pointer-events:none; z-index:0; }
+
+  /* TWO-TIER NAV */
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px); background:rgba(0,0,0,0.72); border-bottom:0.5px solid var(--border); }
+  .nav-top { height:36px; display:flex; align-items:center; padding:0 2rem; gap:1.5rem; border-bottom:0.5px solid rgba(255,255,255,0.06); }
+  .nav-top a { font-size:0.8rem; font-weight:500; letter-spacing:-0.01em; color:#8b949e; text-decoration:none; padding:4px 12px; border-radius:6px; transition:all 0.2s; }
+  .nav-top a:hover { color:#fff; background:rgba(255,255,255,0.05); }
+  .nav-top a.active { color:#00d4b8; background:rgba(0,212,184,0.08); }
+  .nav-bottom { height:48px; display:flex; align-items:center; padding:0 2rem; }
+  .nav-logo { font-size:1rem; font-weight:600; letter-spacing:-0.02em; color:var(--text); text-decoration:none; display:flex; align-items:center; gap:8px; }
+  .nav-links { display:flex; gap:1.75rem; margin-left:2.5rem; list-style:none; }
+  .nav-links a { font-size:0.78rem; color:var(--text-muted); text-decoration:none; letter-spacing:-0.01em; transition:color 0.15s; }
+  .nav-links a:hover { color:var(--text); }
+  .nav-spacer { flex:1; }
+  .nav-right { display:flex; align-items:center; gap:12px; }
+  .nav-signin { font-size:0.78rem; color:var(--text-muted); text-decoration:none; letter-spacing:-0.01em; transition:color 0.15s; }
+  .nav-signin:hover { color:var(--text); }
+  .nav-cta { font-size:0.78rem; font-weight:500; color:var(--text); background:rgba(0,212,184,0.12); border:0.5px solid rgba(0,212,184,0.3); border-radius:980px; padding:5px 14px; text-decoration:none; letter-spacing:-0.01em; transition:all 0.15s; }
+  .nav-cta:hover { background:rgba(0,212,184,0.2); }
+
+  /* HERO */
+  .hero { position:relative; overflow:hidden; z-index:1; min-height:85vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:140px 2rem 80px; text-align:center; }
+  .hero > *:not(.hero-waves) { position:relative; z-index:1; }
+  .hero-waves { position:absolute; inset:0; pointer-events:none; z-index:0; }
+  #ribbonCanvas { position:absolute; inset:0; width:100%; height:100%; }
+  @keyframes gradientShift { from{background-position:0% center} to{background-position:100% center} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* BUTTONS */
+  .btn-primary { display:inline-flex; align-items:center; gap:6px; padding:12px 22px; background:var(--teal); color:#fff; border:none; border-radius:980px; font-family:var(--sans); font-size:0.88rem; font-weight:600; letter-spacing:-0.01em; cursor:pointer; text-decoration:none; transition:all 0.2s; }
+  .btn-primary:hover { opacity:0.88; transform:scale(1.02); }
+  .btn-secondary { display:inline-flex; align-items:center; gap:6px; padding:12px 22px; background:transparent; color:var(--accent); border:none; border-radius:980px; font-family:var(--sans); font-size:0.88rem; font-weight:500; letter-spacing:-0.01em; cursor:pointer; text-decoration:none; transition:all 0.2s; }
+  .btn-secondary:hover { color:var(--text); }
+  .btn-secondary::after { content:' →'; }
+
+  /* DIVIDER / SECTION */
+  .divider { border:none; border-top:0.5px solid var(--border); position:relative; z-index:1; }
+  .section { position:relative; z-index:1; max-width:980px; margin:0 auto; padding:5rem 2rem; }
+  .section-center { text-align:center; }
+  .section-eyebrow { font-size:0.72rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.75rem; }
+  .section-title { font-size:clamp(2rem,4vw,3.2rem); font-weight:600; letter-spacing:-0.03em; line-height:1.08; margin-bottom:1rem; color:var(--text); }
+  .section-sub { font-size:1.05rem; color:var(--text-muted); line-height:1.6; max-width:480px; margin:0 auto 3rem; letter-spacing:-0.01em; }
+
+  /* WINDOW MOCKUP */
+  .window-wrap { position:relative; z-index:1; width:100%; max-width:900px; margin:0 auto; padding:0 2rem 6rem; opacity:0; animation:fadeUp 1s ease 0.6s forwards; }
+  .window { background:var(--surface); border:0.5px solid var(--border-bright); border-radius:14px; overflow:hidden; box-shadow:0 0 0 0.5px rgba(255,255,255,0.06),0 50px 100px rgba(0,0,0,0.8),0 0 80px rgba(0,212,184,0.04); }
+  .window-bar { height:38px; background:var(--surface2); border-bottom:0.5px solid var(--border); display:flex; align-items:center; padding:0 14px; gap:6px; }
+  .wb { width:10px; height:10px; border-radius:50%; }
+  .wb-r { background:#ff5f57; } .wb-y { background:#ffbd2e; } .wb-g { background:#28c840; }
+  .window-bar-title { flex:1; text-align:center; font-family:var(--mono); font-size:0.68rem; color:var(--text-dim); }
+
+  /* DASHBOARD MOCKUP */
+  .dash-layout { display:grid; grid-template-columns:160px 1fr; min-height:340px; }
+  .dash-sidebar { background:var(--bg2); border-right:0.5px solid var(--border); padding:14px 0; }
+  .dash-sidebar-logo { padding:0 14px 14px; border-bottom:0.5px solid var(--border); margin-bottom:10px; font-family:var(--mono); font-size:0.72rem; font-weight:600; color:var(--accent); }
+  .dash-nav-item { padding:7px 14px; font-size:0.65rem; color:var(--text-dim); display:flex; align-items:center; gap:7px; font-family:var(--mono); }
+  .dash-nav-item.active { color:var(--accent); background:rgba(0,212,184,0.06); border-left:2px solid var(--accent); }
+  .dash-main { padding:16px; background:var(--bg); }
+  .dash-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .dash-card { background:var(--surface2); border:0.5px solid var(--border); border-radius:8px; padding:10px; }
+  .dash-card-label { font-size:0.56rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px; font-family:var(--mono); }
+  .dash-card-val { font-family:var(--mono); font-size:1.4rem; font-weight:600; line-height:1; }
+  .dash-card-val.green { color:#28c840; } .dash-card-val.red { color:#ff5f57; } .dash-card-val.teal { color:var(--accent); }
+  .dash-card-sub { font-size:0.56rem; color:var(--text-dim); margin-top:2px; font-family:var(--mono); }
+  .dash-table-head { display:grid; grid-template-columns:2fr 1fr 1fr 2fr 1fr; gap:6px; padding:5px 8px; font-size:0.55rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; border-bottom:0.5px solid var(--border); font-family:var(--mono); }
+  .dash-table-row { display:grid; grid-template-columns:2fr 1fr 1fr 2fr 1fr; gap:6px; padding:7px 8px; font-size:0.62rem; align-items:center; font-family:var(--mono); border-radius:4px; transition:background 0.15s; }
+  .dash-table-row:hover { background:rgba(255,255,255,0.02); }
+  .status-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:4px; }
+  .status-dot.online { background:#28c840; box-shadow:0 0 5px #28c840; }
+  .status-dot.offline { background:#ff5f57; box-shadow:0 0 5px #ff5f57; }
+  .uptime-bar-wrap { display:flex; align-items:center; gap:5px; }
+  .uptime-bar { flex:1; height:3px; background:var(--surface3); border-radius:2px; overflow:hidden; }
+  .uptime-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--teal),var(--accent)); }
+  .uptime-pct { font-size:0.55rem; color:var(--text-dim); white-space:nowrap; }
+  .badge-change { display:inline-flex; background:rgba(210,153,34,0.15); border:0.5px solid rgba(210,153,34,0.3); color:#d29922; border-radius:4px; padding:1px 6px; font-size:0.55rem; font-weight:600; }
+  .badge-ok { display:inline-flex; background:rgba(40,200,64,0.1); border:0.5px solid rgba(40,200,64,0.2); color:#28c840; border-radius:4px; padding:1px 6px; font-size:0.55rem; font-weight:600; }
+
+  /* STAT ROW */
+  .stat-row { display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--border); border:0.5px solid var(--border); border-radius:14px; overflow:hidden; }
+  .stat-cell { background:var(--surface); padding:2rem 1.5rem; text-align:center; }
+  .stat-num { font-size:2.5rem; font-weight:300; letter-spacing:-0.04em; color:var(--text); line-height:1; margin-bottom:6px; }
+  .stat-num.teal { color:var(--accent); }
+  .stat-label { font-size:0.78rem; color:var(--text-dim); letter-spacing:-0.01em; }
+
+  /* BENTO */
+  .bento { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .bento-card { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:1.5rem; transition:border-color 0.2s; position:relative; overflow:hidden; }
+  .bento-card:hover { border-color:var(--border-bright); }
+  .bento-card.wide { grid-column:span 2; }
+  .bento-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; margin-bottom:1rem; flex-shrink:0; }
+  .bi-teal{background:rgba(0,212,184,0.1);} .bi-green{background:rgba(48,209,88,0.1);} .bi-orange{background:rgba(255,107,43,0.1);} .bi-blue{background:rgba(88,166,255,0.1);} .bi-purple{background:rgba(191,144,255,0.1);} .bi-white{background:rgba(255,255,255,0.06);}
+  .bento-title { font-size:1rem; font-weight:600; letter-spacing:-0.02em; color:var(--text); margin-bottom:0.4rem; line-height:1.2; }
+  .bento-desc { font-size:0.82rem; color:var(--text-muted); line-height:1.55; letter-spacing:-0.01em; }
+
+  .mini-terminal { margin-top:1rem; background:var(--bg); border:0.5px solid var(--border); border-radius:8px; padding:0.75rem; font-family:var(--mono); font-size:0.62rem; line-height:1.7; color:var(--text-dim); }
+  .tc{color:#3d3d3d;} .tk{color:#00d4b8;} .tv{color:#79c0ff;} .tg{color:#28c840;} .tr{color:#ff5f57;}
+  .cursor { display:inline-block; width:5px; height:12px; background:var(--accent); animation:blink 1.2s step-end infinite; vertical-align:middle; }
+
+  .diff-preview { margin-top:1rem; background:var(--bg); border:0.5px solid var(--border); border-radius:8px; overflow:hidden; font-family:var(--mono); font-size:0.62rem; }
+  .diff-bar { padding:5px 10px; background:var(--surface2); border-bottom:0.5px solid var(--border); font-size:0.58rem; color:var(--text-dim); display:flex; justify-content:space-between; }
+  .diff-body { padding:0.6rem; display:flex; flex-direction:column; gap:2px; }
+  .diff-line { padding:1px 6px; border-radius:3px; }
+  .diff-add { background:rgba(40,200,64,0.1); color:#28c840; }
+  .diff-rem { background:rgba(255,95,87,0.1); color:#ff5f57; }
+  .diff-ctx { color:var(--text-dim); }
+
+  .alert-list { display:flex; flex-direction:column; gap:6px; margin-top:1rem; }
+  .alert-row { display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface2); border-radius:6px; font-size:0.65rem; color:var(--text-muted); font-family:var(--mono); border-left:2px solid transparent; }
+  .alert-row.crit{border-color:#ff5f57;} .alert-row.warn{border-color:#d29922;} .alert-row.info{border-color:var(--accent);}
+  .alert-name { color:var(--text); font-weight:600; }
+  .alert-spacer{flex:1;}
+
+  /* STEPS */
+  .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; }
+  .steps::before { content:''; position:absolute; top:22px; left:12%; right:12%; height:0.5px; background:var(--border-bright); }
+  .step { text-align:center; padding:0 1rem; position:relative; z-index:1; }
+  .step-num { width:44px; height:44px; border-radius:50%; background:var(--surface); border:0.5px solid var(--border-bright); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:0.75rem; font-weight:600; color:var(--accent); margin:0 auto 1.25rem; }
+  .step-title { font-size:0.88rem; font-weight:600; letter-spacing:-0.02em; margin-bottom:0.4rem; color:var(--text); }
+  .step-desc { font-size:0.78rem; color:var(--text-muted); line-height:1.5; letter-spacing:-0.01em; }
+  .code-pill { display:inline-block; margin-top:0.6rem; background:var(--bg2); border:0.5px solid var(--border-bright); border-radius:6px; padding:5px 10px; font-family:var(--mono); font-size:0.62rem; color:var(--accent); }
+
+  /* HARDWARE */
+  .hw-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .hw-card { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:1.5rem; text-align:center; position:relative; transition:border-color 0.2s,transform 0.2s; }
+  .hw-card:hover { border-color:var(--border-bright); transform:translateY(-2px); }
+  .hw-card.featured { border-color:rgba(0,212,184,0.35); background:rgba(0,212,184,0.03); }
+  .hw-badge { position:absolute; top:10px; right:10px; background:var(--teal); color:#fff; font-size:0.58rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:2px 8px; border-radius:4px; font-family:var(--mono); }
+  .hw-icon { font-size:1.8rem; margin-bottom:0.6rem; display:block; }
+  .hw-name { font-size:0.9rem; font-weight:600; color:var(--text); margin-bottom:3px; }
+  .hw-devices { font-size:0.72rem; color:var(--text-dim); margin-bottom:0.75rem; }
+  .hw-price { font-family:var(--mono); font-size:1.5rem; font-weight:600; color:var(--accent); }
+  .hw-price-note { font-size:0.62rem; color:var(--text-dim); margin-top:2px; }
+  .prebuilt-banner { margin-top:16px; background:linear-gradient(135deg,rgba(0,212,184,0.08),rgba(42,138,120,0.04)); border:0.5px solid rgba(0,212,184,0.3); border-radius:14px; padding:1.5rem 2rem; display:flex; align-items:center; gap:1.5rem; }
+  .pb-icon{font-size:2rem;flex-shrink:0;}
+  .pb-body{flex:1;}
+  .pb-title { font-size:1rem; font-weight:600; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  .pb-tag { background:rgba(0,212,184,0.12); border:0.5px solid rgba(0,212,184,0.3); color:var(--accent); font-size:0.6rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:2px 8px; border-radius:980px; font-family:var(--mono); }
+  .pb-desc{font-size:0.82rem;color:var(--text-muted);line-height:1.6;}
+  .pb-price{text-align:right;flex-shrink:0;}
+  .pb-price-val{font-family:var(--mono);font-size:2rem;font-weight:600;color:var(--accent);line-height:1;}
+  .pb-price-note{font-size:0.65rem;color:var(--text-dim);margin-top:2px;}
+
+  /* PRICING */
+  .pricing-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .price-card { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:1.75rem 1.5rem; position:relative; overflow:hidden; transition:border-color 0.2s,transform 0.2s; }
+  .price-card:hover { border-color:var(--border-bright); transform:translateY(-2px); }
+  .price-card.featured { border-color:rgba(0,212,184,0.4); background:rgba(0,212,184,0.03); }
+  .plan-name { font-size:0.72rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-dim); margin-bottom:1rem; font-family:var(--mono); }
+  .plan-price { font-size:3rem; font-weight:300; letter-spacing:-0.04em; color:var(--text); line-height:1; }
+  .plan-price sup { font-size:1.2rem; vertical-align:top; margin-top:10px; }
+  .plan-period { font-size:0.75rem; color:var(--text-dim); margin-top:3px; margin-bottom:4px; }
+  .plan-annual { font-size:0.72rem; color:var(--accent); margin-bottom:1rem; font-family:var(--mono); }
+  .plan-devices { font-size:1.1rem; font-weight:600; color:var(--text); margin-bottom:1.25rem; letter-spacing:-0.02em; }
+  .plan-features { list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .plan-features li { font-size:0.78rem; color:var(--text-muted); display:flex; gap:8px; align-items:flex-start; }
+  .plan-features li::before { content:'✓'; color:var(--accent); font-size:0.72rem; flex-shrink:0; margin-top:1px; }
+
+  /* SECURITY */
+  .sec-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:2rem; }
+  .sec-card { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:1.5rem; display:flex; gap:1rem; align-items:flex-start; }
+  .sec-icon{font-size:1.4rem;flex-shrink:0;}
+  .sec-title{font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+  .sec-desc{font-size:0.78rem;color:var(--text-muted);line-height:1.5;}
+
+  /* CTA */
+  .cta-wrap { position:relative; z-index:1; padding:5rem 2rem 7rem; text-align:center; display:flex; flex-direction:column; align-items:center; }
+  .cta-box { background:var(--surface); border:0.5px solid var(--border-bright); border-radius:20px; padding:4rem 3rem; max-width:580px; width:100%; position:relative; overflow:hidden; }
+  .cta-box::before { content:''; position:absolute; top:-60px; left:50%; transform:translateX(-50%); width:300px; height:200px; background:radial-gradient(ellipse, rgba(0,212,184,0.06) 0%, transparent 70%); pointer-events:none; }
+  .cta-title{font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:600;letter-spacing:-0.03em;line-height:1.1;color:var(--text);margin-bottom:1rem;}
+  .cta-sub{font-size:0.95rem;color:var(--text-muted);line-height:1.6;letter-spacing:-0.01em;margin-bottom:2rem;}
+  .cta-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+  /* FOOTER */
+  footer { position:relative; z-index:1; border-top:0.5px solid var(--border); padding:1.5rem 2rem; display:flex; align-items:center; justify-content:space-between; }
+  .footer-left{font-size:0.75rem;color:var(--text-dim);display:flex;align-items:center;gap:12px;}
+  .footer-easter{font-family:var(--mono);font-size:0.65rem;color:#2a2a2a;letter-spacing:0.08em;}
+  .footer-links{display:flex;gap:1.5rem;list-style:none;}
+  .footer-links a{font-size:0.72rem;color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .footer-links a:hover{color:var(--text-muted);}
+
+  /* REVEAL */
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease;}
+  .reveal.visible{opacity:1;transform:translateY(0);}
+
+  /* LIGHT MODE */
+  [data-theme="light"] { --bg:#d4d4d2!important; --bg2:#cacac8!important; --surface:#e2e2e0!important; --surface2:#d8d8d6!important; --surface3:#cecece!important; --border:rgba(0,0,0,0.12)!important; --border-bright:rgba(0,0,0,0.2)!important; --text:#0d0d0d!important; --text-muted:#1a1a1a!important; --text-dim:#333333!important; }
+  [data-theme="light"] body{background:#d4d4d2!important;color:#0d0d0d!important;}
+  [data-theme="light"] h1,[data-theme="light"] h2,[data-theme="light"] h3,[data-theme="light"] h4,[data-theme="light"] h5,[data-theme="light"] h6{color:#0d0d0d!important;}
+  [data-theme="light"] p{color:#1a1a1a!important;}
+  [data-theme="light"] nav{background:rgba(212,212,210,0.95)!important;border-bottom-color:rgba(0,0,0,0.12)!important;}
+  [data-theme="light"] .nav-top a{color:#1a1a1a!important;}
+  [data-theme="light"] .nav-links a{color:#0d0d0d!important;}
+  [data-theme="light"] .nav-logo{color:#0d0d0d!important;}
+  [data-theme="light"] .nav-signin{color:#1a1a1a!important;}
+  [data-theme="light"] .nav-cta{background:rgba(0,0,0,0.06)!important;color:#0d0d0d!important;border-color:rgba(0,0,0,0.12)!important;}
+  [data-theme="light"] .bento-card,[data-theme="light"] .price-card,[data-theme="light"] .hw-card,[data-theme="light"] .sec-card,[data-theme="light"] .cta-box{background:#e2e2e0!important;border-color:rgba(0,0,0,0.12)!important;}
+  [data-theme="light"] .bento-title,[data-theme="light"] .sec-title,[data-theme="light"] .step-title,[data-theme="light"] .cta-title{color:#0d0d0d!important;}
+  [data-theme="light"] .bento-desc,[data-theme="light"] .sec-desc,[data-theme="light"] .hero-sub{color:#1a1a1a!important;}
+  [data-theme="light"] .section-title{color:#0d0d0d!important;}
+  [data-theme="light"] .section-sub{color:#1a1a1a!important;}
+  [data-theme="light"] .mini-terminal,[data-theme="light"] .diff-preview,[data-theme="light"] .alert-row{background:#d4d4d2!important;border-color:rgba(0,0,0,0.1)!important;}
+  #landingThemeBtn{transition:all 0.15s;}
+  #landingThemeBtn:hover{opacity:0.8;}
+  [data-theme="dark"] #landingThemeBtn{border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);}
+  [data-theme="light"] #landingThemeBtn{border-color:rgba(0,0,0,0.15);color:#3d3d3d;}
+  [data-theme="light"] #landingThemeLabel{color:#0d0d0d!important;}
+
+  @media(max-width:768px){
+    .bento{grid-template-columns:1fr;}
+    .bento-card.wide{grid-column:span 1;}
+    .steps{grid-template-columns:1fr 1fr;}
+    .stat-row{grid-template-columns:repeat(3,1fr);}
+    .dash-layout{grid-template-columns:1fr;}
+    .dash-sidebar{display:none;}
+    .dash-cards{grid-template-columns:repeat(2,1fr);}
+    .hw-grid{grid-template-columns:repeat(2,1fr);}
+    .pricing-grid{grid-template-columns:repeat(2,1fr);}
+    .sec-grid{grid-template-columns:1fr;}
+    .nav-links{display:none;}
+    .prebuilt-banner{flex-direction:column;text-align:center;}
+    .pb-price{text-align:center;}
   }
-  .container {
-    max-width: 600px;
-    text-align: center;
-  }
-  .badge {
-    display: inline-block;
-    padding: 8px 16px;
-    background: rgba(42,138,120,0.15);
-    border: 1px solid #2a8a78;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #2a8a78;
-    letter-spacing: 0.5px;
-    margin-bottom: 1.5rem;
-  }
-  h1 {
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    margin-bottom: 1rem;
-    line-height: 1.1;
-  }
-  .gradient {
-    background: linear-gradient(120deg, #2a8a78 0%, #58a6ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  p {
-    font-size: 1.1rem;
-    color: #8b949e;
-    line-height: 1.7;
-    margin-bottom: 2rem;
-  }
-  .icon {
-    font-size: 4rem;
-    margin-bottom: 1.5rem;
-    opacity: 0.9;
-  }
-  .btn {
-    display: inline-block;
-    padding: 14px 32px;
-    background: #58a6ff;
-    color: #000;
-    border-radius: 980px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    text-decoration: none;
-    transition: all 0.2s;
-    margin-top: 1rem;
-  }
-  .btn:hover {
-    background: #6eb5ff;
-    transform: translateY(-2px);
-  }
-  .features {
-    display: grid;
-    gap: 1rem;
-    margin-top: 3rem;
-    text-align: left;
-  }
-  .feature {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 1.25rem;
-  }
-  .feature-title {
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #ffffff;
-  }
-  .feature-desc {
-    font-size: 0.9rem;
-    color: #8b949e;
-    line-height: 1.6;
+  @media(max-width:480px){
+    .steps{grid-template-columns:1fr;}
+    .hw-grid{grid-template-columns:1fr;}
+    .pricing-grid{grid-template-columns:1fr;}
   }
 </style>
+
+<script>
+(function(){
+  const saved = localStorage.getItem('cw-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+</script>
 </head>
 <body>
-  <div class="container">
-    <div class="icon">📊</div>
-    <div class="badge">LAUNCHING Q3 2026</div>
-    <h1>NetMonitor<br><span class="gradient">Coming Soon</span></h1>
-    <p>Real-time network monitoring with config backup, change detection, and alerts. Deploy a lightweight Python agent on your network and monitor up to 500 devices from a single dashboard.</p>
-    
-    <div class="features">
-      
-      <div class="feature">
-        <div class="feature-title">🔄 Config Backup & Change Detection</div>
-        <div class="feature-desc">Weekly automated config pulls via SSH. Instant alerts when configs change unexpectedly.</div>
-      </div>
-      <div class="feature">
-        <div class="feature-title">📡 Live Device Status</div>
-        <div class="feature-desc">ICMP ping monitoring every 60 seconds. Know immediately when devices go down.</div>
-      </div>
-      <div class="feature">
-        <div class="feature-title">🐍 Python Agent</div>
-        <div class="feature-desc">Runs on Raspberry Pi, VM, or desktop. Supports Cisco, Aruba CX, and Juniper.</div>
-      </div>
-    
-    </div>
-    
-    <a href="/" class="btn">← Back to SpanGate</a>
+
+<!-- TWO-TIER NAV -->
+<nav>
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <a href="../configwizard/">Config Wizard</a>
+    <a href="../netmonitor/" class="active">Network Monitor</a>
+    <a href="../assettracker/">Asset Tracker</a>
   </div>
+  <div class="nav-bottom">
+    <a href="index.html" class="nav-logo">Network Monitor</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#hardware">Hardware</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <button id="landingThemeBtn" onclick="(function(){var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('cw-theme',t);_updateLandingIcon(t);})()" style="display:flex;align-items:center;gap:7px;padding:5px 12px;background:transparent;border:0.5px solid rgba(255,255,255,0.15);border-radius:980px;cursor:pointer;font-size:0.72rem;color:rgba(255,255,255,0.6);font-family:monospace;">
+        <span id="landingThemeIcon"></span><span id="landingThemeLabel"></span>
+      </button>
+      <a href="./login.html" class="nav-signin">Sign in</a>
+      <a href="./login.html" class="nav-cta">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" style="min-height:85vh;padding:140px 2rem 80px;">
+  <div class="hero-waves" aria-hidden="true"><canvas id="ribbonCanvas"></canvas></div>
+  <div style="max-width:1100px;margin:0 auto;position:relative;z-index:2;">
+    <div style="text-align:center;margin-bottom:4rem;">
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(0,212,184,0.08);border:1px solid rgba(0,212,184,0.2);border-radius:20px;font-size:0.75rem;font-weight:600;color:#00d4b8;letter-spacing:0.5px;margin-bottom:1.5rem;font-family:var(--mono);"><span style="width:6px;height:6px;border-radius:50%;background:#00d4b8;animation:blink 2s ease infinite;display:inline-block;"></span>COMING SOON</div>
+      <h1 style="font-size:clamp(2.5rem,6vw,4.5rem);font-weight:700;letter-spacing:-0.04em;line-height:1.05;margin-bottom:1.5rem;">Network Visibility,<br><span style="background:linear-gradient(120deg,#00d4ff 0%,#2a8a78 50%,#00d4b8 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientShift 6s ease-in-out infinite alternate;">Finally Under Control.</span></h1>
+      <p style="font-size:1.2rem;color:#8b949e;max-width:600px;margin:0 auto 0.75rem;line-height:1.7;font-weight:400;">Real-time device monitoring, instant config change detection, and automated alerts — all from a lightweight agent running on a $50 Pi.</p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:2rem;margin-top:1.5rem;font-size:0.875rem;color:#00d4b8;font-weight:500;">
+        <span>&#10003; 3 Vendors</span><span>&#10003; Config Change Alerts</span><span>&#10003; One-Command Install</span>
+      </div>
+    </div>
+    <div style="background:rgba(13,17,23,0.6);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2.5rem;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="text-align:center;margin-bottom:2rem;"><h2 style="font-size:1.5rem;font-weight:600;color:#fff;margin-bottom:0.5rem;">Your Network at a Glance</h2><p style="font-size:0.95rem;color:#6e6e73;">Live device status, config history, and alerts — one dashboard</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+        <div style="background:linear-gradient(135deg,rgba(0,212,184,0.12),rgba(0,212,184,0.04));border:1.5px solid rgba(0,212,184,0.25);border-radius:14px;padding:1.5rem;"><div style="font-size:2rem;margin-bottom:0.6rem;">📡</div><div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;">Live Status</div><div style="font-size:0.82rem;color:#8b949e;line-height:1.5;">ICMP ping every 60 seconds. See exactly what's online, offline, or degraded.</div></div>
+        <div style="background:linear-gradient(135deg,rgba(88,166,255,0.12),rgba(88,166,255,0.04));border:1.5px solid rgba(88,166,255,0.25);border-radius:14px;padding:1.5rem;"><div style="font-size:2rem;margin-bottom:0.6rem;">🔍</div><div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;">Config Changes</div><div style="font-size:0.82rem;color:#8b949e;line-height:1.5;">Weekly SSH config pulls with hash comparison. Catch unauthorized changes instantly.</div></div>
+        <div style="background:linear-gradient(135deg,rgba(255,107,43,0.12),rgba(255,107,43,0.04));border:1.5px solid rgba(255,107,43,0.25);border-radius:14px;padding:1.5rem;"><div style="font-size:2rem;margin-bottom:0.6rem;">🔔</div><div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;">Smart Alerts</div><div style="font-size:0.82rem;color:#8b949e;line-height:1.5;">Alerts when devices go offline, configs change, or the agent stops reporting.</div></div>
+        <div style="background:linear-gradient(135deg,rgba(48,209,88,0.12),rgba(48,209,88,0.04));border:1.5px solid rgba(48,209,88,0.25);border-radius:14px;padding:1.5rem;"><div style="font-size:2rem;margin-bottom:0.6rem;">🏢</div><div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;">Multi-Site</div><div style="font-size:0.82rem;color:#8b949e;line-height:1.5;">One account, multiple locations. Each site gets its own agent — all in one dashboard.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD WINDOW MOCKUP -->
+<div class="window-wrap">
+  <div class="window">
+    <div class="window-bar">
+      <div class="wb wb-r"></div><div class="wb wb-y"></div><div class="wb wb-g"></div>
+      <div class="window-bar-title">Network Monitor — Dashboard — Main Campus</div>
+    </div>
+    <div class="dash-layout">
+      <div class="dash-sidebar">
+        <div class="dash-sidebar-logo">Network Monitor</div>
+        <div class="dash-nav-item active">📡 Dashboard</div>
+        <div class="dash-nav-item">🔔 Alerts <span style="margin-left:auto;background:rgba(255,95,87,0.2);color:#ff5f57;font-size:0.55rem;padding:1px 5px;border-radius:10px;font-weight:700;">3</span></div>
+        <div class="dash-nav-item">📋 Config History</div>
+        <div class="dash-nav-item">⚙️ Settings</div>
+      </div>
+      <div class="dash-main">
+        <div class="dash-cards">
+          <div class="dash-card"><div class="dash-card-label">Online</div><div class="dash-card-val green">47<span style="font-size:0.9rem;color:var(--text-dim);">/50</span></div><div class="dash-card-sub">3 offline</div></div>
+          <div class="dash-card"><div class="dash-card-label">Config Changes (7d)</div><div class="dash-card-val teal">2</div><div class="dash-card-sub">Last: 2h ago</div></div>
+          <div class="dash-card"><div class="dash-card-label">Active Alerts</div><div class="dash-card-val red">3</div><div class="dash-card-sub">1 critical</div></div>
+          <div class="dash-card"><div class="dash-card-label">Agent</div><div class="dash-card-val green" style="font-size:0.9rem;margin-top:4px;">● Reporting</div><div class="dash-card-sub">8s ago</div></div>
+        </div>
+        <div class="dash-table-head"><span>Hostname / IP</span><span>Vendor</span><span>Status</span><span>24hr Uptime</span><span>Config</span></div>
+        <div class="dash-table-row"><div><div style="color:var(--text);font-weight:600;">core-sw-01</div><div style="color:var(--text-dim);font-size:0.55rem;">10.1.1.1</div></div><div style="color:var(--text-dim);">Cisco IOS-XE</div><div><span class="status-dot online"></span><span style="color:#28c840;">Online</span></div><div class="uptime-bar-wrap"><div class="uptime-bar"><div class="uptime-fill" style="width:100%"></div></div><span class="uptime-pct">100%</span></div><div><span class="badge-ok">&#10003; Clean</span></div></div>
+        <div class="dash-table-row"><div><div style="color:var(--text);font-weight:600;">dist-sw-02</div><div style="color:var(--text-dim);font-size:0.55rem;">10.1.1.2</div></div><div style="color:var(--text-dim);">Aruba CX</div><div><span class="status-dot online"></span><span style="color:#28c840;">Online</span></div><div class="uptime-bar-wrap"><div class="uptime-bar"><div class="uptime-fill" style="width:98%"></div></div><span class="uptime-pct">98.2%</span></div><div><span class="badge-change">&#9889; Changed</span></div></div>
+        <div class="dash-table-row"><div><div style="color:var(--text);font-weight:600;">access-sw-14</div><div style="color:var(--text-dim);font-size:0.55rem;">10.1.2.14</div></div><div style="color:var(--text-dim);">Aruba CX</div><div><span class="status-dot offline"></span><span style="color:#ff5f57;">Offline</span></div><div class="uptime-bar-wrap"><div class="uptime-bar"><div class="uptime-fill" style="width:72%;background:#ff5f57;"></div></div><span class="uptime-pct">72.4%</span></div><div><span class="badge-ok">&#10003; Clean</span></div></div>
+        <div class="dash-table-row"><div><div style="color:var(--text);font-weight:600;">fw-edge-01</div><div style="color:var(--text-dim);font-size:0.55rem;">10.0.0.1</div></div><div style="color:var(--text-dim);">Juniper JunOS</div><div><span class="status-dot online"></span><span style="color:#28c840;">Online</span></div><div class="uptime-bar-wrap"><div class="uptime-bar"><div class="uptime-fill" style="width:100%"></div></div><span class="uptime-pct">100%</span></div><div><span class="badge-ok">&#10003; Clean</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- STATS -->
+<div style="position:relative;z-index:1;">
+  <div class="section" style="padding-top:3.5rem;padding-bottom:3.5rem;">
+    <div class="stat-row reveal">
+      <div class="stat-cell"><div class="stat-num teal">60s</div><div class="stat-label">Ping interval</div></div>
+      <div class="stat-cell"><div class="stat-num">500+</div><div class="stat-label">Devices per agent</div></div>
+      <div class="stat-cell"><div class="stat-num">3</div><div class="stat-label">Vendors supported</div></div>
+      <div class="stat-cell"><div class="stat-num teal">$50</div><div class="stat-label">Min. hardware cost</div></div>
+      <div class="stat-cell"><div class="stat-num teal">0</div><div class="stat-label">Credentials sent to cloud</div></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- FEATURES -->
+<section id="features" style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">Features</div>
+      <h2 class="section-title">Built for anyone needing<br>to monitor their network.</h2>
+      <p class="section-sub">Everything from live device status to config change detection, in one place.</p>
+    </div>
+    <div class="bento">
+      <div class="bento-card wide reveal">
+        <div class="bento-icon bi-teal">📡</div>
+        <div class="bento-title">Live device dashboard</div>
+        <div class="bento-desc">ICMP ping every 60 seconds keeps you current on every device. The dashboard shows live status, 24-hour uptime bars, last-seen timestamps, and vendor details in one clean table. Click any device for a full slide-out panel with active alerts and config history.</div>
+        <div class="mini-terminal">
+          <span class="tc">! Ping sweep — Main Campus — 10.1.0.0/24</span><br>
+          <span class="tg">●</span> <span class="tk">core-sw-01</span>&nbsp;&nbsp;&nbsp;<span class="tv">10.1.1.1</span>&nbsp;&nbsp;&nbsp;<span class="tg">Online</span>&nbsp;&nbsp;&nbsp;<span class="tc">uptime 100.0%</span><br>
+          <span class="tg">●</span> <span class="tk">dist-sw-02</span>&nbsp;&nbsp;&nbsp;<span class="tv">10.1.1.2</span>&nbsp;&nbsp;&nbsp;<span class="tg">Online</span>&nbsp;&nbsp;&nbsp;<span class="tc">uptime&nbsp;&nbsp;98.2%</span><br>
+          <span class="tr">●</span> <span class="tk">access-sw-14</span> <span class="tv">10.1.2.14</span>&nbsp;&nbsp;<span class="tr">Offline</span>&nbsp;&nbsp;<span class="tc">last seen 4h ago</span><br>
+          <span class="tg">●</span> <span class="tk">fw-edge-01</span>&nbsp;&nbsp;&nbsp;<span class="tv">10.0.0.1</span>&nbsp;&nbsp;&nbsp;<span class="tg">Online</span>&nbsp;&nbsp;&nbsp;<span class="tc">uptime 100.0%</span><br>
+          <span class="cursor"></span>
+        </div>
+      </div>
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-blue">🔍</div>
+        <div class="bento-title">Config change detection</div>
+        <div class="bento-desc">Weekly automated SSH pulls with hash comparison. Any unexpected change triggers an immediate alert — before something breaks.</div>
+        <div class="diff-preview">
+          <div class="diff-bar"><span>dist-sw-02 — config diff</span><span style="color:#d29922;">&#9889; Changed 2h ago</span></div>
+          <div class="diff-body">
+            <div class="diff-line diff-ctx">&nbsp;&nbsp;interface vlan 10</div>
+            <div class="diff-line diff-rem">-&nbsp;&nbsp;ip address 10.1.10.1/24</div>
+            <div class="diff-line diff-add">+&nbsp;&nbsp;ip address 10.1.10.2/24</div>
+            <div class="diff-line diff-ctx">&nbsp;&nbsp;no shutdown</div>
+          </div>
+        </div>
+      </div>
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-orange">🔔</div>
+        <div class="bento-title">Smart alerts</div>
+        <div class="bento-desc">Alerts when a device goes offline, a config changes unexpectedly, or the agent stops reporting. In-app now — email and Slack webhooks coming soon.</div>
+        <div class="alert-list">
+          <div class="alert-row crit"><span>🔴</span><div><div class="alert-name">access-sw-14 offline</div><div style="font-size:0.58rem;color:var(--text-dim);">Device unreachable</div></div><span class="alert-spacer"></span><span style="font-size:0.58rem;color:var(--text-dim);">4h ago</span></div>
+          <div class="alert-row warn"><span>&#9889;</span><div><div class="alert-name">dist-sw-02 config changed</div><div style="font-size:0.58rem;color:var(--text-dim);">VLAN 10 IP modified</div></div><span class="alert-spacer"></span><span style="font-size:0.58rem;color:var(--text-dim);">2h ago</span></div>
+          <div class="alert-row info"><span>ℹ️</span><div><div class="alert-name">Weekly config pull complete</div><div style="font-size:0.58rem;color:var(--text-dim);">All devices backed up</div></div><span class="alert-spacer"></span><span style="font-size:0.58rem;color:var(--text-dim);">6h ago</span></div>
+        </div>
+      </div>
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-purple">📋</div>
+        <div class="bento-title">Config history</div>
+        <div class="bento-desc">30-day rolling backup for every device. Side-by-side diff viewer shows exactly what changed, when, and on which device. Always know your last known-good state.</div>
+      </div>
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-green">🗺️</div>
+        <div class="bento-title">Auto discovery</div>
+        <div class="bento-desc">Subnet scan finds all reachable devices on first run. Review the list, confirm, and monitoring activates. Add devices manually too — whatever works for your network.</div>
+      </div>
+      <div class="bento-card wide reveal" style="background:rgba(0,212,184,0.03);border-color:rgba(0,212,184,0.2);">
+        <div class="bento-icon bi-teal">🏢</div>
+        <div class="bento-title">Multi-site support</div>
+        <div class="bento-desc">One account, multiple locations. Each site gets its own lightweight agent — a Pi in a closet, a spare VM, or an existing desktop. All sites appear in a single dashboard under your account. Built for organizations with more than one location from day one.</div>
+        <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;">
+          <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:0.65rem;color:var(--accent);">● Main Campus — 50 devices</div>
+          <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);">● North Campus — 32 devices</div>
+          <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);">● South Campus — 28 devices</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works" style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">How it works</div>
+      <h2 class="section-title">One command.<br>Monitoring in minutes.</h2>
+      <p class="section-sub" style="margin-bottom:3.5rem;">No config files. No port forwarding. Your SSH credentials never leave your building.</p>
+    </div>
+    <div class="steps reveal">
+      <div class="step"><div class="step-num">01</div><div class="step-title">Sign up &amp; get API key</div><div class="step-desc">Create an account. Copy your API key from the Settings page.</div></div>
+      <div class="step"><div class="step-num">02</div><div class="step-title">Run the installer</div><div class="step-desc">One-liner on Linux or Pi. Windows .exe also available.</div><div class="code-pill">curl -sSL https://install.spangate.com | bash</div></div>
+      <div class="step"><div class="step-num">03</div><div class="step-title">Enter key + site name</div><div class="step-desc">Interactive prompts. No YAML. No JSON. Name your site and confirm.</div></div>
+      <div class="step"><div class="step-num">04</div><div class="step-title">Agent scans &amp; activates</div><div class="step-desc">Discovers devices on your subnet, shows you the list, you confirm. Runs as a systemd service — auto-starts on reboot.</div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- HARDWARE -->
+<section id="hardware" style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">Agent Hardware</div>
+      <h2 class="section-title">Runs on whatever<br>you have.</h2>
+      <p class="section-sub">A Raspberry Pi tucked in a closet. A spare VM. An existing desktop. The agent is lightweight enough to run anywhere.</p>
+    </div>
+    <div class="hw-grid reveal">
+      <div class="hw-card"><span class="hw-icon">🍓</span><div class="hw-name">Pi Zero 2W</div><div class="hw-devices">Up to 25 devices</div><div class="hw-price">$50</div><div class="hw-price-note">Amazon · self-setup</div></div>
+      <div class="hw-card featured"><div class="hw-badge">Popular</div><span class="hw-icon">🍓</span><div class="hw-name">Pi 4 (4GB)</div><div class="hw-devices">Up to 150 devices</div><div class="hw-price">$150</div><div class="hw-price-note">Amazon · self-setup</div></div>
+      <div class="hw-card"><span class="hw-icon">🍓</span><div class="hw-name">Pi 5 (8GB)</div><div class="hw-devices">Up to 500 devices</div><div class="hw-price">$150</div><div class="hw-price-note">Amazon · self-setup</div></div>
+      <div class="hw-card"><span class="hw-icon">💻</span><div class="hw-name">VM / Desktop</div><div class="hw-devices">Unlimited devices</div><div class="hw-price" style="font-size:1rem;margin-top:6px;">Use what you have</div><div class="hw-price-note">Any Linux / Windows machine</div></div>
+    </div>
+    <div class="prebuilt-banner reveal">
+      <div class="pb-icon">📦</div>
+      <div class="pb-body">
+        <div class="pb-title">Want it done for you? <span class="pb-tag">New</span></div>
+        <p class="pb-desc">We'll configure a Raspberry Pi, load the Network Monitor agent, and ship it directly to you — ready to plug in and go. No Linux experience needed. Just plug it into your network, power it on, and your dashboard comes alive.</p>
+      </div>
+      <div class="pb-price"><div class="pb-price-val">$199</div><div class="pb-price-note">Pi setup charge</div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- SECURITY -->
+<section style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">Security</div>
+      <h2 class="section-title">Your credentials never<br>leave your building.</h2>
+      <p class="section-sub">Designed for environments where data security isn't optional.</p>
+    </div>
+    <div class="sec-grid reveal">
+      <div class="sec-card"><div class="sec-icon">🔐</div><div><div class="sec-title">Credentials stay on-prem</div><p class="sec-desc">SSH credentials are encrypted locally using your API key. Only encrypted blobs and config text are ever sent to the cloud.</p></div></div>
+      <div class="sec-card"><div class="sec-icon">🗑️</div><div><div class="sec-title">30-day retention only</div><p class="sec-desc">Configs and alerts are automatically purged after 30 days. We don't store your network data forever.</p></div></div>
+      <div class="sec-card"><div class="sec-icon">🚫</div><div><div class="sec-title">No traffic captured</div><p class="sec-desc">Network Monitor does not capture, store, or transmit network traffic. Ping status and config text only.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PRICING -->
+<section id="pricing" style="position:relative;z-index:1;">
+  <div class="section">
+    <div class="section-center reveal">
+      <div class="section-eyebrow">Pricing</div>
+      <h2 class="section-title">Simple. No surprises.</h2>
+      <p class="section-sub">All plans include the full dashboard, all features, and email support. Cancel anytime.</p>
+    </div>
+    <div class="pricing-grid reveal">
+      <div class="price-card"><div class="plan-name">Starter</div><div class="plan-price"><sup>$</sup>99</div><div class="plan-period">per month</div><div class="plan-annual">$1,188 billed annually</div><div class="plan-devices">Up to 50 devices</div><ul class="plan-features"><li>Live device status</li><li>Config change detection</li><li>30-day config history</li><li>In-app alerts</li><li>1 agent / site</li></ul></div>
+      <div class="price-card featured"><div class="plan-name">Plus</div><div class="plan-price"><sup>$</sup>199</div><div class="plan-period">per month</div><div class="plan-annual">$2,388 billed annually</div><div class="plan-devices">Up to 200 devices</div><ul class="plan-features"><li>Everything in Starter</li><li>Multi-site support</li><li>Email alerts</li><li>Config diff viewer</li><li>Priority support</li></ul></div>
+      <div class="price-card"><div class="plan-name">Pro</div><div class="plan-price"><sup>$</sup>399</div><div class="plan-period">per month</div><div class="plan-annual">$4,788 billed annually</div><div class="plan-devices">Up to 500 devices</div><ul class="plan-features"><li>Everything in Plus</li><li>Slack webhooks</li><li>Unlimited agents</li><li>API access</li><li>Phone support</li></ul></div>
+      <div class="price-card"><div class="plan-name">District</div><div class="plan-price"><sup>$</sup>799</div><div class="plan-period">per month</div><div class="plan-annual">$9,588 billed annually</div><div class="plan-devices">Unlimited devices</div><ul class="plan-features"><li>Everything in Pro</li><li>Unlimited sites</li><li>Custom onboarding</li><li>SLA guarantee</li><li>Dedicated support</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-box reveal">
+    <h2 class="cta-title">Stop flying blind<br>on your network.</h2>
+    <p class="cta-sub">Sign up and have your first site monitored in under 10 minutes.</p>
+    <div class="cta-actions">
+      <a href="./login.html" class="btn-primary">Get started free</a>
+      <a href="#how-it-works" class="btn-secondary">See how it works</a>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- FAQ -->
+<section>
+  <div class="section">
+    <div class="section-center reveal"><div class="section-eyebrow">FAQ</div><h2 class="section-title">Common questions</h2></div>
+    <div style="max-width:720px;margin:2rem auto 0;display:flex;flex-direction:column;gap:12px;">
+      <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>What hardware does the agent run on?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Any Linux machine — Raspberry Pi, VM, or desktop. A Pi Zero 2W (~$50) handles up to 25 devices. A Pi 4 (~$150) handles up to 150. A Pi 5 or VM can handle 500+. Windows support is available via a .exe installer. Don't want to set it up yourself? We'll ship you a pre-configured Pi for a one-time $199 setup charge.</div></details>
+      <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>Which vendors are supported?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Network Monitor supports <strong style="color:var(--text);">Cisco IOS-XE</strong>, <strong style="color:var(--text);">Aruba CX (AOS-CX)</strong>, and <strong style="color:var(--text);">Juniper JunOS</strong>. ICMP ping works on any reachable device — config pulls via SSH require one of these three vendors at launch.</div></details>
+      <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>Are my SSH credentials safe?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Yes. SSH credentials are encrypted locally on your Pi or VM using your unique API key and are never transmitted to our servers. Only config text and alert data ever leave your network. Your credentials stay in your building.</div></details>
+      <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>How long are configs stored?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Configs, diffs, and alerts are retained for 30 days and then automatically purged. We don't store your network data indefinitely. Ping status is live only — not stored at all.</div></details>
+      <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>Can I monitor multiple sites?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Yes. Multi-site support is built in from day one. Each site gets its own agent. All sites appear in a single dashboard. Plus, Pro, and District plans support multiple agents and sites.</div></details>
+      <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>Can I cancel my subscription?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Yes. Cancel any time before your annual renewal date and you won't be charged again. Your access continues until the end of your paid period.</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">Network Monitor &copy; 2026 <span class="footer-easter">00:SP:AN:GA:TE:00</span></div>
+  <ul class="footer-links">
+    <li><a href="../">SpanGate</a></li>
+    <li><a href="../configwizard/">Config Wizard</a></li>
+    <li><a href="../assettracker/">Asset Tracker</a></li>
+    <li><a href="./login.html">Sign in</a></li>
+  </ul>
+</footer>
+
+<script>
+function _updateLandingIcon(theme) {
+  const icon=document.getElementById('landingThemeIcon');
+  const label=document.getElementById('landingThemeLabel');
+  const btn=document.getElementById('landingThemeBtn');
+  const isDark=theme==='dark';
+  if(icon) icon.innerHTML=isDark?'<svg width="32" height="14" viewBox="0 0 32 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><rect x="1" y="5.5" width="20" height="3" rx="1.5" fill="#ff2222"/><rect x="1" y="6" width="20" height="2" rx="1" fill="white" opacity="0.5"/><ellipse cx="1.5" cy="7" rx="1.5" ry="1.5" fill="#ff2222"/><rect x="0" y="4" width="22" height="6" rx="3" fill="#ff0000" opacity="0.2"/><rect x="20" y="2" width="2" height="10" rx="1" fill="#aaaaaa"/><rect x="21" y="3" width="1" height="8" rx="0.5" fill="#cccccc"/><rect x="22" y="4.5" width="9" height="5" rx="1.5" fill="#666666"/><rect x="23" y="5" width="7" height="4" rx="1" fill="#888888"/><line x1="25" y1="5" x2="25" y2="9" stroke="#555" stroke-width="0.5"/><line x1="27" y1="5" x2="27" y2="9" stroke="#555" stroke-width="0.5"/><line x1="29" y1="5" x2="29" y2="9" stroke="#555" stroke-width="0.5"/><rect x="30.5" y="5" width="1.5" height="4" rx="0.75" fill="#999"/></svg>':'<svg width="32" height="14" viewBox="0 0 32 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><rect x="1" y="5.5" width="20" height="3" rx="1.5" fill="#00cc33"/><rect x="1" y="6" width="20" height="2" rx="1" fill="white" opacity="0.5"/><ellipse cx="1.5" cy="7" rx="1.5" ry="1.5" fill="#00cc33"/><rect x="0" y="4" width="22" height="6" rx="3" fill="#00ff44" opacity="0.2"/><rect x="20" y="2" width="2" height="10" rx="1" fill="#aaaaaa"/><rect x="21" y="3" width="1" height="8" rx="0.5" fill="#cccccc"/><rect x="22" y="4.5" width="9" height="5" rx="1.5" fill="#666666"/><rect x="23" y="5" width="7" height="4" rx="1" fill="#888888"/><line x1="25" y1="5" x2="25" y2="9" stroke="#555" stroke-width="0.5"/><line x1="27" y1="5" x2="27" y2="9" stroke="#555" stroke-width="0.5"/><line x1="29" y1="5" x2="29" y2="9" stroke="#555" stroke-width="0.5"/><rect x="30.5" y="5" width="1.5" height="4" rx="0.75" fill="#999"/></svg>';
+  if(label) label.textContent=isDark?'Dark Side':'Light Side';
+  if(btn) btn.setAttribute('data-theme-btn',isDark?'dark':'light');
+}
+(function(){
+  const saved=localStorage.getItem('cw-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',saved);
+  document.addEventListener('DOMContentLoaded',function(){_updateLandingIcon(saved);});
+})();
+
+const obs=new IntersectionObserver((entries)=>{
+  entries.forEach((e,i)=>{
+    if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*60);obs.unobserve(e.target);}
+  });
+},{threshold:0.08});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+(function(){
+  const canvas=document.getElementById('ribbonCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  let W,H;
+  function resize(){const el=canvas.parentElement;W=canvas.width=el.offsetWidth;H=canvas.height=el.offsetHeight;}
+  resize();
+  window.addEventListener('resize',resize);
+  const nodes=Array.from({length:40},()=>({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*.0003,vy:(Math.random()-.5)*.0003}));
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>1)n.vx*=-1;if(n.y<0||n.y>1)n.vy*=-1;});
+    nodes.forEach((a,i)=>nodes.slice(i+1).forEach(b=>{
+      const dx=(a.x-b.x)*W,dy=(a.y-b.y)*H,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<120){ctx.beginPath();ctx.moveTo(a.x*W,a.y*H);ctx.lineTo(b.x*W,b.y*H);ctx.strokeStyle='rgba(0,212,184,'+(0.12*(1-dist/120))+')';ctx.lineWidth=0.8;ctx.stroke();}
+    }));
+    nodes.forEach(n=>{ctx.beginPath();ctx.arc(n.x*W,n.y*H,1.5,0,Math.PI*2);ctx.fillStyle='rgba(0,212,184,0.4)';ctx.fill();});
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
 </body>
 </html>
