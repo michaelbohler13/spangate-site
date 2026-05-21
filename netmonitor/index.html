@@ -33,6 +33,8 @@
   .nav-links a:hover { color:var(--text); }
   .nav-spacer { flex:1; }
   .nav-right { display:flex; align-items:center; gap:12px; }
+  .nav-my-monitor { font-size:0.78rem; font-weight:600; color:#30d158; text-decoration:none; letter-spacing:-0.01em; transition:color 0.15s; font-family:var(--mono); }
+  .nav-my-monitor:hover { color:#4ae86a; }
   .nav-signin { font-size:0.78rem; color:var(--text-muted); text-decoration:none; letter-spacing:-0.01em; transition:color 0.15s; }
   .nav-signin:hover { color:var(--text); }
   .nav-cta { font-size:0.78rem; font-weight:500; color:var(--text); background:rgba(0,212,184,0.12); border:0.5px solid rgba(0,212,184,0.3); border-radius:980px; padding:5px 14px; text-decoration:none; letter-spacing:-0.01em; transition:all 0.15s; }
@@ -275,9 +277,7 @@
     </ul>
     <div class="nav-spacer"></div>
     <div class="nav-right">
-      <button id="landingThemeBtn" onclick="(function(){var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('cw-theme',t);_updateLandingIcon(t);})()" style="display:flex;align-items:center;gap:7px;padding:5px 12px;background:transparent;border:0.5px solid rgba(255,255,255,0.15);border-radius:980px;cursor:pointer;font-size:0.72rem;color:rgba(255,255,255,0.6);font-family:monospace;">
-        <span id="landingThemeIcon"></span><span id="landingThemeLabel"></span>
-      </button>
+      <a href="./dashboard.html" class="nav-my-monitor">● My Network Monitor</a>
       <a href="./login.html" class="nav-signin">Sign in</a>
       <a href="./login.html" class="nav-cta">Get started</a>
     </div>
@@ -296,47 +296,100 @@
         <span>&#10003; 3 Vendors</span><span>&#10003; Config Change Alerts</span><span>&#10003; One-Command Install</span>
       </div>
     </div>
-    <div style="background:rgba(13,17,23,0.6);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2.5rem;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-      <div style="text-align:center;margin-bottom:2rem;"><h2 style="font-size:1.5rem;font-weight:600;color:#fff;margin-bottom:0.5rem;">Your Network at a Glance</h2><p style="font-size:0.95rem;color:#6e6e73;">Live device status, config history, and alerts — one dashboard</p></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
-        <div style="background:linear-gradient(135deg,rgba(0,212,184,0.12),rgba(0,212,184,0.04));border:1.5px solid rgba(0,212,184,0.25);border-radius:14px;padding:1.5rem;"><div style="font-size:2rem;margin-bottom:0.6rem;">📡</div><div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;">Live Status</div><div style="font-size:0.82rem;color:#8b949e;line-height:1.5;">ICMP ping every 60 seconds. See exactly what's online, offline, or degraded.</div></div>
-        <div style="background:linear-gradient(135deg,rgba(88,166,255,0.12),rgba(88,166,255,0.04));border:1.5px solid rgba(88,166,255,0.25);border-radius:14px;padding:1.5rem;"><div style="font-size:2rem;margin-bottom:0.6rem;">🔍</div><div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;">Config Changes</div><div style="font-size:0.82rem;color:#8b949e;line-height:1.5;">Weekly SSH config pulls with hash comparison. Catch unauthorized changes instantly.</div></div>
-        <div style="background:linear-gradient(135deg,rgba(255,107,43,0.12),rgba(255,107,43,0.04));border:1.5px solid rgba(255,107,43,0.25);border-radius:14px;padding:1.5rem;"><div style="font-size:2rem;margin-bottom:0.6rem;">🔔</div><div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;">Smart Alerts</div><div style="font-size:0.82rem;color:#8b949e;line-height:1.5;">Alerts when devices go offline, configs change, or the agent stops reporting.</div></div>
-        <div style="background:linear-gradient(135deg,rgba(48,209,88,0.12),rgba(48,209,88,0.04));border:1.5px solid rgba(48,209,88,0.25);border-radius:14px;padding:1.5rem;"><div style="font-size:2rem;margin-bottom:0.6rem;">🏢</div><div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;">Multi-Site</div><div style="font-size:0.82rem;color:#8b949e;line-height:1.5;">One account, multiple locations. Each site gets its own agent — all in one dashboard.</div></div>
+    <div style="background:rgba(10,10,10,0.85);backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 60px rgba(0,212,184,0.04);">
+      <!-- Terminal bar -->
+      <div style="background:#111;border-bottom:0.5px solid rgba(255,255,255,0.06);padding:10px 16px;display:flex;align-items:center;gap:8px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#ff5f57;"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e;"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#28c840;"></div>
+        <span style="flex:1;text-align:center;font-family:var(--mono);font-size:0.65rem;color:#444;">spangate.com/netmonitor — Main Campus — live</span>
+        <span style="font-family:var(--mono);font-size:0.6rem;color:#30d158;background:rgba(48,209,88,0.1);padding:2px 8px;border-radius:4px;border:0.5px solid rgba(48,209,88,0.2);">● Agent reporting</span>
+      </div>
+      <!-- Summary row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:0.5px solid rgba(255,255,255,0.06);">
+        <div style="padding:1.2rem 1.5rem;border-right:0.5px solid rgba(255,255,255,0.06);">
+          <div style="font-family:var(--mono);font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:4px;">Devices online</div>
+          <div style="font-family:var(--mono);font-size:2rem;font-weight:600;color:#28c840;line-height:1;">47<span style="font-size:1rem;color:#333;">/50</span></div>
+        </div>
+        <div style="padding:1.2rem 1.5rem;border-right:0.5px solid rgba(255,255,255,0.06);">
+          <div style="font-family:var(--mono);font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:4px;">Config changes (7d)</div>
+          <div style="font-family:var(--mono);font-size:2rem;font-weight:600;color:#00d4b8;line-height:1;">2</div>
+        </div>
+        <div style="padding:1.2rem 1.5rem;border-right:0.5px solid rgba(255,255,255,0.06);">
+          <div style="font-family:var(--mono);font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:4px;">Active alerts</div>
+          <div style="font-family:var(--mono);font-size:2rem;font-weight:600;color:#ff5f57;line-height:1;">3</div>
+        </div>
+        <div style="padding:1.2rem 1.5rem;">
+          <div style="font-family:var(--mono);font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:4px;">Last ping</div>
+          <div style="font-family:var(--mono);font-size:2rem;font-weight:600;color:#f5f5f7;line-height:1;">8<span style="font-size:0.9rem;color:#444;">s ago</span></div>
+        </div>
+      </div>
+      <!-- Device list -->
+      <div style="padding:0;">
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:8px 16px;font-family:var(--mono);font-size:0.58rem;text-transform:uppercase;letter-spacing:0.07em;color:#333;border-bottom:0.5px solid rgba(255,255,255,0.04);">
+          <span>Hostname</span><span>Vendor</span><span>Status</span><span>24hr uptime</span><span>Config</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:10px 16px;font-family:var(--mono);font-size:0.7rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);">
+          <div><span style="color:#f5f5f7;font-weight:600;">core-sw-01</span><span style="color:#333;font-size:0.58rem;margin-left:8px;">10.1.1.1</span></div>
+          <span style="color:#555;">Cisco IOS-XE</span>
+          <span style="color:#28c840;">● online</span>
+          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:100%;height:100%;background:linear-gradient(90deg,#2a8a78,#00d4b8);"></div></div><span style="color:#333;font-size:0.58rem;">100%</span></div>
+          <span style="color:#28c840;font-size:0.62rem;">✓ clean</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:10px 16px;font-family:var(--mono);font-size:0.7rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);background:rgba(210,153,34,0.03);">
+          <div><span style="color:#f5f5f7;font-weight:600;">dist-sw-02</span><span style="color:#333;font-size:0.58rem;margin-left:8px;">10.1.1.2</span></div>
+          <span style="color:#555;">Aruba CX</span>
+          <span style="color:#28c840;">● online</span>
+          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:98%;height:100%;background:linear-gradient(90deg,#2a8a78,#00d4b8);"></div></div><span style="color:#333;font-size:0.58rem;">98%</span></div>
+          <span style="color:#d29922;font-size:0.62rem;">⚡ changed</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:10px 16px;font-family:var(--mono);font-size:0.7rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);background:rgba(255,95,87,0.03);">
+          <div><span style="color:#f5f5f7;font-weight:600;">access-sw-14</span><span style="color:#333;font-size:0.58rem;margin-left:8px;">10.1.2.14</span></div>
+          <span style="color:#555;">Aruba CX</span>
+          <span style="color:#ff5f57;">● offline</span>
+          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:72%;height:100%;background:#ff5f57;"></div></div><span style="color:#333;font-size:0.58rem;">72%</span></div>
+          <span style="color:#28c840;font-size:0.62rem;">✓ clean</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:10px 16px;font-family:var(--mono);font-size:0.7rem;align-items:center;">
+          <div><span style="color:#f5f5f7;font-weight:600;">fw-edge-01</span><span style="color:#333;font-size:0.58rem;margin-left:8px;">10.0.0.1</span></div>
+          <span style="color:#555;">Juniper JunOS</span>
+          <span style="color:#28c840;">● online</span>
+          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:100%;height:100%;background:linear-gradient(90deg,#2a8a78,#00d4b8);"></div></div><span style="color:#333;font-size:0.58rem;">100%</span></div>
+          <span style="color:#28c840;font-size:0.62rem;">✓ clean</span>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- DASHBOARD WINDOW MOCKUP -->
-<div class="window-wrap">
-  <div class="window">
-    <div class="window-bar">
-      <div class="wb wb-r"></div><div class="wb wb-y"></div><div class="wb wb-g"></div>
-      <div class="window-bar-title">Network Monitor — Dashboard — Main Campus</div>
+<!-- FEATURE STRIP -->
+<div style="position:relative;z-index:1;border-top:0.5px solid rgba(255,255,255,0.06);border-bottom:0.5px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.3);">
+  <div style="max-width:980px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);">
+
+    <div style="padding:2rem 1.75rem;border-right:0.5px solid rgba(255,255,255,0.06);">
+      <div style="font-family:var(--mono);font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#00d4b8;margin-bottom:0.6rem;">Live Status</div>
+      <div style="font-size:0.95rem;font-weight:600;color:#f5f5f7;margin-bottom:0.4rem;letter-spacing:-0.02em;">Know in 60 seconds.</div>
+      <div style="font-size:0.8rem;color:#6e6e73;line-height:1.6;">ICMP ping every 60 seconds. Every device. Online, offline, or degraded — always current.</div>
     </div>
-    <div class="dash-layout">
-      <div class="dash-sidebar">
-        <div class="dash-sidebar-logo">Network Monitor</div>
-        <div class="dash-nav-item active">📡 Dashboard</div>
-        <div class="dash-nav-item">🔔 Alerts <span style="margin-left:auto;background:rgba(255,95,87,0.2);color:#ff5f57;font-size:0.55rem;padding:1px 5px;border-radius:10px;font-weight:700;">3</span></div>
-        <div class="dash-nav-item">📋 Config History</div>
-        <div class="dash-nav-item">⚙️ Settings</div>
-      </div>
-      <div class="dash-main">
-        <div class="dash-cards">
-          <div class="dash-card"><div class="dash-card-label">Online</div><div class="dash-card-val green">47<span style="font-size:0.9rem;color:var(--text-dim);">/50</span></div><div class="dash-card-sub">3 offline</div></div>
-          <div class="dash-card"><div class="dash-card-label">Config Changes (7d)</div><div class="dash-card-val teal">2</div><div class="dash-card-sub">Last: 2h ago</div></div>
-          <div class="dash-card"><div class="dash-card-label">Active Alerts</div><div class="dash-card-val red">3</div><div class="dash-card-sub">1 critical</div></div>
-          <div class="dash-card"><div class="dash-card-label">Agent</div><div class="dash-card-val green" style="font-size:0.9rem;margin-top:4px;">● Reporting</div><div class="dash-card-sub">8s ago</div></div>
-        </div>
-        <div class="dash-table-head"><span>Hostname / IP</span><span>Vendor</span><span>Status</span><span>24hr Uptime</span><span>Config</span></div>
-        <div class="dash-table-row"><div><div style="color:var(--text);font-weight:600;">core-sw-01</div><div style="color:var(--text-dim);font-size:0.55rem;">10.1.1.1</div></div><div style="color:var(--text-dim);">Cisco IOS-XE</div><div><span class="status-dot online"></span><span style="color:#28c840;">Online</span></div><div class="uptime-bar-wrap"><div class="uptime-bar"><div class="uptime-fill" style="width:100%"></div></div><span class="uptime-pct">100%</span></div><div><span class="badge-ok">&#10003; Clean</span></div></div>
-        <div class="dash-table-row"><div><div style="color:var(--text);font-weight:600;">dist-sw-02</div><div style="color:var(--text-dim);font-size:0.55rem;">10.1.1.2</div></div><div style="color:var(--text-dim);">Aruba CX</div><div><span class="status-dot online"></span><span style="color:#28c840;">Online</span></div><div class="uptime-bar-wrap"><div class="uptime-bar"><div class="uptime-fill" style="width:98%"></div></div><span class="uptime-pct">98.2%</span></div><div><span class="badge-change">&#9889; Changed</span></div></div>
-        <div class="dash-table-row"><div><div style="color:var(--text);font-weight:600;">access-sw-14</div><div style="color:var(--text-dim);font-size:0.55rem;">10.1.2.14</div></div><div style="color:var(--text-dim);">Aruba CX</div><div><span class="status-dot offline"></span><span style="color:#ff5f57;">Offline</span></div><div class="uptime-bar-wrap"><div class="uptime-bar"><div class="uptime-fill" style="width:72%;background:#ff5f57;"></div></div><span class="uptime-pct">72.4%</span></div><div><span class="badge-ok">&#10003; Clean</span></div></div>
-        <div class="dash-table-row"><div><div style="color:var(--text);font-weight:600;">fw-edge-01</div><div style="color:var(--text-dim);font-size:0.55rem;">10.0.0.1</div></div><div style="color:var(--text-dim);">Juniper JunOS</div><div><span class="status-dot online"></span><span style="color:#28c840;">Online</span></div><div class="uptime-bar-wrap"><div class="uptime-bar"><div class="uptime-fill" style="width:100%"></div></div><span class="uptime-pct">100%</span></div><div><span class="badge-ok">&#10003; Clean</span></div></div>
-      </div>
+
+    <div style="padding:2rem 1.75rem;border-right:0.5px solid rgba(255,255,255,0.06);">
+      <div style="font-family:var(--mono);font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#00d4b8;margin-bottom:0.6rem;">Config Changes</div>
+      <div style="font-size:0.95rem;font-weight:600;color:#f5f5f7;margin-bottom:0.4rem;letter-spacing:-0.02em;">Catch it before it hurts.</div>
+      <div style="font-size:0.8rem;color:#6e6e73;line-height:1.6;">Weekly SSH config pulls. Hash comparison flags any unexpected change and alerts you immediately.</div>
     </div>
+
+    <div style="padding:2rem 1.75rem;border-right:0.5px solid rgba(255,255,255,0.06);">
+      <div style="font-family:var(--mono);font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#00d4b8;margin-bottom:0.6rem;">Smart Alerts</div>
+      <div style="font-size:0.95rem;font-weight:600;color:#f5f5f7;margin-bottom:0.4rem;letter-spacing:-0.02em;">Only what matters.</div>
+      <div style="font-size:0.8rem;color:#6e6e73;line-height:1.6;">Device down, config changed, agent offline. In-app alerts now — email and Slack webhooks coming soon.</div>
+    </div>
+
+    <div style="padding:2rem 1.75rem;">
+      <div style="font-family:var(--mono);font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#00d4b8;margin-bottom:0.6rem;">Multi-Site</div>
+      <div style="font-size:0.95rem;font-weight:600;color:#f5f5f7;margin-bottom:0.4rem;letter-spacing:-0.02em;">Every campus, one view.</div>
+      <div style="font-size:0.8rem;color:#6e6e73;line-height:1.6;">One account, multiple locations. Each site gets its own agent. All of them in a single dashboard.</div>
+    </div>
+
   </div>
 </div>
 
@@ -459,8 +512,8 @@
     <div class="hw-grid reveal">
       <div class="hw-card"><span class="hw-icon">🍓</span><div class="hw-name">Pi Zero 2W</div><div class="hw-devices">Up to 25 devices</div><div class="hw-price">$50</div><div class="hw-price-note">Amazon · self-setup</div></div>
       <div class="hw-card featured"><div class="hw-badge">Popular</div><span class="hw-icon">🍓</span><div class="hw-name">Pi 4 (4GB)</div><div class="hw-devices">Up to 150 devices</div><div class="hw-price">$150</div><div class="hw-price-note">Amazon · self-setup</div></div>
-      <div class="hw-card"><span class="hw-icon">🍓</span><div class="hw-name">Pi 5 (8GB)</div><div class="hw-devices">Up to 500 devices</div><div class="hw-price">$250</div><div class="hw-price-note">Amazon · self-setup</div></div>
-      <div class="hw-card"><span class="hw-icon">💻</span><div class="hw-name">VM / Desktop</div><div class="hw-devices">Up to 1000 devices</div><div class="hw-price" style="font-size:1rem;margin-top:6px;">Use what you have</div><div class="hw-price-note">Any Linux / Windows machine</div></div>
+      <div class="hw-card"><span class="hw-icon">🍓</span><div class="hw-name">Pi 5 (8GB)</div><div class="hw-devices">Up to 500 devices</div><div class="hw-price">$150</div><div class="hw-price-note">Amazon · self-setup</div></div>
+      <div class="hw-card"><span class="hw-icon">💻</span><div class="hw-name">VM / Desktop</div><div class="hw-devices">Unlimited devices</div><div class="hw-price" style="font-size:1rem;margin-top:6px;">Use what you have</div><div class="hw-price-note">Any Linux / Windows machine</div></div>
     </div>
     <div class="prebuilt-banner reveal">
       <div class="pb-icon">📦</div>
@@ -505,7 +558,7 @@
       <div class="price-card"><div class="plan-name">Starter</div><div class="plan-price"><sup>$</sup>99</div><div class="plan-period">per month</div><div class="plan-annual">$1,188 billed annually</div><div class="plan-devices">Up to 50 devices</div><ul class="plan-features"><li>Live device status</li><li>Config change detection</li><li>30-day config history</li><li>In-app alerts</li><li>1 agent / site</li></ul></div>
       <div class="price-card featured"><div class="plan-name">Plus</div><div class="plan-price"><sup>$</sup>199</div><div class="plan-period">per month</div><div class="plan-annual">$2,388 billed annually</div><div class="plan-devices">Up to 200 devices</div><ul class="plan-features"><li>Everything in Starter</li><li>Multi-site support</li><li>Email alerts</li><li>Config diff viewer</li><li>Priority support</li></ul></div>
       <div class="price-card"><div class="plan-name">Pro</div><div class="plan-price"><sup>$</sup>399</div><div class="plan-period">per month</div><div class="plan-annual">$4,788 billed annually</div><div class="plan-devices">Up to 500 devices</div><ul class="plan-features"><li>Everything in Plus</li><li>Slack webhooks</li><li>Unlimited agents</li><li>API access</li><li>Phone support</li></ul></div>
-      <div class="price-card"><div class="plan-name">Enterprise</div><div class="plan-price"><sup>$</sup>799</div><div class="plan-period">per month</div><div class="plan-annual">$9,588 billed annually</div><div class="plan-devices">Unlimited devices</div><ul class="plan-features"><li>Everything in Pro</li><li>Unlimited sites</li><li>Custom onboarding</li><li>SLA guarantee</li><li>Dedicated support</li></ul></div>
+      <div class="price-card"><div class="plan-name">District</div><div class="plan-price"><sup>$</sup>799</div><div class="plan-period">per month</div><div class="plan-annual">$9,588 billed annually</div><div class="plan-devices">Unlimited devices</div><ul class="plan-features"><li>Everything in Pro</li><li>Unlimited sites</li><li>Custom onboarding</li><li>SLA guarantee</li><li>Dedicated support</li></ul></div>
     </div>
   </div>
 </section>
@@ -553,21 +606,6 @@
 </footer>
 
 <script>
-function _updateLandingIcon(theme) {
-  const icon=document.getElementById('landingThemeIcon');
-  const label=document.getElementById('landingThemeLabel');
-  const btn=document.getElementById('landingThemeBtn');
-  const isDark=theme==='dark';
-  if(icon) icon.innerHTML=isDark?'<svg width="32" height="14" viewBox="0 0 32 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><rect x="1" y="5.5" width="20" height="3" rx="1.5" fill="#ff2222"/><rect x="1" y="6" width="20" height="2" rx="1" fill="white" opacity="0.5"/><ellipse cx="1.5" cy="7" rx="1.5" ry="1.5" fill="#ff2222"/><rect x="0" y="4" width="22" height="6" rx="3" fill="#ff0000" opacity="0.2"/><rect x="20" y="2" width="2" height="10" rx="1" fill="#aaaaaa"/><rect x="21" y="3" width="1" height="8" rx="0.5" fill="#cccccc"/><rect x="22" y="4.5" width="9" height="5" rx="1.5" fill="#666666"/><rect x="23" y="5" width="7" height="4" rx="1" fill="#888888"/><line x1="25" y1="5" x2="25" y2="9" stroke="#555" stroke-width="0.5"/><line x1="27" y1="5" x2="27" y2="9" stroke="#555" stroke-width="0.5"/><line x1="29" y1="5" x2="29" y2="9" stroke="#555" stroke-width="0.5"/><rect x="30.5" y="5" width="1.5" height="4" rx="0.75" fill="#999"/></svg>':'<svg width="32" height="14" viewBox="0 0 32 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><rect x="1" y="5.5" width="20" height="3" rx="1.5" fill="#00cc33"/><rect x="1" y="6" width="20" height="2" rx="1" fill="white" opacity="0.5"/><ellipse cx="1.5" cy="7" rx="1.5" ry="1.5" fill="#00cc33"/><rect x="0" y="4" width="22" height="6" rx="3" fill="#00ff44" opacity="0.2"/><rect x="20" y="2" width="2" height="10" rx="1" fill="#aaaaaa"/><rect x="21" y="3" width="1" height="8" rx="0.5" fill="#cccccc"/><rect x="22" y="4.5" width="9" height="5" rx="1.5" fill="#666666"/><rect x="23" y="5" width="7" height="4" rx="1" fill="#888888"/><line x1="25" y1="5" x2="25" y2="9" stroke="#555" stroke-width="0.5"/><line x1="27" y1="5" x2="27" y2="9" stroke="#555" stroke-width="0.5"/><line x1="29" y1="5" x2="29" y2="9" stroke="#555" stroke-width="0.5"/><rect x="30.5" y="5" width="1.5" height="4" rx="0.75" fill="#999"/></svg>';
-  if(label) label.textContent=isDark?'Dark Side':'Light Side';
-  if(btn) btn.setAttribute('data-theme-btn',isDark?'dark':'light');
-}
-(function(){
-  const saved=localStorage.getItem('cw-theme')||'dark';
-  document.documentElement.setAttribute('data-theme',saved);
-  document.addEventListener('DOMContentLoaded',function(){_updateLandingIcon(saved);});
-})();
-
 const obs=new IntersectionObserver((entries)=>{
   entries.forEach((e,i)=>{
     if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*60);obs.unobserve(e.target);}
