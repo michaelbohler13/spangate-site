@@ -29,14 +29,14 @@
     --sans: 'IBM Plex Sans', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body{background:#0d1117; color: var(--text); font-family: 'Plus Jakarta Sans',sans-serif; min-height: 100vh; }
+  body{background:#0d1117; color: var(--text); font-family: 'Plus Jakarta Sans',sans-serif; min-height: 100vh; padding-top: 84px; }
 
   /* ── Shared Nav ── */
   .site-nav {
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 200;
-    height: 44px;
+    height: 84px;
     display: flex;
     align-items: center;
     padding: 0 1.5rem;
@@ -469,77 +469,37 @@
 
 <!-- Shared Supabase auth -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-function toggleDashTheme() {
-  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const next = isDark ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  const icon = document.getElementById('dashThemeIcon');
-  const label = document.getElementById('dashThemeLabel');
-  if (label) label.textContent = isDark ? 'Light Side' : 'Dark Side';
-}
-</script>
-  </a>
-  <ul class="site-nav-links">
-    <li><a href="index.html">Home</a></li>
-    <li><a href="wizard.html">Config Wizard</a></li>
-    <li><a href="dashboard.html" class="active">My Configs</a></li>
-    <li><a href="topology.html">Network Map</a></li>
-    <li><a href="instant-on-wizard.html">Aruba Instant On</a></li>
-    <li><a href="netdoctor.html">NetDoctor</a></li>
-  </ul>
-  <div class="site-nav-spacer"></div>
-  <div class="site-nav-right">
-    <div class="avatar-sm" id="userAvatar">?</div>
-    <span id="userEmail" style="font-size:0.72rem;color:var(--text-muted);font-family:var(--mono);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-    <div class="site-nav-divider"></div>
-    <button class="site-nav-btn ghost" onclick="handleSignOut()">Sign out</button>
-  </div>
-  <button onclick="toggleDashTheme()" id="dashThemeBtn" style="background:none;border:0.5px solid rgba(255,255,255,0.15);border-radius:980px;padding:4px 10px;display:flex;align-items:center;gap:5px;cursor:pointer;font-family:monospace;font-size:0.7rem;color:rgba(255,255,255,0.6);">
-    <span id="dashThemeIcon"><svg width="32" height="14" viewBox="0 0 32 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;">
-  <rect x="1" y="5.5" width="20" height="3" rx="1.5" fill="#ff2222"/>
-  <rect x="1" y="6" width="20" height="2" rx="1" fill="white" opacity="0.5"/>
-  <ellipse cx="1.5" cy="7" rx="1.5" ry="1.5" fill="#ff2222"/>
-  <rect x="0" y="4" width="22" height="6" rx="3" fill="#ff0000" opacity="0.2"/>
-  <rect x="20" y="2" width="2" height="10" rx="1" fill="#aaaaaa"/>
-  <rect x="21" y="3" width="1" height="8" rx="0.5" fill="#cccccc"/>
-  <rect x="22" y="4.5" width="9" height="5" rx="1.5" fill="#666666"/>
-  <rect x="23" y="5" width="7" height="4" rx="1" fill="#888888"/>
-  <line x1="25" y1="5" x2="25" y2="9" stroke="#555" stroke-width="0.5"/>
-  <line x1="27" y1="5" x2="27" y2="9" stroke="#555" stroke-width="0.5"/>
-  <line x1="29" y1="5" x2="29" y2="9" stroke="#555" stroke-width="0.5"/>
-  <rect x="30.5" y="5" width="1.5" height="4" rx="0.75" fill="#999"/>
-</svg></span>
-    <span id="dashThemeLabel">Dark Side</span>
-  </button>
-</nav>
+<script src="../spangate-auth.js"></script>
 
-<nav style="display:none;" id="oldNav">
-  <a href="index.html" class="nav-brand" style="text-decoration:none; display:none;"><span>▸</span> ConfigWizard</a>
-  <div class="nav-spacer" style="display:none;"></div>
-  <div class="nav-user" style="display:none;">
-    <div class="avatar" id="userAvatarOld">?</div>
-    <span id="userEmailOld"></span>
+<!-- Two-tier nav -->
+<nav style="position:fixed;top:0;left:0;right:0;z-index:200;border-bottom:0.5px solid rgba(255,255,255,0.06);background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);">
+  <!-- Top tier: platform links -->
+  <div style="height:36px;display:flex;align-items:center;padding:0 24px;border-bottom:0.5px solid rgba(255,255,255,0.06);font-size:0.72rem;font-weight:500;letter-spacing:0.02em;gap:0;">
+    <a href="../" style="color:rgba(255,255,255,0.45);text-decoration:none;padding:0 10px;line-height:36px;transition:color .15s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">SpanGate</a>
+    <div style="width:1px;height:14px;background:rgba(255,255,255,0.15);margin:0 0.25rem;"></div>
+    <a href="../configwizard/" style="color:#58a6ff;background:rgba(88,166,255,0.08);text-decoration:none;padding:0 10px;line-height:36px;" >Config Wizard</a>
+    <div style="width:1px;height:14px;background:rgba(255,255,255,0.15);margin:0 0.25rem;"></div>
+    <a href="../netmonitor/" style="color:rgba(255,255,255,0.45);text-decoration:none;padding:0 10px;line-height:36px;transition:color .15s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">Network Monitor</a>
+    <div style="width:1px;height:14px;background:rgba(255,255,255,0.15);margin:0 0.25rem;"></div>
+    <a href="../assettracker/" style="color:rgba(255,255,255,0.45);text-decoration:none;padding:0 10px;line-height:36px;transition:color .15s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">Asset Tracker</a>
   </div>
-  <a href="wizard.html" class="btn-primary" style="text-decoration:none;display:none;">+ New Config</a>
-  <button class="btn-nav" style="display:none;" onclick="handleSignOut()">Sign out</button>
-  <button onclick="toggleDashTheme()" id="dashThemeBtn" style="background:none;border:0.5px solid rgba(255,255,255,0.15);border-radius:980px;padding:4px 10px;display:flex;align-items:center;gap:5px;cursor:pointer;font-family:monospace;font-size:0.7rem;color:rgba(255,255,255,0.6);">
-    <span id="dashThemeIcon"><svg width="32" height="14" viewBox="0 0 32 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;">
-  <rect x="1" y="5.5" width="20" height="3" rx="1.5" fill="#ff2222"/>
-  <rect x="1" y="6" width="20" height="2" rx="1" fill="white" opacity="0.5"/>
-  <ellipse cx="1.5" cy="7" rx="1.5" ry="1.5" fill="#ff2222"/>
-  <rect x="0" y="4" width="22" height="6" rx="3" fill="#ff0000" opacity="0.2"/>
-  <rect x="20" y="2" width="2" height="10" rx="1" fill="#aaaaaa"/>
-  <rect x="21" y="3" width="1" height="8" rx="0.5" fill="#cccccc"/>
-  <rect x="22" y="4.5" width="9" height="5" rx="1.5" fill="#666666"/>
-  <rect x="23" y="5" width="7" height="4" rx="1" fill="#888888"/>
-  <line x1="25" y1="5" x2="25" y2="9" stroke="#555" stroke-width="0.5"/>
-  <line x1="27" y1="5" x2="27" y2="9" stroke="#555" stroke-width="0.5"/>
-  <line x1="29" y1="5" x2="29" y2="9" stroke="#555" stroke-width="0.5"/>
-  <rect x="30.5" y="5" width="1.5" height="4" rx="0.75" fill="#999"/>
-</svg></span>
-    <span id="dashThemeLabel">Dark Side</span>
-  </button>
+  <!-- Bottom tier: product nav -->
+  <div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:0;">
+      <a href="./index.html" style="font-size:0.95rem;font-weight:700;color:#e6edf3;text-decoration:none;letter-spacing:-0.01em;margin-right:1.5rem;">Config<span style="color:#58a6ff;">Wizard</span></a>
+      <a href="./wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .15s,background .15s;" onmouseover="this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.background='transparent'">Config Wizard</a>
+      <a href="./topology.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .15s,background .15s;" onmouseover="this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.background='transparent'">Network Map</a>
+      <a href="./instant-on-wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .15s,background .15s;" onmouseover="this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.background='transparent'">Aruba Instant On</a>
+      <a href="./netdoctor.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .15s,background .15s;" onmouseover="this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.background='transparent'">NetDoctor</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="avatar-sm" id="userAvatar">?</div>
+      <span id="userEmail" style="font-size:0.72rem;color:var(--text-muted);font-family:var(--mono);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      <div class="site-nav-divider"></div>
+      <a href="./dashboard.html" style="font-size:0.72rem;font-family:var(--mono);padding:4px 12px;border-radius:980px;border:0.5px solid rgba(255,255,255,0.15);color:var(--text-muted);text-decoration:none;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color=''">My Configs</a>
+      <button class="site-nav-btn ghost" onclick="handleSignOut()">Sign out</button>
+    </div>
+  </div>
 </nav>
 
 <div class="page">
@@ -608,8 +568,6 @@ function toggleDashTheme() {
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../spangate-auth.js"></script>
 <script>
   const SUPABASE_URL  = 'https://tiviipaamwvfjvoscnyk.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
