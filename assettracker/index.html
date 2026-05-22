@@ -13,10 +13,10 @@
   /* ─── TOKENS ─── */
   :root {
     --bg:       #0d1117;
-    --surface:  #161b22;
-    --surface2: #1c2330;
+    --surface:  #0d0d0d;
+    --surface2: #1a1a1a;
     --border:   rgba(255,255,255,0.08);
-    --border2:  rgba(255,255,255,0.12);
+    --border2:  rgba(255,255,255,0.15);
     --text:     #e6edf3;
     --muted:    #8b949e;
     --faint:    #484f58;
@@ -108,7 +108,7 @@
   .nav-my-assets {
     font-family: var(--mono);
     font-size: 0.75rem; font-weight: 600;
-    color: var(--green);
+    color: var(--accent);
     display: flex; align-items: center; gap: 6px;
     padding: 5px 4px;
     transition: opacity 0.15s;
@@ -117,10 +117,9 @@
   .nav-my-assets::before {
     content: '';
     width: 7px; height: 7px;
-    background: var(--green);
+    background: var(--accent);
     border-radius: 50%;
-    box-shadow: 0 0 6px var(--green);
-    animation: pulse 2s infinite;
+    box-shadow: 0 0 6px var(--accent);
     flex-shrink: 0;
   }
 
@@ -830,6 +829,14 @@
     <a href="#features" class="btn-ghost">
       See features
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3V11M4 8L7 11L10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+
+  <div style="position:relative;z-index:1;margin-bottom:2rem;">
+    <a href="./demo.html" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:0.75rem;font-weight:600;color:var(--accent);border:1px solid rgba(196,154,74,0.25);background:rgba(196,154,74,0.06);padding:7px 16px;border-radius:8px;transition:background 0.15s,border-color 0.15s;" onmouseover="this.style.background='rgba(196,154,74,0.12)';this.style.borderColor='rgba(196,154,74,0.4)';" onmouseout="this.style.background='rgba(196,154,74,0.06)';this.style.borderColor='rgba(196,154,74,0.25)';">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5H9M4 4.5H9M4 8.5H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Mock Asset Tracker &mdash; Acme Corp
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2.5 5.5H8.5M6 3L8.5 5.5L6 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </a>
   </div>
 
