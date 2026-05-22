@@ -1113,6 +1113,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <!-- Shared auth -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../spangate-auth.js"></script>
 <script>
 (function(){
   const _url='https://tiviipaamwvfjvoscnyk.supabase.co',_anon='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
@@ -1124,9 +1125,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if(s&&s.user){
         const name=s.user.user_metadata?.full_name||s.user.email||'';
         const ini=(name.split(' ').map(w=>w[0]).join('').toUpperCase()||'?').slice(0,2);
-        el.innerHTML='<div style="display:flex;align-items:center;gap:8px;"><div style="width:26px;height:26px;border-radius:50%;background:#58a6ff;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;font-family:monospace;">'+ini+'</div><span style="font-size:0.72rem;color:#8b949e;font-family:monospace;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+name+'</span><a href="./dashboard.html" style="font-size:0.72rem;font-family:monospace;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.15);color:#8b949e;text-decoration:none;">My Configs</a><button style="font-size:0.72rem;font-family:monospace;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.15);background:none;color:#8b949e;cursor:pointer;" onclick="supabase.createClient(\'https://tiviipaamwvfjvoscnyk.supabase.co\',\'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs\').auth.signOut().then(()=>location.href=\'login.html\')">Sign out</button></div>';
+        el.innerHTML='<div style="display:flex;align-items:center;gap:8px;"><div style="width:26px;height:26px;border-radius:50%;background:#58a6ff;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;font-family:monospace;">'+ini+'</div><span style="font-size:0.72rem;color:#8b949e;font-family:monospace;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+name+'</span><a href="./dashboard.html" style="font-size:0.72rem;font-family:monospace;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.15);color:#8b949e;text-decoration:none;">My Configs</a><button style="font-size:0.72rem;font-family:monospace;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.15);background:none;color:#8b949e;cursor:pointer;" onclick="supabase.createClient(\'https://tiviipaamwvfjvoscnyk.supabase.co\',\'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs\').auth.signOut().then(()=>location.href=\'../login.html\')">Sign out</button></div>';
       }else{
-        el.innerHTML='<a href="./login.html" style="font-size:0.78rem;color:#a1a1a6;text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;" onmouseover="this.style.color=\'#f5f5f7\'" onmouseout="this.style.color=\'#a1a1a6\'">Sign in</a>';
+        el.innerHTML='<a href="../login.html?return=configwizard" style="font-size:0.78rem;color:#a1a1a6;text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;" onmouseover="this.style.color=\'#f5f5f7\'" onmouseout="this.style.color=\'#a1a1a6\'">Sign in</a>';
       }
     }
     _c.auth.getSession().then(r=>_r(r.data.session));
@@ -1164,8 +1165,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <a href="./instant-on-wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">Aruba Instant On</a>
       <a href="./netdoctor.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">NetDoctor</a>
       <div style="width:1px;height:18px;background:rgba(255,255,255,0.1);margin:0 4px;"></div>
-      <span id="landingNavRight"><a href="./login.html" class="nav-signin">Sign in</a></span>
-      <a href="./login.html" class="nav-cta">Get started</a>
+      <span id="landingNavRight"><a href="../login.html?return=configwizard" class="nav-signin">Sign in</a></span>
+      <a href="../login.html?return=configwizard" class="nav-cta">Get started</a>
     </div>
   </div>
 </nav>
@@ -1457,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:2rem;" class="">
 
       <!-- Network Map Preview -->
-      <div class="pro-preview-card" onclick="window.location.href='login.html'">
+      <div class="pro-preview-card" onclick="window.location.href='../login.html?return=configwizard'">
         <div class="pro-preview-animation" id="anim-netmap">
           <canvas id="netmapCanvas" style="width:100%;height:100%;"></canvas>
         </div>
@@ -1465,12 +1466,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="pro-lock-badge">🔒 Pro</div>
           <div class="pro-preview-title">Network Map</div>
           <div class="pro-preview-desc">Drag and drop Cisco-style devices onto a visual canvas. Connect them, inspect configs, generate all configs at once.</div>
-          <a href="./login.html" class="pro-upgrade-btn">Upgrade to Pro →</a>
+          <a href="../login.html?return=configwizard" class="pro-upgrade-btn">Upgrade to Pro →</a>
         </div>
       </div>
 
       <!-- NetDoctor Preview -->
-      <div class="pro-preview-card" onclick="window.location.href='login.html'">
+      <div class="pro-preview-card" onclick="window.location.href='../login.html?return=configwizard'">
         <div class="pro-preview-animation" id="anim-netdoctor">
           <div class="nd-anim-wrap">
             <div class="nd-vendor-row">
@@ -1488,12 +1489,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="pro-lock-badge">🔒 Pro</div>
           <div class="pro-preview-title">NetDoctor</div>
           <div class="pro-preview-desc">Run diagnostic commands, paste the output, build a perfect AI prompt. Diagnose any network issue in minutes.</div>
-          <a href="./login.html" class="pro-upgrade-btn">Upgrade to Pro →</a>
+          <a href="../login.html?return=configwizard" class="pro-upgrade-btn">Upgrade to Pro →</a>
         </div>
       </div>
 
       <!-- Aruba Instant On Preview -->
-      <div class="pro-preview-card" onclick="window.location.href='login.html'">
+      <div class="pro-preview-card" onclick="window.location.href='../login.html?return=configwizard'">
         <div class="pro-preview-animation">
           <div class="io-anim-wrap">
             <div class="io-step-label">Business type</div>
@@ -1520,12 +1521,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="pro-lock-badge">🔒 Pro</div>
           <div class="pro-preview-title">Aruba Instant On</div>
           <div class="pro-preview-desc">Plain English WiFi setup for any business. Pick your type, name your networks, download your config. No CLI needed.</div>
-          <a href="./login.html" class="pro-upgrade-btn">Upgrade to Pro →</a>
+          <a href="../login.html?return=configwizard" class="pro-upgrade-btn">Upgrade to Pro →</a>
         </div>
       </div>
 
       <!-- Full Config Wizard Preview -->
-      <div class="pro-preview-card" onclick="window.location.href='login.html'">
+      <div class="pro-preview-card" onclick="window.location.href='../login.html?return=configwizard'">
         <div class="pro-preview-animation">
           <div class="wiz-anim-wrap">
             <div class="wiz-step-row" id="wizStepRow"></div>
@@ -1542,7 +1543,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="pro-lock-badge">🔒 Pro</div>
           <div class="pro-preview-title">Full Config Wizard</div>
           <div class="pro-preview-desc">All 9 steps — 802.1X, ACL builder, L3 uplinks, OSPF, version history, AI security review. Full enterprise config.</div>
-          <a href="./login.html" class="pro-upgrade-btn">Upgrade to Pro →</a>
+          <a href="../login.html?return=configwizard" class="pro-upgrade-btn">Upgrade to Pro →</a>
         </div>
       </div>
 
@@ -1620,7 +1621,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <h2 class="cta-title">Stop writing configs<br>by hand.</h2>
     <p class="cta-sub"> and build your first config in under five minutes. </p>
     <div class="cta-actions">
-      <a href="./login.html" class="btn-primary">Create </a>
+      <a href="../login.html?return=configwizard" class="btn-primary">Create </a>
       <a href="./wizard.html" class="btn-secondary">Try free wizard</a>
     </div>
   </div>
@@ -1718,7 +1719,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ConfigWizard © 2026
   </div>
   <ul class="footer-links">
-    <li><a href="./configwizard/login.html">Sign in</a></li>
+    <li><a href="../login.html?return=configwizard">Sign in</a></li>
     <li><a href="./configwizard/wizard.html">Config Wizard</a></li>
     <li><a href="./configwizard/topology.html">Network Map</a></li>
     <li><a href="./configwizard/instant-on-wizard.html">Aruba Instant On</a></li>

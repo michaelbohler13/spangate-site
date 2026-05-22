@@ -607,6 +607,7 @@ function toggleDashTheme() {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../spangate-auth.js"></script>
 <script>
   const SUPABASE_URL  = 'https://tiviipaamwvfjvoscnyk.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
@@ -622,7 +623,7 @@ function toggleDashTheme() {
   // ── Auth guard ──────────────────────────────────────────────
   async function init() {
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return; }
+    if (!session) { window.location.href = '../login.html?return=configwizard'; return; }
     currentUser = session.user;
     renderUserInfo();
     await loadProfiles();
@@ -637,7 +638,7 @@ function toggleDashTheme() {
 
   async function handleSignOut() {
     await sb.auth.signOut();
-    window.location.href = 'index.html';
+    window.location.href = '../login.html';
   }
 
   // ── Data ────────────────────────────────────────────────────
