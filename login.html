@@ -415,11 +415,11 @@
   <div class="nav-top">
     <a href="../">SpanGate</a>
     <div class="sep"></div>
-    <a href="../configwizard/">Config Wizard</a>
+    <a href="./configwizard/">Config Wizard</a>
     <div class="sep"></div>
-    <a href="../netmonitor/">Network Monitor</a>
+    <a href="./netmonitor/">Network Monitor</a>
     <div class="sep"></div>
-    <a href="../assettracker/">Asset Tracker</a>
+    <a href="./assettracker/">Asset Tracker</a>
   </div>
   <div class="nav-bottom">
     <a class="nav-logo" href="../">SpanGate <span style="color:var(--muted);font-weight:400;">Technology</span></a>
@@ -641,7 +641,7 @@ const PRODUCTS = {
     id:    'configwizard',
     name:  'Config Wizard',
     desc:  'Pro plan · $9.99/mo',
-    url:   '../configwizard/dashboard.html',
+    url:   './configwizard/dashboard.html',
     accent:'cw',
     dot:   'cw'
   },
@@ -649,7 +649,7 @@ const PRODUCTS = {
     id:    'netmonitor',
     name:  'Network Monitor',
     desc:  '', // filled from plan
-    url:   '../netmonitor/',
+    url:   './netmonitor/',
     accent:'nm',
     dot:   'nm'
   },
@@ -657,7 +657,7 @@ const PRODUCTS = {
     id:    'assettracker',
     name:  'Asset Tracker',
     desc:  '', // filled from plan
-    url:   '../assettracker/',
+    url:   './assettracker/',
     accent:'at',
     dot:   'at'
   }
@@ -975,7 +975,7 @@ window.spangate_hasAccess = async function(productId) {
 };
 
 window.spangate_redirectToLogin = function(productId) {
-  window.location.href = `../login.html?return=${productId}`;
+  window.location.href = `./login.html?return=${productId}`;
 };
 </script>
 </body>
