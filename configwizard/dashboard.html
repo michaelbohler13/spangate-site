@@ -37,15 +37,47 @@
     top: 0; left: 0; right: 0;
     z-index: 200;
     height: 84px;
+    background: rgba(13,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid rgba(255,255,255,0.06);
+  }
+  .nav-top {
+    height: 36px;
     display: flex;
     align-items: center;
-    padding: 0 1.5rem;
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    background: rgba(13,17,23,0.82);
+    padding: 0 2rem;
+    gap: 1.5rem;
     border-bottom: 0.5px solid rgba(255,255,255,0.06);
-    gap: 1rem;
   }
+  .nav-top a {
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: #8b949e;
+    text-decoration: none;
+    padding: 4px 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .nav-top a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  .nav-top a.active { color: #58a6ff; background: rgba(88,166,255,0.08); }
+  .nav-bottom {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+  }
+  .nav-logo {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+  }
+  .nav-spacer { flex: 1; }
+  .nav-right { display: flex; align-items: center; gap: 4px; }
   .site-nav-logo {
     font-family: var(--mono); font-size:0.88rem; font-weight:600;
     color:var(--text); text-decoration:none;
@@ -471,21 +503,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../spangate-auth.js"></script>
 
-<nav style="position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);border-bottom:0.5px solid rgba(255,255,255,0.06);">
-
-  <!-- Top tier -->
-  <div style="height:36px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;border-bottom:0.5px solid rgba(255,255,255,0.06);">
-    <a href="../" style="font-size:0.8rem;font-weight:500;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='#8b949e';this.style.background='transparent'">SpanGate</a>
-    <a href="../configwizard/" style="font-size:0.8rem;font-weight:500;color:#58a6ff;background:rgba(88,166,255,0.08);text-decoration:none;padding:4px 12px;border-radius:6px;">Config Wizard</a>
-    <a href="../netmonitor/" style="font-size:0.8rem;font-weight:500;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='#8b949e';this.style.background='transparent'">Network Monitor</a>
-    <a href="../assettracker/" style="font-size:0.8rem;font-weight:500;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='#8b949e';this.style.background='transparent'">Asset Tracker</a>
+<!-- TWO-TIER NAV -->
+<nav class="site-nav">
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <a href="./index.html" class="active">Config Wizard</a>
+    <a href="../netmonitor/">Network Monitor</a>
+    <a href="../assettracker/">Asset Tracker</a>
   </div>
-
-  <!-- Bottom tier -->
-  <div style="height:48px;display:flex;align-items:center;padding:0 2rem;">
-    <a href="./index.html" style="font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:#e6edf3;text-decoration:none;display:flex;align-items:center;">Config<span style="color:#58a6ff;">Wizard</span></a>
-    <div style="flex:1;"></div>
-    <div style="display:flex;align-items:center;gap:4px;">
+  <div class="nav-bottom">
+    <a href="./index.html" class="nav-logo">Config<span style="color:#58a6ff;">Wizard</span></a>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
       <a href="./wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">Config Wizard</a>
       <a href="./topology.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">Network Map</a>
       <a href="./instant-on-wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">Aruba Instant On</a>
@@ -498,7 +527,6 @@
       <button class="site-nav-btn ghost" onclick="handleSignOut()">Sign out</button>
     </div>
   </div>
-
 </nav>
 
 <div class="page">
