@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  
+  padding-top: 60px; /* offset fixed nav so hero content is truly centered in visible area */
 }
 #lineCanvas {
   position: absolute;
@@ -1094,7 +1094,7 @@ table {
     <a href="mailto:hello@spangate.com">Contact</a>
   </div>
   <div class="nav-r">
-    
+    <a href="./login.html" style="font-size:13px;color:rgba(255,255,255,.45);text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,.45)'">Sign in</a>
     <button class="nav-cta" onclick="location.href='https://netconfig-app.vercel.app'">Start Free</button>
   </div>
 </nav>
