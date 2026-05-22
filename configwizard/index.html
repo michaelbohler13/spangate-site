@@ -1143,26 +1143,27 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Top tier: Product navigation -->
   <div class="nav-top">
     <a href="../">SpanGate</a>
-    <a href="./index.html" class="active">ConfigWizard</a>
-    <a href="../netmonitor/">NetMonitor</a>
-    <a href="../assettracker/">AssetTracker</a>
+    <a href="./index.html" class="active">Config Wizard</a>
+    <a href="../netmonitor/">Network Monitor</a>
+    <a href="../assettracker/">Asset Tracker</a>
   </div>
   
   <!-- Bottom tier: ConfigWizard tools -->
   <div class="nav-bottom">
     <a href="index.html" class="nav-logo">
-      ConfigWizard
+      Config<span style="color:#58a6ff;">Wizard</span>
     </a>
     <ul class="nav-links">
       <li><a href="#features">Features</a></li>
       <li><a href="#how-it-works">How it works</a></li>
-      <li><a href="./wizard.html">Config Wizard</a></li>
-      <li><a href="./topology.html">Network Map</a></li>
-      <li><a href="./instant-on-wizard.html">Aruba Instant On</a></li>
-      <li><a href="./netdoctor.html">NetDoctor</a></li>
     </ul>
     <div class="nav-spacer"></div>
-    <div class="nav-right">
+    <div class="nav-right" style="gap:4px;">
+      <a href="./wizard.html" style="font-size:0.78rem;font-weight:500;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent'">Config Wizard</a>
+      <a href="./topology.html" style="font-size:0.78rem;font-weight:500;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent'">Network Map</a>
+      <a href="./instant-on-wizard.html" style="font-size:0.78rem;font-weight:500;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent'">Aruba Instant On</a>
+      <a href="./netdoctor.html" style="font-size:0.78rem;font-weight:500;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent'">NetDoctor</a>
+      <div style="width:1px;height:18px;background:rgba(255,255,255,0.1);margin:0 4px;"></div>
       <span id="landingNavRight"><a href="./login.html" class="nav-signin">Sign in</a></span>
       <a href="./login.html" class="nav-cta">Get started</a>
     </div>
@@ -1831,6 +1832,55 @@ function submitFeedback() {
     });
   } catch(e) { console.warn('Feedback error:', e); }
 }
+// Ribbon canvas animation — moving nodes + lines in blue
+(function(){
+  const canvas = document.getElementById('ribbonCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize() {
+    const el = canvas.parentElement;
+    W = canvas.width  = el.offsetWidth;
+    H = canvas.height = el.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  const nodes = Array.from({length: 40}, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    vx: (Math.random() - 0.5) * 0.0003,
+    vy: (Math.random() - 0.5) * 0.0003
+  }));
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > 1) n.vx *= -1;
+      if (n.y < 0 || n.y > 1) n.vy *= -1;
+    });
+    nodes.forEach((a, i) => nodes.slice(i + 1).forEach(b => {
+      const dx = (a.x - b.x) * W, dy = (a.y - b.y) * H;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.moveTo(a.x * W, a.y * H);
+        ctx.lineTo(b.x * W, b.y * H);
+        ctx.strokeStyle = 'rgba(88,166,255,' + (0.12 * (1 - dist / 120)) + ')';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+    }));
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x * W, n.y * H, 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(88,166,255,0.4)';
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
 // Show feedback button only if logged in
 document.addEventListener('DOMContentLoaded', function() {
   try {
