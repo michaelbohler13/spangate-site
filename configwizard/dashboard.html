@@ -471,35 +471,34 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../spangate-auth.js"></script>
 
-<!-- Two-tier nav -->
-<nav style="position:fixed;top:0;left:0;right:0;z-index:200;border-bottom:0.5px solid rgba(255,255,255,0.06);background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);">
-  <!-- Top tier: platform links -->
-  <div style="height:36px;display:flex;align-items:center;padding:0 24px;border-bottom:0.5px solid rgba(255,255,255,0.06);font-size:0.72rem;font-weight:500;letter-spacing:0.02em;gap:0;">
-    <a href="../" style="color:rgba(255,255,255,0.45);text-decoration:none;padding:0 10px;line-height:36px;transition:color .15s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">SpanGate</a>
-    <div style="width:1px;height:14px;background:rgba(255,255,255,0.15);margin:0 0.25rem;"></div>
-    <a href="../configwizard/" style="color:#58a6ff;background:rgba(88,166,255,0.08);text-decoration:none;padding:0 10px;line-height:36px;" >Config Wizard</a>
-    <div style="width:1px;height:14px;background:rgba(255,255,255,0.15);margin:0 0.25rem;"></div>
-    <a href="../netmonitor/" style="color:rgba(255,255,255,0.45);text-decoration:none;padding:0 10px;line-height:36px;transition:color .15s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">Network Monitor</a>
-    <div style="width:1px;height:14px;background:rgba(255,255,255,0.15);margin:0 0.25rem;"></div>
-    <a href="../assettracker/" style="color:rgba(255,255,255,0.45);text-decoration:none;padding:0 10px;line-height:36px;transition:color .15s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">Asset Tracker</a>
+<nav style="position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);border-bottom:0.5px solid rgba(255,255,255,0.06);">
+
+  <!-- Top tier -->
+  <div style="height:36px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;border-bottom:0.5px solid rgba(255,255,255,0.06);">
+    <a href="../" style="font-size:0.8rem;font-weight:500;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='#8b949e';this.style.background='transparent'">SpanGate</a>
+    <a href="../configwizard/" style="font-size:0.8rem;font-weight:500;color:#58a6ff;background:rgba(88,166,255,0.08);text-decoration:none;padding:4px 12px;border-radius:6px;">Config Wizard</a>
+    <a href="../netmonitor/" style="font-size:0.8rem;font-weight:500;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='#8b949e';this.style.background='transparent'">Network Monitor</a>
+    <a href="../assettracker/" style="font-size:0.8rem;font-weight:500;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.color='#8b949e';this.style.background='transparent'">Asset Tracker</a>
   </div>
-  <!-- Bottom tier: product nav -->
-  <div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;">
-    <div style="display:flex;align-items:center;gap:0;">
-      <a href="./index.html" style="font-size:0.95rem;font-weight:700;color:#e6edf3;text-decoration:none;letter-spacing:-0.01em;margin-right:1.5rem;">Config<span style="color:#58a6ff;">Wizard</span></a>
-      <a href="./wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .15s,background .15s;" onmouseover="this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.background='transparent'">Config Wizard</a>
-      <a href="./topology.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .15s,background .15s;" onmouseover="this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.background='transparent'">Network Map</a>
-      <a href="./instant-on-wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .15s,background .15s;" onmouseover="this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.background='transparent'">Aruba Instant On</a>
-      <a href="./netdoctor.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;padding:5px 10px;border-radius:6px;transition:color .15s,background .15s;" onmouseover="this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.background='transparent'">NetDoctor</a>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
+
+  <!-- Bottom tier -->
+  <div style="height:48px;display:flex;align-items:center;padding:0 2rem;">
+    <a href="./index.html" style="font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:#e6edf3;text-decoration:none;display:flex;align-items:center;">Config<span style="color:#58a6ff;">Wizard</span></a>
+    <div style="flex:1;"></div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <a href="./wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">Config Wizard</a>
+      <a href="./topology.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">Network Map</a>
+      <a href="./instant-on-wizard.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">Aruba Instant On</a>
+      <a href="./netdoctor.html" style="font-size:0.78rem;font-weight:500;color:#58a6ff;text-decoration:none;letter-spacing:-0.01em;padding:5px 10px;border-radius:6px;transition:color 0.15s,background 0.15s;" onmouseover="this.style.color='#fff';this.style.background='rgba(88,166,255,0.08)'" onmouseout="this.style.color='#58a6ff';this.style.background='transparent'">NetDoctor</a>
+      <div style="width:1px;height:18px;background:rgba(255,255,255,0.1);margin:0 4px;"></div>
       <div class="avatar-sm" id="userAvatar">?</div>
-      <span id="userEmail" style="font-size:0.72rem;color:var(--text-muted);font-family:var(--mono);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-      <div class="site-nav-divider"></div>
-      <a href="./dashboard.html" style="font-size:0.72rem;font-family:var(--mono);padding:4px 12px;border-radius:980px;border:0.5px solid rgba(255,255,255,0.15);color:var(--text-muted);text-decoration:none;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color=''">My Configs</a>
+      <span id="userEmail" style="font-size:0.72rem;color:#8b949e;font-family:var(--mono);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      <div style="width:1px;height:18px;background:rgba(255,255,255,0.1);margin:0 4px;"></div>
+      <a href="./dashboard.html" style="font-size:0.72rem;font-family:var(--mono);padding:4px 12px;border-radius:980px;border:0.5px solid rgba(255,255,255,0.15);color:#8b949e;text-decoration:none;transition:all 0.15s;" onmouseover="this.style.color='#e6edf3';this.style.borderColor='rgba(255,255,255,0.3)'" onmouseout="this.style.color='#8b949e';this.style.borderColor='rgba(255,255,255,0.15)'">My Configs</a>
       <button class="site-nav-btn ghost" onclick="handleSignOut()">Sign out</button>
     </div>
   </div>
+
 </nav>
 
 <div class="page">
