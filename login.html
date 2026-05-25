@@ -695,10 +695,15 @@ const selectedPlans    = {};
 
   if (tabParam === 'signup') switchTab('signup');
 
-  // Check if already signed in
+  // Check if already signed in — verify against server so deleted users are cleared
   const { data: { session } } = await _supabase.auth.getSession();
   if (session) {
-    showDashboard(session.user, returnTo);
+    const { data: { user }, error } = await _supabase.auth.getUser();
+    if (error || !user) {
+      await _supabase.auth.signOut();
+    } else {
+      showDashboard(user, returnTo);
+    }
   }
 })();
 
