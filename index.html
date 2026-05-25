@@ -1095,8 +1095,8 @@ table {
     <a href="mailto:hello@spangate.com">Contact</a>
   </div>
   <div class="nav-r">
-    <a href="./login.html" style="font-size:13px;color:rgba(255,255,255,.45);text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,.45)'">Sign in</a>
-    <a href="./login.html?tab=signup" class="nav-cta" style="text-decoration:none;">Get started</a>
+    <a href="./login.html" id="navSignin" style="font-size:13px;color:rgba(255,255,255,.45);text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#e6edf3'" onmouseout="this.style.color='rgba(255,255,255,.45)'">Sign in</a>
+    <a href="./login.html?tab=signup" class="nav-cta" id="navCta" style="text-decoration:none;">Get started</a>
   </div>
 </nav>
 
@@ -1490,6 +1490,33 @@ function toggleFaq(el) {
       orbs.classList.remove('orbs-hidden');
     }
   }, { passive: true });
+})();
+</script>
+<script>
+(function(){
+  try {
+    var raw  = localStorage.getItem('sb-tiviipaamwvfjvoscnyk-auth-token');
+    var data = raw ? JSON.parse(raw) : null;
+    var now  = Math.floor(Date.now()/1000);
+    var user = data && data.user && (!data.expires_at || data.expires_at > now) ? data.user : null;
+    if (user) {
+      var s = document.getElementById('navSignin');
+      var c = document.getElementById('navCta');
+      if (s) {
+        s.textContent = user.email;
+        s.style.fontFamily = 'monospace';
+        s.style.fontSize   = '0.72rem';
+        s.style.color      = '#8b949e';
+        s.removeAttribute('onmouseover');
+        s.removeAttribute('onmouseout');
+        s.href = './login.html';
+      }
+      if (c) {
+        c.textContent = 'Dashboard';
+        c.href = './login.html';
+      }
+    }
+  } catch(e) {}
 })();
 </script>
 </body>
