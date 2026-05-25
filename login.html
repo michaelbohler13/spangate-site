@@ -730,22 +730,18 @@ function showSignIn() {
 // ── UI: PRODUCT TOGGLE ───────────────────────
 function toggleProduct(code) {
   const opt = document.getElementById('opt-' + code);
-  const chk = document.getElementById('chk-' + code);
   const planSec = document.getElementById('planSection-' + code);
 
   if (selectedProducts.has(code)) {
     selectedProducts.delete(code);
     opt.classList.remove('selected-' + code);
-    chk.checked = false;
     if (planSec) planSec.style.display = 'none';
     delete selectedPlans[code];
   } else {
     selectedProducts.add(code);
     opt.classList.add('selected-' + code);
-    chk.checked = true;
     if (planSec) {
       planSec.style.display = 'block';
-      // Auto-select the first plan chip so signup never fails validation
       const firstChip = planSec.querySelector('.plan-chip');
       if (firstChip && !selectedPlans[code]) {
         selectPlan(code, firstChip.dataset.plan, firstChip);
