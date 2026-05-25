@@ -544,7 +544,7 @@
                 <div class="product-name">Asset Tracker</div>
                 <div class="product-desc">IT asset inventory, QR tags, CSV exports</div>
               </div>
-              <span class="product-badge badge-at">from $99/mo</span>
+              <span class="product-badge badge-at">from $49/mo</span>
             </label>
 
           </div>
@@ -557,20 +557,29 @@
             <button class="plan-chip" data-product="nm" data-plan="starter" onclick="selectPlan('nm','starter',this)">Starter · 50 devices · $99</button>
             <button class="plan-chip" data-product="nm" data-plan="plus" onclick="selectPlan('nm','plus',this)">Plus · 200 devices · $199</button>
             <button class="plan-chip" data-product="nm" data-plan="pro" onclick="selectPlan('nm','pro',this)">Pro · 500 devices · $399</button>
-            <button class="plan-chip" data-product="nm" data-plan="district" onclick="selectPlan('nm','district',this)">District · Unlimited · $799</button>
+            <button class="plan-chip" data-product="nm" data-plan="enterprise" onclick="selectPlan('nm','enterprise',this)">Enterprise · 5,000 devices · $799</button>
           </div>
         </div>
 
         <div id="planSection-at" style="display:none;">
           <div class="product-select-label" style="color:var(--at);margin-bottom:8px;">Asset Tracker Plan</div>
           <div class="plan-row">
-            <button class="plan-chip" data-product="at" data-plan="starter" onclick="selectPlan('at','starter',this)">Starter · 100 assets · $99</button>
-            <button class="plan-chip" data-product="at" data-plan="plus" onclick="selectPlan('at','plus',this)">Plus · 500 assets · $199</button>
-            <button class="plan-chip" data-product="at" data-plan="pro" onclick="selectPlan('at','pro',this)">Pro · 2,000 assets · $299</button>
-            <button class="plan-chip" data-product="at" data-plan="enterprise" onclick="selectPlan('at','enterprise',this)">Enterprise · Unlimited · $499</button>
+            <button class="plan-chip" data-product="at" data-plan="starter" onclick="selectPlan('at','starter',this)">Starter · 250 assets · $49</button>
+            <button class="plan-chip" data-product="at" data-plan="plus" onclick="selectPlan('at','plus',this)">Plus · 1,000 assets · $99</button>
+            <button class="plan-chip" data-product="at" data-plan="pro" onclick="selectPlan('at','pro',this)">Pro · 5,000 assets · $199</button>
+            <button class="plan-chip" data-product="at" data-plan="enterprise" onclick="selectPlan('at','enterprise',this)">Enterprise · 10,000 assets · $399</button>
           </div>
         </div>
 
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1px solid rgba(0,212,184,0.35);background:rgba(0,212,184,0.07);margin-bottom:4px;">
+          <div style="width:20px;height:20px;border-radius:50%;background:#00d4b8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="#0d1117" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:#e6edf3;">14-day free trial included</div>
+            <div style="font-size:0.72rem;color:#8b949e;font-family:'JetBrains Mono',monospace;margin-top:1px;">No credit card required · Cancel anytime before day 14</div>
+          </div>
+        </div>
         <button class="btn-submit" id="signupBtn" onclick="handleSignUp()">Create Account</button>
 
         <div class="form-divider">or</div>
@@ -664,8 +673,8 @@ const PRODUCTS = {
 };
 
 const PLAN_LABELS = {
-  nm: { starter:'Starter · 50 devices', plus:'Plus · 200 devices', pro:'Pro · 500 devices', district:'District · Unlimited' },
-  at: { starter:'Starter · 100 assets', plus:'Plus · 500 assets',  pro:'Pro · 2,000 assets', enterprise:'Enterprise · Unlimited' }
+  nm: { starter:'Starter · 50 devices', plus:'Plus · 200 devices', pro:'Pro · 500 devices', enterprise:'Enterprise · 5,000 devices' },
+  at: { starter:'Starter · 250 assets', plus:'Plus · 1,000 assets', pro:'Pro · 5,000 assets', enterprise:'Enterprise · 10,000 assets' }
 };
 
 // ── INIT ─────────────────────────────────────
