@@ -553,6 +553,7 @@
         <div id="planSection-nm" style="display:none;">
           <div class="product-select-label" style="color:var(--nm);margin-bottom:8px;">Network Monitor Plan</div>
           <div class="plan-row">
+            <button class="plan-chip" data-product="nm" data-plan="trial" onclick="selectPlan('nm','trial',this)">Free Trial · 10 devices</button>
             <button class="plan-chip" data-product="nm" data-plan="starter" onclick="selectPlan('nm','starter',this)">Starter · 50 devices · $99</button>
             <button class="plan-chip" data-product="nm" data-plan="plus" onclick="selectPlan('nm','plus',this)">Plus · 200 devices · $199</button>
             <button class="plan-chip" data-product="nm" data-plan="pro" onclick="selectPlan('nm','pro',this)">Pro · 500 devices · $399</button>
@@ -563,6 +564,7 @@
         <div id="planSection-at" style="display:none;">
           <div class="product-select-label" style="color:var(--at);margin-bottom:8px;">Asset Tracker Plan</div>
           <div class="plan-row">
+            <button class="plan-chip" data-product="at" data-plan="trial" onclick="selectPlan('at','trial',this)">Free Trial · 50 assets</button>
             <button class="plan-chip" data-product="at" data-plan="starter" onclick="selectPlan('at','starter',this)">Starter · 250 assets · $49</button>
             <button class="plan-chip" data-product="at" data-plan="plus" onclick="selectPlan('at','plus',this)">Plus · 1,000 assets · $99</button>
             <button class="plan-chip" data-product="at" data-plan="pro" onclick="selectPlan('at','pro',this)">Pro · 5,000 assets · $199</button>
@@ -672,8 +674,8 @@ const PRODUCTS = {
 };
 
 const PLAN_LABELS = {
-  nm: { starter:'Starter · 50 devices', plus:'Plus · 200 devices', pro:'Pro · 500 devices', enterprise:'Enterprise · 5,000 devices' },
-  at: { starter:'Starter · 250 assets', plus:'Plus · 1,000 assets', pro:'Pro · 5,000 assets', enterprise:'Enterprise · 10,000 assets' }
+  nm: { trial:'Free Trial · 10 devices', starter:'Starter · 50 devices', plus:'Plus · 200 devices', pro:'Pro · 500 devices', enterprise:'Enterprise · 5,000 devices' },
+  at: { trial:'Free Trial · 50 assets', starter:'Starter · 250 assets', plus:'Plus · 1,000 assets', pro:'Pro · 5,000 assets', enterprise:'Enterprise · 10,000 assets' }
 };
 
 // ── INIT ─────────────────────────────────────
