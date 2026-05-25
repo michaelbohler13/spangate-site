@@ -659,7 +659,7 @@ const PRODUCTS = {
     id:    'netmonitor',
     name:  'Network Monitor',
     desc:  '', // filled from plan
-    url:   './netmonitor/',
+    url:   './netmonitor-coming-soon.html',
     accent:'nm',
     dot:   'nm'
   },
@@ -667,7 +667,7 @@ const PRODUCTS = {
     id:    'assettracker',
     name:  'Asset Tracker',
     desc:  '', // filled from plan
-    url:   './assettracker/',
+    url:   './assettracker-coming-soon.html',
     accent:'at',
     dot:   'at'
   }
@@ -893,23 +893,27 @@ async function showDashboard(user, returnTo) {
     .eq('user_id', user.id);
   subs = subs || [];
 
-  // Lazy-init: first sign-in after signup — create rows from user metadata
-  if (subs.length === 0) {
-    const meta   = user.user_metadata || {};
-    let access   = meta.product_access || {};
-    if (Object.keys(access).length === 0) {
-      access = { configwizard: { plan: 'pro' } };
+  // Sync subscriptions from user metadata — insert any products not yet in DB
+  {
+    const meta = user.user_metadata || {};
+    let metaAccess = meta.product_access || {};
+    if (Object.keys(metaAccess).length === 0) {
+      metaAccess = { configwizard: { plan: 'pro' } };
     }
-    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
-    const inserts  = Object.entries(access).map(([product, info]) => ({
-      user_id:      user.id,
-      product,
-      plan:         info.plan || 'trial',
-      status:       'trial',
-      trial_ends_at: trialEnd
-    }));
-    const { data: created } = await _supabase.from('subscriptions').insert(inserts).select();
-    subs = created || [];
+    const alreadyHave = new Set(subs.map(s => s.product));
+    const missing = Object.entries(metaAccess).filter(([p]) => !alreadyHave.has(p));
+    if (missing.length > 0) {
+      const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const inserts  = missing.map(([product, info]) => ({
+        user_id:       user.id,
+        product,
+        plan:          info.plan || 'trial',
+        status:        'trial',
+        trial_ends_at: trialEnd
+      }));
+      const { data: created } = await _supabase.from('subscriptions').insert(inserts).select();
+      if (created) subs = [...subs, ...created];
+    }
   }
 
   // Mark any expired trials
