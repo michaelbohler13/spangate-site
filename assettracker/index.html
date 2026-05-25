@@ -783,8 +783,8 @@
     </div>
     <div class="nav-right">
       <a href="./assets.html" class="nav-my-assets">My Asset Tracking</a>
-      <a href="./login.html" class="nav-signin">Sign in</a>
-      <a href="./signup.html" class="nav-cta">Get started</a>
+      <a href="./login.html" class="nav-signin" id="navSignin">Sign in</a>
+      <a href="./signup.html" class="nav-cta" id="navCta">Get started</a>
     </div>
   </div>
 </nav>
@@ -1432,6 +1432,22 @@ const observer = new IntersectionObserver(entries => {
   });
 }, { threshold: 0.1 });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+<script>
+(function(){
+  try {
+    var raw  = localStorage.getItem('sb-tiviipaamwvfjvoscnyk-auth-token');
+    var data = raw ? JSON.parse(raw) : null;
+    var now  = Math.floor(Date.now()/1000);
+    var user = data && data.user && (!data.expires_at || data.expires_at > now) ? data.user : null;
+    if (user) {
+      var s = document.getElementById('navSignin');
+      var c = document.getElementById('navCta');
+      if (s) { s.textContent = user.email; s.style.fontFamily = 'monospace'; s.style.fontSize = '0.72rem'; }
+      if (c) { c.textContent = 'Dashboard'; c.href = './login.html'; }
+    }
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>
