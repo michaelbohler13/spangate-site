@@ -8,8 +8,8 @@
     { "source": "/configwizard/dashboard", "destination": "/configwizard/dashboard.html" },
     { "source": "/configwizard/login", "destination": "/configwizard/login.html" },
     { "source": "/configwizard/profile", "destination": "/configwizard/profile.html" },
-    { "source": "/netmonitor", "destination": "/netmonitor/index.html" },
-    { "source": "/assettracker", "destination": "/assettracker/index.html" }
+    { "source": "/netmonitor", "destination": "/netmonitor-coming-soon.html" },
+    { "source": "/assettracker", "destination": "/assettracker-coming-soon.html" }
   ],
   "headers": [
     {
