@@ -875,52 +875,87 @@ async function handleSignOut() {
 }
 
 // ── DASHBOARD ────────────────────────────────
-function showDashboard(user, returnTo) {
+async function showDashboard(user, returnTo) {
   // Hide all form panels
   document.getElementById('signinForm').classList.remove('visible');
   document.getElementById('signupForm').classList.remove('visible');
   document.getElementById('resetForm').classList.remove('visible');
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-
-  // Show dashboard panel
   document.getElementById('dashboardView').classList.add('visible');
-
-  // User email
   document.getElementById('userEmailDisplay').textContent = user.email;
 
-  // Determine product access from user metadata
-  const meta   = user.user_metadata || {};
-  const access = meta.product_access || {};
+  const now = new Date();
 
-  // If no metadata, treat logged-in as having ConfigWizard Pro (existing behavior)
-  // This preserves backward compat for existing Config Wizard users
-  const hasAny = Object.keys(access).length > 0;
-  if (!hasAny) {
-    access.configwizard = { plan: 'pro', active: true };
+  // Fetch subscriptions from DB
+  let { data: subs } = await _supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id);
+  subs = subs || [];
+
+  // Lazy-init: first sign-in after signup — create rows from user metadata
+  if (subs.length === 0) {
+    const meta   = user.user_metadata || {};
+    let access   = meta.product_access || {};
+    if (Object.keys(access).length === 0) {
+      access = { configwizard: { plan: 'pro' } };
+    }
+    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const inserts  = Object.entries(access).map(([product, info]) => ({
+      user_id:      user.id,
+      product,
+      plan:         info.plan || 'trial',
+      status:       'trial',
+      trial_ends_at: trialEnd
+    }));
+    const { data: created } = await _supabase.from('subscriptions').insert(inserts).select();
+    subs = created || [];
   }
 
-  // Build product cards
+  // Mark any expired trials
+  const expired = subs.filter(s => s.status === 'trial' && new Date(s.trial_ends_at) < now);
+  if (expired.length) {
+    await _supabase.from('subscriptions')
+      .update({ status: 'expired' })
+      .in('id', expired.map(s => s.id));
+    expired.forEach(s => { s.status = 'expired'; });
+  }
+
+  // Build access map keyed by product
+  const access = {};
+  subs.forEach(s => { access[s.product] = s; });
+
+  // Render product cards
   const grid = document.getElementById('productsGrid');
   grid.innerHTML = '';
 
   const allProducts = ['configwizard', 'netmonitor', 'assettracker'];
   allProducts.forEach(pid => {
     const cfg    = PRODUCTS[pid];
-    const info   = access[pid];
-    const active = info && info.active;
-    const plan   = info ? info.plan : null;
+    const sub    = access[pid];
+    const active = sub && (sub.status === 'trial' || sub.status === 'active');
+    const plan   = sub ? sub.plan : null;
 
     let planLabel = '';
-    if (pid === 'configwizard') planLabel = 'Pro plan · $9.99/mo';
-    else if (pid === 'netmonitor' && plan) planLabel = PLAN_LABELS.nm[plan] || plan;
+    if (pid === 'configwizard') planLabel = plan === 'trial' ? 'Free Trial' : 'Pro plan · $9.99/mo';
+    else if (pid === 'netmonitor'   && plan) planLabel = PLAN_LABELS.nm[plan] || plan;
     else if (pid === 'assettracker' && plan) planLabel = PLAN_LABELS.at[plan] || plan;
-    if (!active) planLabel = 'No active subscription';
+
+    let badgeText = 'Not subscribed';
+    if (sub && sub.status === 'trial') {
+      const daysLeft = Math.max(0, Math.ceil((new Date(sub.trial_ends_at) - now) / 86400000));
+      planLabel += ` · ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`;
+      badgeText = 'Trial';
+    } else if (sub && sub.status === 'expired') {
+      planLabel = 'Trial expired — upgrade to continue';
+      badgeText = 'Expired';
+    } else if (sub && sub.status === 'active') {
+      badgeText = 'Active';
+    }
 
     const card = document.createElement(active ? 'a' : 'div');
     card.className = `product-card${active ? ' access-' + cfg.accent : ' locked'}`;
-    if (active) {
-      card.href = cfg.url;
-    }
+    if (active) card.href = cfg.url;
 
     card.innerHTML = `
       <div class="product-card-left">
@@ -931,15 +966,15 @@ function showDashboard(user, returnTo) {
         </div>
       </div>
       <div class="product-card-right">
-        <span class="access-badge ${active ? 'active' : 'no-access'}">${active ? 'Active' : 'Not subscribed'}</span>
+        <span class="access-badge ${active ? 'active' : 'no-access'}">${badgeText}</span>
         ${active ? '<span class="chevron">›</span>' : ''}
       </div>
     `;
     grid.appendChild(card);
   });
 
-  // Auto-redirect if coming from a specific product and has access
-  if (returnTo && access[returnTo] && access[returnTo].active) {
+  // Auto-redirect if returning from a product page and access is still active
+  if (returnTo && access[returnTo] && (access[returnTo].status === 'trial' || access[returnTo].status === 'active')) {
     setTimeout(() => {
       window.location.href = PRODUCTS[returnTo]?.url || '../';
     }, 800);
@@ -986,10 +1021,16 @@ _supabase.auth.onAuthStateChange((event, session) => {
 window.spangate_hasAccess = async function(productId) {
   const { data: { session } } = await _supabase.auth.getSession();
   if (!session) return false;
-  const access = session.user.user_metadata?.product_access || {};
-  // Fallback: if no metadata set, treat as CW Pro (existing users)
-  if (!Object.keys(access).length) return productId === 'configwizard';
-  return !!(access[productId] && access[productId].active);
+  const { data: sub } = await _supabase
+    .from('subscriptions')
+    .select('status, trial_ends_at')
+    .eq('user_id', session.user.id)
+    .eq('product', productId)
+    .single();
+  if (!sub) return false;
+  if (sub.status === 'active') return true;
+  if (sub.status === 'trial') return new Date(sub.trial_ends_at) > new Date();
+  return false;
 };
 
 window.spangate_redirectToLogin = function(productId) {
