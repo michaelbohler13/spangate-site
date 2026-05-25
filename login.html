@@ -609,6 +609,24 @@
         <button class="btn-submit" onclick="handlePasswordReset()">Send Reset Link</button>
       </div>
 
+      <!-- SET NEW PASSWORD FORM (after reset link clicked) -->
+      <div id="newPasswordForm" class="auth-form">
+        <div id="newPasswordStatus" class="auth-status"></div>
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;margin-bottom:4px;">
+          Choose a new password for your account.
+        </p>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="newPassword" placeholder="Min. 8 characters" autocomplete="new-password">
+          <span class="form-hint">At least 8 characters</span>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <input type="password" id="confirmPassword" placeholder="Re-enter new password" autocomplete="new-password">
+        </div>
+        <button class="btn-submit" id="newPasswordBtn" onclick="handleNewPassword()">Set New Password</button>
+      </div>
+
       <!-- POST-LOGIN DASHBOARD -->
       <div id="dashboardView" class="auth-form">
         <div class="dashboard-overlay visible" id="dashboardOverlay">
@@ -858,11 +876,54 @@ async function handlePasswordReset() {
   if (!email) { showStatus(status, 'error', 'Please enter your email.'); return; }
 
   const { error } = await _supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname + '?tab=reset'
+    redirectTo: window.location.origin + '/login.html'
   });
 
   if (error) { showStatus(status, 'error', error.message); return; }
   showStatus(status, 'success', '✓ Reset link sent — check your email.');
+}
+
+// ── AUTH: SHOW NEW PASSWORD FORM ─────────────
+function showNewPasswordForm() {
+  ['signinForm','signupForm','resetForm','dashboardView'].forEach(id =>
+    document.getElementById(id).classList.remove('visible')
+  );
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('newPasswordForm').classList.add('visible');
+}
+
+// ── AUTH: SET NEW PASSWORD ────────────────────
+async function handleNewPassword() {
+  const newPass     = document.getElementById('newPassword').value;
+  const confirmPass = document.getElementById('confirmPassword').value;
+  const btn         = document.getElementById('newPasswordBtn');
+  const status      = document.getElementById('newPasswordStatus');
+  clearStatus(status);
+
+  if (!newPass || !confirmPass) { showStatus(status, 'error', 'Please fill in both fields.'); return; }
+  if (newPass.length < 8)       { showStatus(status, 'error', 'Password must be at least 8 characters.'); return; }
+  if (newPass !== confirmPass)   { showStatus(status, 'error', 'Passwords do not match.'); return; }
+
+  setLoading(btn, true, 'Updating…');
+
+  const { error } = await _supabase.auth.updateUser({ password: newPass });
+
+  if (error) {
+    setLoading(btn, false, 'Set New Password');
+    showStatus(status, 'error', error.message);
+    return;
+  }
+
+  showStatus(status, 'success', '✓ Password updated! Taking you to your dashboard…');
+  setLoading(btn, false, 'Set New Password');
+  setTimeout(() => {
+    const params  = new URLSearchParams(window.location.search);
+    const returnTo = params.get('return') || null;
+    _supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) showDashboard(session.user, returnTo);
+      else switchTab('signin');
+    });
+  }, 1500);
 }
 
 // ── AUTH: SIGN OUT ───────────────────────────
@@ -1005,7 +1066,9 @@ function clearStatus(el) {
 
 // ── LISTEN FOR AUTH STATE CHANGES ────────────
 _supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN' && session) {
+  if (event === 'PASSWORD_RECOVERY') {
+    showNewPasswordForm();
+  } else if (event === 'SIGNED_IN' && session) {
     const params   = new URLSearchParams(window.location.search);
     const returnTo = params.get('return') || null;
     showDashboard(session.user, returnTo);
