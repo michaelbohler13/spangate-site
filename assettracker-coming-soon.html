@@ -167,22 +167,18 @@
 
 <footer>00:SP:AN:GA:TE:00</footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-  const _sb = supabase.createClient(
-    'https://tiviipaamwvfjvoscnyk.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs'
-  );
-  (async () => {
-    const { data: { session } } = await _sb.auth.getSession();
-    const area = document.getElementById('navUser');
-    if (session) {
-      area.innerHTML = `
-        <span class="nav-email">${session.user.email}</span>
-        <a href="./login.html" class="nav-btn nav-btn-dashboard">Dashboard</a>
-      `;
-    } else {
-      area.innerHTML = `<a href="./login.html" class="nav-btn nav-btn-signin">Sign In</a>`;
+  (function () {
+    try {
+      const raw = localStorage.getItem('sb-tiviipaamwvfjvoscnyk-auth-token');
+      const data = raw ? JSON.parse(raw) : null;
+      const now  = Math.floor(Date.now() / 1000);
+      const user = data && data.user && (!data.expires_at || data.expires_at > now) ? data.user : null;
+      document.getElementById('navUser').innerHTML = user
+        ? `<span class="nav-email">${user.email}</span><a href="./login.html" class="nav-btn nav-btn-dashboard">Dashboard</a>`
+        : `<a href="./login.html" class="nav-btn nav-btn-signin">Sign In</a>`;
+    } catch (e) {
+      document.getElementById('navUser').innerHTML = `<a href="./login.html" class="nav-btn nav-btn-signin">Sign In</a>`;
     }
   })();
 </script>
