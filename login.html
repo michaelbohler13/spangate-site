@@ -741,7 +741,14 @@ function toggleProduct(code) {
     selectedProducts.add(code);
     opt.classList.add('selected-' + code);
     chk.checked = true;
-    if (planSec) planSec.style.display = 'block';
+    if (planSec) {
+      planSec.style.display = 'block';
+      // Auto-select the first plan chip so signup never fails validation
+      const firstChip = planSec.querySelector('.plan-chip');
+      if (firstChip && !selectedPlans[code]) {
+        selectPlan(code, firstChip.dataset.plan, firstChip);
+      }
+    }
   }
 }
 
