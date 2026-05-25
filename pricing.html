@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing — SpanGate Technology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #0d0d0d;
+    --surface2: #1a1a1a;
+    --border:   rgba(255,255,255,0.08);
+    --border2:  rgba(255,255,255,0.15);
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --faint:    #484f58;
+    --font:     'Inter', sans-serif;
+    --mono:     'JetBrains Mono', monospace;
+    --nav-h:    84px;
+    --cw:       #58a6ff;
+    --nm:       #00d4b8;
+    --at:       #c49a4a;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── NAV (exact from login.html) ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    border-bottom: 0.5px solid var(--border);
+    background: rgba(13,17,23,0.92);
+    backdrop-filter: blur(12px);
+  }
+  .nav-top {
+    height: 36px;
+    display: flex; align-items: center; gap: 0;
+    padding: 0 24px;
+    border-bottom: 0.5px solid rgba(255,255,255,0.06);
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.02em;
+  }
+  .nav-top a {
+    color: var(--muted); text-decoration: none; padding: 0 10px; line-height: 36px;
+    transition: color .15s;
+  }
+  .nav-top a:first-child { padding-left: 0; }
+  .nav-top a:hover { color: var(--text); }
+  .nav-top .sep { width: 1px; height: 14px; background: var(--border2); margin: 0 0.25rem; }
+  .nav-bottom {
+    height: 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+  }
+  .nav-logo {
+    font-size: 0.95rem; font-weight: 700; color: var(--text); text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── FOOTER (exact from login.html) ── */
+  footer {
+    border-top: 0.5px solid var(--border);
+    padding: 20px 24px;
+    text-align: center;
+    font-size: 0.72rem; color: var(--faint); font-family: var(--mono);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1;
+    padding: calc(var(--nav-h) + 56px) 24px 80px;
+    max-width: 1080px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ── HEADING ── */
+  .eyebrow {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--nm); font-family: var(--mono);
+    margin-bottom: 16px;
+  }
+  .page-h1 {
+    font-size: clamp(1.9rem, 4vw, 2.75rem);
+    font-weight: 700; letter-spacing: -0.025em; line-height: 1.1;
+    color: var(--text); margin-bottom: 14px;
+  }
+  .subline {
+    font-size: 0.95rem; color: var(--muted); line-height: 1.6; margin-bottom: 28px;
+  }
+
+  /* ── TRIAL BANNER ── */
+  .trial-banner {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,212,184,0.35);
+    background: rgba(0,212,184,0.07);
+    margin-bottom: 52px;
+    max-width: 500px;
+  }
+  .trial-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--nm);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .trial-text-main { font-size: 0.84rem; font-weight: 600; color: var(--text); }
+  .trial-text-sub {
+    font-size: 0.71rem; color: var(--muted); font-family: var(--mono); margin-top: 2px;
+  }
+
+  /* ── PRICING TABLE ── */
+  .table-wrap {
+    overflow-x: auto; margin-bottom: 56px;
+    border-radius: 12px; border: 1px solid var(--border2);
+  }
+  table {
+    width: 100%; border-collapse: collapse;
+    min-width: 640px;
+  }
+  thead th {
+    padding: 16px 20px; text-align: left;
+    background: rgba(255,255,255,0.025);
+    border-bottom: 1px solid var(--border2);
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--muted); font-family: var(--mono);
+    white-space: nowrap;
+  }
+  thead th:first-child { color: var(--faint); width: 90px; }
+  thead th.col-cw { color: var(--cw); border-left: 2px solid var(--cw); }
+  thead th.col-nm { color: var(--nm); border-left: 2px solid var(--nm); }
+  thead th.col-at { color: var(--at); border-left: 2px solid var(--at); }
+
+  tbody tr { border-bottom: 0.5px solid var(--border); transition: background .12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.018); }
+
+  td { padding: 18px 20px; vertical-align: top; }
+  td:first-child {
+    font-size: 0.75rem; font-weight: 600; font-family: var(--mono);
+    color: var(--faint); text-transform: uppercase; letter-spacing: 0.07em;
+    white-space: nowrap; padding-top: 22px;
+  }
+  td.col-cw { border-left: 2px solid rgba(88,166,255,0.18); }
+  td.col-nm { border-left: 2px solid rgba(0,212,184,0.18); }
+  td.col-at { border-left: 2px solid rgba(196,154,74,0.18); }
+
+  .price-main {
+    font-size: 1.05rem; font-weight: 700; color: var(--text);
+    display: block; margin-bottom: 5px;
+  }
+  .price-main .unit { font-size: 0.72rem; font-weight: 400; color: var(--muted); }
+  .price-desc { font-size: 0.78rem; color: var(--muted); display: block; }
+  .price-annual {
+    font-size: 0.68rem; color: var(--faint); font-family: var(--mono);
+    display: block; margin-top: 5px;
+  }
+  .price-badge {
+    display: inline-block; margin-top: 8px;
+    font-size: 0.63rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 4px;
+    background: rgba(88,166,255,0.1); color: var(--cw); font-family: var(--mono);
+  }
+  .price-dash { color: var(--faint); font-size: 1.2rem; line-height: 1; }
+
+  /* ── BUILD YOUR PLAN ── */
+  .section-label {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); font-family: var(--mono);
+    margin-bottom: 16px;
+  }
+  .builder-section {
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .builder-header {
+    padding: 22px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+  .builder-header h2 {
+    font-size: 1.1rem; font-weight: 700; letter-spacing: -0.015em;
+    color: var(--text); margin-bottom: 4px;
+  }
+  .builder-header p { font-size: 0.8rem; color: var(--muted); }
+
+  .builder-body {
+    padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 22px;
+  }
+  .builder-product { display: flex; flex-direction: column; gap: 10px; }
+  .builder-product-label {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: var(--mono); color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .label-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .plan-chip {
+    padding: 6px 13px; border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: transparent; color: var(--muted);
+    font-size: 0.76rem; font-family: var(--mono); cursor: pointer;
+    transition: all .13s;
+    white-space: nowrap;
+  }
+  .plan-chip:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+  .plan-chip.active-cw { border-color: var(--cw); color: var(--cw); background: rgba(88,166,255,0.09); }
+  .plan-chip.active-nm { border-color: var(--nm); color: var(--nm); background: rgba(0,212,184,0.09); }
+  .plan-chip.active-at { border-color: var(--at); color: var(--at); background: rgba(196,154,74,0.09); }
+
+  .builder-footer {
+    padding: 20px 28px;
+    border-top: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .total-block { display: flex; flex-direction: column; gap: 3px; }
+  .total-monthly {
+    font-size: 1.55rem; font-weight: 700; letter-spacing: -0.025em; color: var(--text);
+    line-height: 1;
+  }
+  .total-monthly .unit { font-size: 0.82rem; font-weight: 400; color: var(--muted); }
+  .total-annual { font-size: 0.7rem; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
+
+  .builder-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .btn-primary {
+    padding: 10px 20px; border-radius: 8px;
+    background: var(--nm); color: #0d1117;
+    font-size: 0.84rem; font-weight: 700; font-family: var(--font);
+    border: none; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: opacity .15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary {
+    padding: 10px 18px; border-radius: 8px;
+    background: transparent; color: var(--muted);
+    font-size: 0.84rem; font-weight: 500; font-family: var(--font);
+    border: 1px solid var(--border2); cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center;
+    transition: all .15s;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.28); }
+
+  @media (max-width: 768px) {
+    main { padding-top: calc(var(--nav-h) + 36px); }
+    .builder-footer { flex-direction: column; align-items: flex-start; }
+    .builder-header, .builder-body, .builder-footer { padding-left: 18px; padding-right: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV — exact copy from login.html -->
+<nav>
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <div class="sep"></div>
+    <a href="./configwizard/">Config Wizard</a>
+    <div class="sep"></div>
+    <a href="./netmonitor/">Network Monitor</a>
+    <div class="sep"></div>
+    <a href="./assettracker/">Asset Tracker</a>
+  </div>
+  <div class="nav-bottom">
+    <a class="nav-logo" href="../">SpanGate <span style="color:var(--muted);font-weight:400;">Technology</span></a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- 1. Heading section -->
+  <div class="eyebrow">Pricing</div>
+  <h1 class="page-h1">Pick what you need.<br>Pay for nothing else.</h1>
+  <p class="subline">Three products. One platform. À la carte — all plans billed annually.</p>
+
+  <!-- 2. Trial banner -->
+  <div class="trial-banner">
+    <div class="trial-check">
+      <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+        <polyline points="2,5 4,7 8,3" stroke="#0d1117" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="trial-text-main">14-day free trial on all paid plans</div>
+      <div class="trial-text-sub">No credit card required · Cancel anytime before day 14</div>
+    </div>
+  </div>
+
+  <!-- 3. Pricing table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th class="col-cw">
+            ● ConfigWizard
+            <div style="font-size:0.63rem;font-weight:400;color:rgba(88,166,255,0.55);letter-spacing:0.04em;margin-top:2px;">Live</div>
+          </th>
+          <th class="col-nm">
+            ◎ NetMonitor
+            <div style="font-size:0.63rem;font-weight:400;color:rgba(0,212,184,0.55);letter-spacing:0.04em;margin-top:2px;">Building</div>
+          </th>
+          <th class="col-at">
+            ◇ Asset Tracker
+            <div style="font-size:0.63rem;font-weight:400;color:rgba(196,154,74,0.55);letter-spacing:0.04em;margin-top:2px;">Planned</div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Starter</td>
+          <td class="col-cw">
+            <span class="price-main">$9.99<span class="unit">/mo</span></span>
+            <span class="price-desc">All features</span>
+            <span class="price-annual">$119.88 billed annually</span>
+            <span class="price-badge">Free tier available</span>
+          </td>
+          <td class="col-nm">
+            <span class="price-main">$99<span class="unit">/mo</span></span>
+            <span class="price-desc">Up to 50 devices</span>
+            <span class="price-annual">$1,188 billed annually</span>
+          </td>
+          <td class="col-at">
+            <span class="price-main">$49<span class="unit">/mo</span></span>
+            <span class="price-desc">Up to 250 assets</span>
+            <span class="price-annual">$588 billed annually</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Plus</td>
+          <td class="col-cw"><span class="price-dash">—</span></td>
+          <td class="col-nm">
+            <span class="price-main">$199<span class="unit">/mo</span></span>
+            <span class="price-desc">Up to 200 devices</span>
+            <span class="price-annual">$2,388 billed annually</span>
+          </td>
+          <td class="col-at">
+            <span class="price-main">$99<span class="unit">/mo</span></span>
+            <span class="price-desc">Up to 1,000 assets</span>
+            <span class="price-annual">$1,188 billed annually</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Pro</td>
+          <td class="col-cw"><span class="price-dash">—</span></td>
+          <td class="col-nm">
+            <span class="price-main">$399<span class="unit">/mo</span></span>
+            <span class="price-desc">Up to 500 devices</span>
+            <span class="price-annual">$4,788 billed annually</span>
+          </td>
+          <td class="col-at">
+            <span class="price-main">$199<span class="unit">/mo</span></span>
+            <span class="price-desc">Up to 5,000 assets</span>
+            <span class="price-annual">$2,388 billed annually</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Enterprise</td>
+          <td class="col-cw"><span class="price-dash">—</span></td>
+          <td class="col-nm">
+            <span class="price-main">$799<span class="unit">/mo</span></span>
+            <span class="price-desc">Up to 5,000 devices</span>
+            <span class="price-annual">$9,588 billed annually</span>
+          </td>
+          <td class="col-at">
+            <span class="price-main">$399<span class="unit">/mo</span></span>
+            <span class="price-desc">Up to 10,000 assets</span>
+            <span class="price-annual">$4,788 billed annually</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. Build your plan -->
+  <div class="builder-section">
+    <div class="builder-header">
+      <h2>Build your plan</h2>
+      <p>Select a tier for each product you need. Add or remove anytime.</p>
+    </div>
+
+    <div class="builder-body">
+
+      <!-- ConfigWizard -->
+      <div class="builder-product">
+        <div class="builder-product-label">
+          <div class="label-dot" style="background:var(--cw);"></div>
+          ConfigWizard
+        </div>
+        <div class="chip-row">
+          <button class="plan-chip active-cw" data-product="cw" data-price="0"    onclick="pick('cw',this)">None</button>
+          <button class="plan-chip"           data-product="cw" data-price="9.99"  onclick="pick('cw',this)">Starter · $9.99/mo</button>
+        </div>
+      </div>
+
+      <!-- NetMonitor -->
+      <div class="builder-product">
+        <div class="builder-product-label">
+          <div class="label-dot" style="background:var(--nm);"></div>
+          NetMonitor
+        </div>
+        <div class="chip-row">
+          <button class="plan-chip active-nm" data-product="nm" data-price="0"   onclick="pick('nm',this)">None</button>
+          <button class="plan-chip"           data-product="nm" data-price="99"   onclick="pick('nm',this)">Starter · $99/mo</button>
+          <button class="plan-chip"           data-product="nm" data-price="199"  onclick="pick('nm',this)">Plus · $199/mo</button>
+          <button class="plan-chip"           data-product="nm" data-price="399"  onclick="pick('nm',this)">Pro · $399/mo</button>
+          <button class="plan-chip"           data-product="nm" data-price="799"  onclick="pick('nm',this)">Enterprise · $799/mo</button>
+        </div>
+      </div>
+
+      <!-- Asset Tracker -->
+      <div class="builder-product">
+        <div class="builder-product-label">
+          <div class="label-dot" style="background:var(--at);"></div>
+          Asset Tracker
+        </div>
+        <div class="chip-row">
+          <button class="plan-chip active-at" data-product="at" data-price="0"   onclick="pick('at',this)">None</button>
+          <button class="plan-chip"           data-product="at" data-price="49"   onclick="pick('at',this)">Starter · $49/mo</button>
+          <button class="plan-chip"           data-product="at" data-price="99"   onclick="pick('at',this)">Plus · $99/mo</button>
+          <button class="plan-chip"           data-product="at" data-price="199"  onclick="pick('at',this)">Pro · $199/mo</button>
+          <button class="plan-chip"           data-product="at" data-price="399"  onclick="pick('at',this)">Enterprise · $399/mo</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="builder-footer">
+      <div class="total-block">
+        <div class="total-monthly" id="totalMonthly">$0 <span class="unit">/mo</span></div>
+        <div class="total-annual"  id="totalAnnual">Select products above to see total</div>
+      </div>
+      <div class="builder-actions">
+        <a href="./login.html?tab=signup" class="btn-primary">Start 14-day free trial →</a>
+        <button class="btn-secondary" onclick="document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth'})">Compare features</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER — exact copy from login.html -->
+<footer>00:SP:AN:GA:TE:00</footer>
+
+<script>
+const totals = { cw: 0, nm: 0, at: 0 };
+
+function pick(product, btn) {
+  document.querySelectorAll(`[data-product="${product}"]`)
+    .forEach(c => c.classList.remove(`active-${product}`));
+  btn.classList.add(`active-${product}`);
+  totals[product] = parseFloat(btn.dataset.price) || 0;
+  render();
+}
+
+function render() {
+  const mo = totals.cw + totals.nm + totals.at;
+  const yr = mo * 12;
+  const fmt = n => n === 0 ? '$0' : n % 1 === 0
+    ? '$' + n.toLocaleString()
+    : '$' + n.toFixed(2);
+
+  document.getElementById('totalMonthly').innerHTML =
+    fmt(mo) + ' <span class="unit">/mo</span>';
+  document.getElementById('totalAnnual').textContent = mo === 0
+    ? 'Select products above to see total'
+    : fmt(yr) + ' billed annually';
+}
+</script>
+
+</body>
+</html>
