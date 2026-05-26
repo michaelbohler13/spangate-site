@@ -9,6 +9,7 @@
     { "source": "/configwizard/login", "destination": "/configwizard/login.html" },
     { "source": "/configwizard/profile", "destination": "/configwizard/profile.html" },
     { "source": "/netmonitor", "destination": "/netmonitor/index.html" },
+    { "source": "/netmonitor/dashboard", "destination": "/netmonitor/dashboard.html" },
     { "source": "/assettracker", "destination": "/assettracker/index.html" }
   ],
   "headers": [

@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Monitor — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d1117; --bg2:#0a0a0a; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#222222;
+  --border:rgba(255,255,255,0.08); --border-bright:rgba(255,255,255,0.15);
+  --text:#f5f5f7; --text-muted:#a1a1a6; --text-dim:#6e6e73;
+  --accent:#00d4b8; --teal:#2a8a78;
+  --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  background:rgba(0,0,0,0.72);border-bottom:0.5px solid var(--border);}
+.nav-top{height:36px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;
+  border-bottom:0.5px solid rgba(255,255,255,0.06);}
+.nav-top a{font-size:0.8rem;font-weight:500;letter-spacing:-0.01em;color:#8b949e;
+  text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;}
+.nav-top a:hover{color:#fff;background:rgba(255,255,255,0.05);}
+.nav-top a.active{color:var(--accent);background:rgba(0,212,184,0.08);}
+.nav-bottom{height:48px;display:flex;align-items:center;padding:0 2rem;}
+.nav-logo{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);
+  text-decoration:none;display:flex;align-items:center;gap:8px;}
+.nav-links{display:flex;gap:1.75rem;margin-left:2.5rem;list-style:none;}
+.nav-links a{font-size:0.78rem;color:var(--text-muted);text-decoration:none;
+  letter-spacing:-0.01em;transition:color 0.15s;cursor:pointer;}
+.nav-links a:hover{color:var(--text);}
+.nav-spacer{flex:1;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-user{font-size:0.78rem;color:var(--text-muted);font-family:var(--mono);}
+.nav-signout{font-size:0.78rem;color:var(--text-dim);background:none;border:none;
+  cursor:pointer;font-family:var(--sans);transition:color 0.15s;padding:0;}
+.nav-signout:hover{color:var(--text);}
+
+/* ── PAGE WRAP ────────────────────────────────────────────────────────────── */
+.page-wrap{padding-top:84px;min-height:100vh;}
+
+/* ── MOCK BANNER ──────────────────────────────────────────────────────────── */
+#mockBanner{display:flex;align-items:center;gap:10px;padding:9px 2rem;
+  background:var(--surface2);border-left:3px solid var(--accent);
+  font-size:0.78rem;color:var(--text-muted);}
+#mockBanner span{font-family:var(--mono);}
+#mockBanner button{background:none;border:none;color:var(--text-dim);cursor:pointer;
+  font-size:1rem;margin-left:auto;padding:2px 6px;border-radius:4px;transition:color 0.15s;}
+#mockBanner button:hover{color:var(--text);}
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;
+  border-radius:980px;font-family:var(--sans);font-size:0.85rem;font-weight:500;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;border:none;}
+.btn-primary{background:var(--teal);color:#fff;}
+.btn-primary:hover{opacity:0.88;transform:scale(1.02);}
+.btn-ghost{background:transparent;color:var(--text-muted);border:0.5px solid var(--border-bright);}
+.btn-ghost:hover{color:var(--text);}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid rgba(0,212,184,0.35);}
+.btn-outline:hover{background:rgba(0,212,184,0.07);border-color:var(--accent);}
+
+/* ── ONBOARDING ───────────────────────────────────────────────────────────── */
+#onboarding{display:none;min-height:calc(100vh - 84px);align-items:flex-start;
+  justify-content:center;padding:2.5rem 1.5rem 4rem;}
+.ob-card{width:100%;max-width:680px;background:var(--surface);
+  border:0.5px solid var(--border-bright);border-radius:16px;overflow:hidden;}
+.ob-progress{display:flex;gap:4px;padding:1.25rem 1.5rem 0;}
+.ob-seg{flex:1;height:3px;background:var(--surface3);border-radius:2px;transition:background 0.3s;}
+.ob-seg.done{background:var(--teal);}
+.ob-seg.active{background:var(--accent);}
+.ob-step-label{padding:0.45rem 1.5rem 1.1rem;font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);}
+.ob-body{padding:0 1.5rem 0.5rem;}
+.ob-title{font-size:1.35rem;font-weight:600;letter-spacing:-0.03em;color:var(--text);margin-bottom:0.55rem;}
+.ob-desc{font-size:0.83rem;color:var(--text-muted);line-height:1.65;margin-bottom:1.1rem;}
+.ob-footer{display:flex;align-items:center;justify-content:space-between;
+  padding:1rem 1.5rem;border-top:0.5px solid var(--border);margin-top:1rem;}
+
+/* API key box */
+.api-key-box{display:flex;align-items:center;gap:10px;background:var(--surface2);
+  border:0.5px solid var(--border-bright);border-radius:10px;padding:11px 14px;margin:0.75rem 0 1.1rem;}
+.api-key-val{font-family:var(--mono);font-size:0.85rem;color:var(--accent);
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.api-key-copy-btn{flex-shrink:0;background:var(--surface3);border:0.5px solid var(--border-bright);
+  border-radius:6px;padding:5px 12px;font-size:0.7rem;color:var(--text-muted);
+  cursor:pointer;font-family:var(--sans);transition:all 0.15s;}
+.api-key-copy-btn:hover{color:var(--text);border-color:rgba(0,212,184,0.4);}
+
+/* OS tabs */
+.os-tabs{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:1.1rem;}
+.os-tab{padding:8px 16px;background:none;border:none;border-bottom:2px solid transparent;
+  font-family:var(--sans);font-size:0.82rem;font-weight:500;color:var(--text-muted);
+  cursor:pointer;transition:all 0.15s;}
+.os-tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.os-tab:hover:not(.active){color:var(--text-dim);}
+.os-pane{display:none;}
+.os-pane.active{display:block;}
+
+/* Sub-steps */
+.sub-steps{display:flex;flex-direction:column;gap:1rem;padding-bottom:0.5rem;}
+.sub-step{display:flex;gap:12px;}
+.sub-step-num{flex-shrink:0;width:26px;height:26px;border-radius:50%;
+  background:rgba(0,212,184,0.1);border:1px solid rgba(0,212,184,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:0.65rem;color:var(--accent);font-weight:600;margin-top:1px;}
+.sub-step-body{flex:1;padding-top:2px;}
+.sub-step-title{font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;}
+.sub-step-text{font-size:0.79rem;color:var(--text-muted);line-height:1.6;margin-bottom:0.4rem;}
+.sub-step-note{font-size:0.7rem;color:var(--text-dim);font-style:italic;margin-top:0.3rem;}
+
+/* Code blocks */
+.code-block{position:relative;margin:0.4rem 0;}
+.code-block pre{background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;
+  padding:0.7rem 3rem 0.7rem 0.8rem;font-family:var(--mono);font-size:0.71rem;
+  line-height:1.7;color:var(--text-muted);overflow-x:auto;white-space:pre;}
+.code-copy{position:absolute;top:6px;right:6px;background:var(--surface3);
+  border:0.5px solid var(--border-bright);border-radius:5px;padding:3px 10px;
+  font-size:0.63rem;color:var(--text-dim);cursor:pointer;font-family:var(--sans);transition:all 0.15s;}
+.code-copy:hover{color:var(--accent);border-color:rgba(0,212,184,0.35);}
+
+/* Step 3 — waiting */
+.wait-center{display:flex;flex-direction:column;align-items:center;padding:1.75rem 0 1rem;gap:1rem;text-align:center;}
+.pulse-wrap{position:relative;width:116px;height:116px;display:flex;align-items:center;justify-content:center;}
+.pulse-outer{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(0,212,184,0.25);animation:pulseRing 2s ease-in-out infinite;}
+.pulse-inner{position:absolute;inset:14px;border-radius:50%;border:2px solid rgba(0,212,184,0.55);background:rgba(0,212,184,0.04);display:flex;align-items:center;justify-content:center;animation:pulseRing 2s ease-in-out infinite 0.35s;}
+@keyframes pulseRing{0%,100%{transform:scale(0.96);opacity:0.75;}50%{transform:scale(1.04);opacity:0.22;}}
+.wait-title{font-size:1.05rem;font-weight:600;color:var(--text);}
+.wait-body{font-size:0.82rem;color:var(--text-muted);line-height:1.6;max-width:340px;}
+.wait-poll{font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);}
+#connFlash{display:none;color:var(--accent);font-family:var(--mono);font-size:0.85rem;font-weight:600;}
+
+/* ── DASHBOARD ────────────────────────────────────────────────────────────── */
+#dashboard{display:none;}
+
+/* Site header */
+.site-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:0.85rem 2rem;background:var(--surface);border-bottom:0.5px solid var(--border);}
+.site-hdr-l{display:flex;align-items:center;gap:14px;}
+.site-name-label{font-size:0.95rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);}
+.agent-online{display:flex;align-items:center;gap:6px;}
+.pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--accent);animation:pulseDot 2s ease-in-out infinite;}
+@keyframes pulseDot{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.agent-txt{font-family:var(--mono);font-size:0.67rem;color:var(--text-muted);}
+.site-hdr-r{font-family:var(--mono);font-size:0.67rem;color:var(--text-dim);
+  display:flex;align-items:center;gap:8px;}
+.hdr-sep{color:var(--border-bright);}
+
+/* Main tabs */
+.main-tab-bar{display:flex;background:var(--bg);border-bottom:0.5px solid var(--border);
+  padding:0 2rem;position:sticky;top:84px;z-index:50;}
+.main-tab{padding:0.7rem 1.2rem;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--text-muted);cursor:pointer;font-family:var(--sans);font-size:0.82rem;
+  font-weight:500;letter-spacing:-0.01em;transition:all 0.15s;}
+.main-tab:hover{color:var(--text);}
+.main-tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.tab-pane{display:none;padding:1.5rem 2rem;}
+.tab-pane.active{display:block;}
+
+/* ── DEVICES TAB ─────────────────────────────────────────────────────────── */
+.dev-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.dev-table th{padding:0.55rem 1rem;text-align:left;font-size:0.62rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);
+  font-family:var(--mono);border-bottom:0.5px solid var(--border);}
+.dev-table td{padding:0.72rem 1rem;border-bottom:0.5px solid var(--border);vertical-align:middle;}
+.dev-row{cursor:pointer;transition:background 0.12s;}
+.dev-row:hover{background:rgba(255,255,255,0.02);}
+.dev-row.expanded{background:rgba(0,212,184,0.025);}
+.acc-row td{border-bottom:0.5px solid var(--border);padding:0;}
+.acc-inner{padding:0.9rem 1rem 1rem 1rem;background:rgba(0,212,184,0.02);}
+.acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.9rem;}
+.acc-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;
+  color:var(--text-dim);font-family:var(--mono);margin-bottom:3px;}
+.acc-val{font-family:var(--mono);font-size:0.76rem;color:var(--text-muted);}
+.acc-alerts-hd{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;
+  color:var(--text-dim);font-family:var(--mono);margin-bottom:6px;}
+.mini-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;
+  border-radius:5px;font-family:var(--mono);font-size:0.63rem;background:var(--surface2);
+  border:0.5px solid var(--border);color:var(--text-muted);margin:0 4px 4px 0;}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
+  border-radius:980px;font-size:0.67rem;font-weight:600;font-family:var(--mono);}
+.s-up{background:rgba(0,212,184,0.14);color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);}
+.s-down{background:rgba(255,95,87,0.14);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.3);}
+.v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;}
+.hn{font-family:var(--mono);font-size:0.78rem;color:var(--text);}
+.ip-cell{font-family:var(--mono);font-size:0.74rem;color:var(--text-muted);}
+.ls-cell{font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);}
+.chevron{font-size:0.6rem;color:var(--text-dim);transition:transform 0.2s;margin-left:4px;display:inline-block;}
+.dev-row.expanded .chevron{transform:rotate(90deg);}
+
+/* ── ALERTS TAB ──────────────────────────────────────────────────────────── */
+.alert-sub-bar{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:1.1rem;}
+.alert-sub-tab{padding:7px 14px;background:none;border:none;border-bottom:2px solid transparent;
+  font-family:var(--sans);font-size:0.8rem;font-weight:500;color:var(--text-muted);
+  cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px;}
+.alert-sub-tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.alert-sub-tab:hover:not(.active){color:var(--text-dim);}
+.a-count{display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;border-radius:50%;background:var(--surface3);
+  font-size:0.59rem;font-family:var(--mono);}
+.al-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.al-table th{padding:0.55rem 0.75rem;text-align:left;font-size:0.62rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);
+  font-family:var(--mono);border-bottom:0.5px solid var(--border);}
+.al-table td{padding:0.72rem 0.75rem;border-bottom:0.5px solid var(--border);vertical-align:middle;}
+.al-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:5px;
+  font-family:var(--mono);font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+.al-ping-down{background:rgba(255,95,87,0.14);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.3);}
+.al-ping-up{background:rgba(0,212,184,0.12);color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);}
+.al-config{background:rgba(196,154,74,0.14);color:#c49a4a;border:0.5px solid rgba(196,154,74,0.3);}
+.al-ts{font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);}
+.al-msg{font-size:0.79rem;color:var(--text-muted);}
+.ack-btn{background:transparent;border:0.5px solid rgba(0,212,184,0.3);color:var(--accent);
+  border-radius:6px;padding:4px 10px;font-size:0.7rem;cursor:pointer;
+  font-family:var(--sans);transition:all 0.15s;}
+.ack-btn:hover{background:rgba(0,212,184,0.07);}
+.empty-st{text-align:center;padding:2.5rem;font-size:0.8rem;color:var(--text-dim);font-family:var(--mono);}
+
+/* ── CONFIGS TAB ─────────────────────────────────────────────────────────── */
+.cfg-select-wrap{position:relative;display:inline-block;margin-bottom:1.1rem;}
+.cfg-select-wrap::after{content:'▾';position:absolute;right:11px;top:50%;
+  transform:translateY(-50%);color:var(--text-dim);font-size:0.68rem;pointer-events:none;}
+.cfg-select{width:260px;background:var(--surface2);border:0.5px solid var(--border-bright);
+  border-radius:8px;padding:8px 30px 8px 12px;font-family:var(--mono);font-size:0.8rem;
+  color:var(--text-muted);cursor:pointer;outline:none;transition:border-color 0.15s;
+  appearance:none;-webkit-appearance:none;}
+.cfg-select:focus{border-color:var(--accent);color:var(--text);}
+.bk-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.bk-table th{padding:0.5rem 0.75rem;font-size:0.62rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.06em;color:var(--text-dim);font-family:var(--mono);
+  border-bottom:0.5px solid var(--border);text-align:left;}
+.bk-table td{padding:0.72rem 0.75rem;border-bottom:0.5px solid var(--border);vertical-align:middle;}
+.bk-date{font-family:var(--mono);font-size:0.76rem;color:var(--text-muted);}
+.bk-hash{font-family:var(--mono);font-size:0.76rem;color:var(--accent);
+  background:rgba(0,212,184,0.07);padding:2px 8px;border-radius:4px;}
+.diff-btn{background:transparent;border:0.5px solid var(--border-bright);
+  color:var(--text-muted);border-radius:6px;padding:4px 12px;font-size:0.7rem;
+  cursor:pointer;font-family:var(--sans);transition:all 0.15s;}
+.diff-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── MODAL ───────────────────────────────────────────────────────────────── */
+#configModal{position:fixed;inset:0;z-index:1000;display:none;align-items:flex-start;
+  justify-content:center;padding:2.5rem 1.25rem;overflow-y:auto;}
+#configModal.open{display:flex;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);}
+.modal-box{width:100%;max-width:860px;background:var(--surface);
+  border:0.5px solid var(--border-bright);border-radius:14px;overflow:hidden;position:relative;z-index:1;}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:1rem 1.25rem;border-bottom:0.5px solid var(--border);}
+.modal-title{font-size:0.88rem;font-weight:600;color:var(--text);font-family:var(--mono);}
+.modal-x{background:none;border:none;color:var(--text-dim);cursor:pointer;
+  font-size:1.15rem;padding:4px 8px;border-radius:6px;transition:all 0.15s;line-height:1;}
+.modal-x:hover{color:var(--text);background:var(--surface3);}
+.modal-sec{padding:1rem 1.25rem;}
+.modal-sec+.modal-sec{border-top:0.5px solid var(--border);}
+.modal-eyebrow{font-size:0.6rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:0.65rem;font-family:var(--mono);}
+.modal-sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.65rem;}
+.diff-display{max-height:280px;overflow-y:auto;background:var(--bg2);border:0.5px solid var(--border);
+  border-radius:8px;padding:0.6rem;font-family:var(--mono);font-size:0.75rem;}
+.dl{padding:1px 0 1px 10px;border-radius:2px;line-height:1.75;}
+.dl-add{background:rgba(0,212,184,0.09);color:var(--accent);border-left:2px solid var(--accent);}
+.dl-rem{background:rgba(255,95,87,0.09);color:#ff5f57;border-left:2px solid #ff5f57;}
+.dl-ctx{color:var(--text-dim);padding-left:12px;}
+.full-cfg{max-height:380px;overflow-y:auto;background:var(--surface2);border:0.5px solid var(--border);
+  border-radius:8px;padding:1rem;font-family:var(--mono);font-size:0.71rem;
+  line-height:1.75;color:var(--text-muted);white-space:pre;}
+
+/* ── UTILS ───────────────────────────────────────────────────────────────── */
+.fade-in{animation:fadeIn 0.35s ease forwards;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <a href="../configwizard/">Config Wizard</a>
+    <a href="../netmonitor/" class="active">Network Monitor</a>
+    <a href="../assettracker/">Asset Tracker</a>
+  </div>
+  <div class="nav-bottom">
+    <a href="./index.html" class="nav-logo">Network <span style="color:#00d4b8;">Monitor</span></a>
+    <ul class="nav-links">
+      <li><a onclick="navToTab('devices')">Devices</a></li>
+      <li><a onclick="navToTab('alerts')">Alerts</a></li>
+      <li><a onclick="navToTab('configs')">Configs</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <span class="nav-user" id="navUser"></span>
+      <button class="nav-signout" id="navSignOut" onclick="signOut()" style="display:none;">Sign out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+<!-- ── MOCK BANNER ──────────────────────────────────────────────────────────── -->
+<div id="mockBanner" style="display:none;">
+  <span>⚠ Mock mode — no backend connected</span>
+  <button onclick="this.parentElement.style.display='none'">×</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- STATE A — ONBOARDING                                                       -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="onboarding">
+<div class="ob-card fade-in">
+
+  <!-- Progress bar -->
+  <div class="ob-progress">
+    <div class="ob-seg active" id="seg1"></div>
+    <div class="ob-seg" id="seg2"></div>
+    <div class="ob-seg" id="seg3"></div>
+  </div>
+  <div class="ob-step-label" id="stepLabel">Step 1 of 3</div>
+
+  <!-- ── STEP 1 — API Key ──────────────────────────────────────────────────── -->
+  <div id="step1" class="ob-body">
+    <div class="ob-title">Your API Key</div>
+    <div class="ob-desc">This key identifies your site. Keep it secret — anyone with this key can send data to your account.</div>
+    <div class="api-key-box">
+      <span class="api-key-val" id="apiKeyDisplay">sg_live_mock_key_abc123xyz</span>
+      <button class="api-key-copy-btn" onclick="copyApiKey(this)">Copy</button>
+    </div>
+    <div class="ob-desc" style="margin-bottom:0;">You'll paste this key into your agent config file in the next step. If you ever need to rotate it, generate a new one from Settings.</div>
+  </div>
+  <div class="ob-footer" id="foot1">
+    <span></span>
+    <button class="btn btn-primary" onclick="goStep(2)">Next: Install the agent →</button>
+  </div>
+
+  <!-- ── STEP 2 — Install ──────────────────────────────────────────────────── -->
+  <div id="step2" class="ob-body" style="display:none;">
+    <div class="ob-title">Install the Agent</div>
+    <div class="ob-desc">Choose your platform and follow the steps below. The agent runs silently in the background on your local network.</div>
+
+    <div class="os-tabs">
+      <button class="os-tab active" id="tabPi" onclick="switchOs('pi')">Raspberry Pi</button>
+      <button class="os-tab" id="tabWin" onclick="switchOs('win')">Windows</button>
+    </div>
+
+    <!-- Pi steps -->
+    <div class="os-pane active" id="panePi">
+      <div class="sub-steps">
+        <div class="sub-step">
+          <div class="sub-step-num">1</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Flash Raspberry Pi OS</div>
+            <div class="sub-step-text">Download Raspberry Pi Imager from raspberrypi.com/software. Flash Raspberry Pi OS Lite (64-bit). In Imager settings (⚙️): enable SSH, set a username and password, configure WiFi if needed.</div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">2</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Connect and update</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3 python3-pip python3-venv git
+python3 --version</pre>
+            </div>
+            <div class="sub-step-note">Python 3.9 or higher required</div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">3</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Clone and install</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>git clone https://github.com/michaelbohler13/spangate-site.git
+cd spangate-site/netmonitor-agent
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt</pre>
+            </div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">4</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Configure</div>
+            <div class="sub-step-text">Create your config file with your API key and device list:</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre id="piConfigBlock">agent:
+  site_name: "My Network"
+  api_url: "https://api.spangate.com"
+  api_key: "sg_live_mock_key_abc123xyz"
+devices:
+  - hostname: "core-sw-01"
+    ip: "192.168.1.1"
+    vendor: "cisco"
+    ssh_username: "admin"
+    ssh_password: "your_password"</pre>
+            </div>
+            <div class="sub-step-note">Supported vendors: cisco · aruba_cx · juniper</div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">5</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Run the agent</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>python3 agent.py --config /etc/spangate/netmonitor/config.yaml</pre>
+            </div>
+            <div class="sub-step-note">You should see: [INFO] SpanGate Network Monitor Agent v1.0.0 — connected</div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">6</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Install as system service</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>sudo systemctl enable spangate-netmonitor
+sudo systemctl start spangate-netmonitor
+sudo systemctl status spangate-netmonitor</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /panePi -->
+
+    <!-- Windows steps -->
+    <div class="os-pane" id="paneWin">
+      <div class="sub-steps">
+        <div class="sub-step">
+          <div class="sub-step-num">1</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Install Python</div>
+            <div class="sub-step-text">Download Python 3.11 from python.org/downloads. Run the installer — check "Add Python to PATH" before clicking Install.</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>python --version</pre>
+            </div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">2</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Clone the repo</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>cd %USERPROFILE%\Documents
+git clone https://github.com/michaelbohler13/spangate-site.git
+cd spangate-site\netmonitor-agent</pre>
+            </div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">3</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Install dependencies</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt</pre>
+            </div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">4</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Configure</div>
+            <div class="sub-step-text">Create your config file with your API key and device list:</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre id="winConfigBlock">agent:
+  site_name: "My Network"
+  api_url: "https://api.spangate.com"
+  api_key: "sg_live_mock_key_abc123xyz"
+devices:
+  - hostname: "core-sw-01"
+    ip: "192.168.1.1"
+    vendor: "cisco"
+    ssh_username: "admin"
+    ssh_password: "your_password"</pre>
+            </div>
+            <div class="sub-step-note">Supported vendors: cisco · aruba_cx · juniper</div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">5</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Test the agent</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>python agent.py --config my-config.yaml</pre>
+            </div>
+            <div class="sub-step-note">You should see: [INFO] SpanGate Network Monitor Agent v1.0.0 — connected</div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">6</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Install as Windows service</div>
+            <div class="sub-step-text">Download NSSM from nssm.cc/download. Copy nssm.exe to C:\Windows\System32\ then run as Administrator:</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>nssm install SpangateNetMonitor</pre>
+            </div>
+            <div class="sub-step-text" style="margin-top:0.5rem;">In the NSSM GUI set:<br>· Path: full path to venv\Scripts\python.exe<br>· Startup directory: full path to netmonitor-agent\<br>· Arguments: agent.py --config my-config.yaml<br><br>Then: <code style="font-family:var(--mono);font-size:0.79rem;color:var(--accent);">nssm start SpangateNetMonitor</code></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /paneWin -->
+  </div><!-- /step2 body -->
+  <div class="ob-footer" id="foot2" style="display:none;">
+    <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+    <button class="btn btn-primary" onclick="goStep(3)">Next: Wait for connection →</button>
+  </div>
+
+  <!-- ── STEP 3 — Waiting ──────────────────────────────────────────────────── -->
+  <div id="step3" class="ob-body" style="display:none;">
+    <div class="ob-title">Waiting for your agent...</div>
+    <div class="wait-center">
+      <div class="pulse-wrap">
+        <div class="pulse-outer"></div>
+        <div class="pulse-inner">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00d4b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
+            <line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/>
+            <line x1="7" y1="19" x2="17" y2="19"/>
+          </svg>
+        </div>
+      </div>
+      <div class="wait-title">Waiting for your agent...</div>
+      <div class="wait-body">Once your agent starts and connects, this page will update automatically.</div>
+      <div class="wait-poll" id="pollStatus">Checking for connection every 10 seconds...</div>
+      <div id="connFlash">● Agent connected!</div>
+      <div id="mockSimBtn" style="display:none;margin-top:0.5rem;">
+        <button class="btn btn-outline" onclick="simulateConnect()">Simulate Connection →</button>
+      </div>
+    </div>
+  </div>
+  <div class="ob-footer" id="foot3" style="display:none;">
+    <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+    <span></span>
+  </div>
+
+</div><!-- /ob-card -->
+</div><!-- /onboarding -->
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- STATE B — LIVE DASHBOARD                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="dashboard">
+
+  <!-- Site header -->
+  <div class="site-hdr">
+    <div class="site-hdr-l">
+      <div class="site-name-label" id="siteNameLabel">Main Campus</div>
+      <div class="agent-online">
+        <span class="pulse-dot"></span>
+        <span class="agent-txt">Agent connected</span>
+      </div>
+    </div>
+    <div class="site-hdr-r">
+      <span id="lastSeenTxt">Last seen: 2 minutes ago</span>
+      <span class="hdr-sep">·</span>
+      <span id="deviceSummary">3 devices · 2 up · 1 down</span>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="main-tab-bar">
+    <button class="main-tab active" id="mt-devices" onclick="switchTab('devices')">Devices</button>
+    <button class="main-tab" id="mt-alerts" onclick="switchTab('alerts')">Alerts</button>
+    <button class="main-tab" id="mt-configs" onclick="switchTab('configs')">Configs</button>
+  </div>
+
+  <!-- ── DEVICES PANE ──────────────────────────────────────────────────────── -->
+  <div class="tab-pane active" id="pane-devices">
+    <table class="dev-table" id="devTable">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Hostname</th>
+          <th>IP Address</th>
+          <th>Vendor</th>
+          <th>Type</th>
+          <th>Last Seen</th>
+        </tr>
+      </thead>
+      <tbody id="devTbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ── ALERTS PANE ───────────────────────────────────────────────────────── -->
+  <div class="tab-pane" id="pane-alerts">
+    <div class="alert-sub-bar">
+      <button class="alert-sub-tab active" id="ast-active" onclick="switchAlertTab('active')">
+        Active <span class="a-count" id="activeCount">0</span>
+      </button>
+      <button class="alert-sub-tab" id="ast-resolved" onclick="switchAlertTab('resolved')">
+        Resolved <span class="a-count" id="resolvedCount">0</span>
+      </button>
+    </div>
+    <div id="alertsList"></div>
+  </div>
+
+  <!-- ── CONFIGS PANE ──────────────────────────────────────────────────────── -->
+  <div class="tab-pane" id="pane-configs">
+    <div class="cfg-select-wrap">
+      <select class="cfg-select" id="cfgDeviceSelect" onchange="onCfgDeviceChange(this.value)">
+        <option value="">Select device...</option>
+        <option value="core-sw-01">core-sw-01</option>
+        <option value="dist-sw-01">dist-sw-01</option>
+        <option value="edge-rtr-01">edge-rtr-01</option>
+      </select>
+    </div>
+    <div id="backupList"></div>
+  </div>
+
+</div><!-- /dashboard -->
+
+</div><!-- /page-wrap -->
+
+<!-- ── CONFIG MODAL ──────────────────────────────────────────────────────────── -->
+<div id="configModal">
+  <div class="modal-bg" onclick="closeModal()"></div>
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title" id="modalTitle">core-sw-01 — May 24 2026 11:32 PM</span>
+      <button class="modal-x" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-sec">
+      <div class="modal-eyebrow">Changes from previous backup</div>
+      <div class="diff-display" id="modalDiff"></div>
+    </div>
+    <div class="modal-sec">
+      <div class="modal-sec-hdr">
+        <div class="modal-eyebrow" style="margin-bottom:0;">Full Configuration</div>
+        <button class="code-copy" style="position:static;padding:4px 12px;" onclick="cpFullCfg(this)">Copy full config</button>
+      </div>
+      <div class="full-cfg" id="modalFullCfg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+const MOCK_MODE  = true;
+const MOCK_STATE = 'live';   // 'live' | 'onboarding'
+const API_BASE   = 'https://api.spangate.com';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOCK DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const MOCK_API_KEY = 'sg_live_mock_key_abc123xyz';
+
+const MOCK_DEVICES = [
+  { hostname:'core-sw-01',  ip:'10.1.1.1',   vendor:'cisco',    type:'Switch', status:'up',   lastSeen:'2 min ago',  configHash:'a3f9b2c1', configPulled:'May 24 2026 11:32 PM' },
+  { hostname:'dist-sw-01',  ip:'10.1.1.2',   vendor:'aruba_cx', type:'Switch', status:'up',   lastSeen:'2 min ago',  configHash:'d8e4f710', configPulled:'May 17 2026 03:00 AM' },
+  { hostname:'edge-rtr-01', ip:'10.1.1.254', vendor:'juniper',  type:'Router', status:'down', lastSeen:'14 min ago', configHash:null,        configPulled:null },
+];
+
+const MOCK_ALERTS_ACTIVE_INIT = [
+  { id:1, type:'config_change', hostname:'core-sw-01',  ts:'May 24 2026 11:32 PM', msg:'Config changed — 4 lines modified' },
+  { id:2, type:'ping_down',     hostname:'edge-rtr-01', ts:'May 25 2026 08:14 AM', msg:'Device unreachable' },
+];
+const MOCK_ALERTS_RESOLVED_INIT = [
+  { id:3, type:'ping_down', hostname:'dist-sw-01', ts:'May 23 2026 02:10 AM', msg:'Device unreachable' },
+];
+
+const MOCK_CONFIGS = {
+  'core-sw-01': {
+    backups: [
+      { id:1, date:'May 24 2026 11:32 PM', hash:'a3f9b2c1', hasDiff:true  },
+      { id:2, date:'May 17 2026 03:00 AM', hash:'d8e4f710', hasDiff:false },
+    ],
+    diff: '- ntp server 10.1.1.100\n+ ntp server 10.1.1.200\n+ ntp server 10.1.1.201\n  interface GigabitEthernet0/1\n-  description OLD-UPLINK\n+  description CORE-UPLINK-01',
+    fullConfig: 'hostname core-sw-01\n!\nntp server 10.1.1.200\nntp server 10.1.1.201\n!\nvlan 10\n name STAFF\nvlan 20\n name STUDENTS\nvlan 99\n name MGMT\n!\ninterface GigabitEthernet0/1\n description CORE-UPLINK-01\n switchport mode trunk\n switchport trunk allowed vlan 10,20,99\n!\ninterface GigabitEthernet0/2\n description ACCESS-PORT-STAFF\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n!\nip ssh version 2\n!\nline vty 0 4\n transport input ssh\n login local\n!\nend',
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MUTABLE STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let activeAlerts   = MOCK_ALERTS_ACTIVE_INIT.map(a => ({...a}));
+let resolvedAlerts = MOCK_ALERTS_RESOLVED_INIT.map(a => ({...a}));
+let expandedDevice = null;
+let apiKey         = MOCK_API_KEY;
+let currentStep    = 1;
+let activeTab      = 'devices';
+let alertSubTab    = 'active';
+let pollTimer      = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function cpCode(btn) {
+  const txt = btn.nextElementSibling.textContent;
+  navigator.clipboard.writeText(txt).catch(() => {});
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function copyApiKey(btn) {
+  navigator.clipboard.writeText(apiKey).catch(() => {});
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function cpFullCfg(btn) {
+  const txt = document.getElementById('modalFullCfg').textContent;
+  navigator.clipboard.writeText(txt).catch(() => {});
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => { btn.textContent = 'Copy full config'; }, 2000);
+}
+function vendorLabel(v) {
+  return {cisco:'Cisco', aruba_cx:'Aruba CX', juniper:'Juniper'}[v] || v;
+}
+function vendorClass(v) {
+  return {cisco:'v-cisco', aruba_cx:'v-aruba', juniper:'v-juniper'}[v] || '';
+}
+function alertBadgeClass(t) {
+  return {ping_down:'al-ping-down', ping_up:'al-ping-up', config_change:'al-config'}[t] || '';
+}
+function alertBadgeLabel(t) {
+  return {ping_down:'Device Down', ping_up:'Device Up', config_change:'Config Change'}[t] || t;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────────────────────────────────────────
+async function initApp() {
+  // Inject API key into config code blocks
+  injectApiKey(apiKey);
+
+  // Show sign-out in nav if SpanGate available
+  if (typeof SpanGate !== 'undefined') {
+    try {
+      const user = await SpanGate.getUser();
+      if (user) {
+        const nu = document.getElementById('navUser');
+        const ns = document.getElementById('navSignOut');
+        if (nu) nu.textContent = user.email;
+        if (ns) ns.style.display = '';
+      }
+      if (!MOCK_MODE) {
+        const ok = await SpanGate.hasAccess('netmonitor');
+        if (!ok) { window.location.href = '../login.html?product=netmonitor'; return; }
+        // In live mode, get real API key from user metadata
+        if (user && user.user_metadata && user.user_metadata.api_key) {
+          apiKey = user.user_metadata.api_key;
+          injectApiKey(apiKey);
+        }
+      }
+    } catch(e) {
+      if (!MOCK_MODE) {
+        window.location.href = '../login.html?product=netmonitor';
+        return;
+      }
+    }
+  } else if (!MOCK_MODE) {
+    window.location.href = '../login.html?product=netmonitor';
+    return;
+  }
+
+  // Show mock banner
+  if (MOCK_MODE) {
+    document.getElementById('mockBanner').style.display = 'flex';
+  }
+
+  // Determine state
+  if (MOCK_MODE) {
+    if (MOCK_STATE === 'onboarding') showOnboarding();
+    else showDashboard();
+  } else {
+    await determineState();
+  }
+}
+
+async function determineState() {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/agent/heartbeat`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    if (res.ok) showDashboard();
+    else showOnboarding();
+  } catch(e) {
+    showOnboarding();
+  }
+}
+
+function signOut() {
+  if (typeof SpanGate !== 'undefined') SpanGate.signOut();
+  else window.location.href = '../login.html';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ONBOARDING
+// ─────────────────────────────────────────────────────────────────────────────
+function showOnboarding() {
+  document.getElementById('onboarding').style.display = 'flex';
+  document.getElementById('dashboard').style.display  = 'none';
+  goStep(1);
+}
+
+function goStep(n) {
+  currentStep = n;
+  // Hide all step bodies and footers
+  [1,2,3].forEach(i => {
+    const body = document.getElementById('step'+i);
+    const foot = document.getElementById('foot'+i);
+    if (body) body.style.display = 'none';
+    if (foot) foot.style.display = 'none';
+  });
+  // Show active step
+  const activeBody = document.getElementById('step'+n);
+  const activeFoot = document.getElementById('foot'+n);
+  if (activeBody) activeBody.style.display = '';
+  if (activeFoot) activeFoot.style.display = 'flex';
+
+  // Progress bar
+  document.getElementById('seg1').className = 'ob-seg ' + (n > 1 ? 'done' : n === 1 ? 'active' : '');
+  document.getElementById('seg2').className = 'ob-seg ' + (n > 2 ? 'done' : n === 2 ? 'active' : '');
+  document.getElementById('seg3').className = 'ob-seg ' + (n === 3 ? 'active' : '');
+
+  // Step label
+  document.getElementById('stepLabel').textContent = `Step ${n} of 3`;
+
+  // Step 3 setup
+  if (n === 3) {
+    if (MOCK_MODE) {
+      document.getElementById('mockSimBtn').style.display = '';
+    } else {
+      startPolling();
+    }
+  } else {
+    stopPolling();
+  }
+}
+
+function switchOs(os) {
+  document.getElementById('tabPi').className  = 'os-tab' + (os === 'pi' ? ' active' : '');
+  document.getElementById('tabWin').className = 'os-tab' + (os === 'win' ? ' active' : '');
+  document.getElementById('panePi').className  = 'os-pane' + (os === 'pi' ? ' active' : '');
+  document.getElementById('paneWin').className = 'os-pane' + (os === 'win' ? ' active' : '');
+}
+
+function injectApiKey(key) {
+  const blocks = ['piConfigBlock','winConfigBlock'];
+  blocks.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = el.textContent.replace(/api_key:.*/, `api_key: "${key}"`);
+  });
+  const disp = document.getElementById('apiKeyDisplay');
+  if (disp) disp.textContent = key;
+}
+
+function simulateConnect() {
+  const flash = document.getElementById('connFlash');
+  const simBtn = document.getElementById('mockSimBtn');
+  if (flash) { flash.style.display = 'block'; }
+  if (simBtn) simBtn.style.display = 'none';
+  setTimeout(showDashboard, 900);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POLLING (live mode only)
+// ─────────────────────────────────────────────────────────────────────────────
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/agent/heartbeat`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+      if (res.ok) {
+        stopPolling();
+        const flash = document.getElementById('connFlash');
+        if (flash) { flash.style.display = 'block'; }
+        setTimeout(showDashboard, 900);
+      }
+    } catch(e) {}
+  }, 10000);
+}
+
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DASHBOARD
+// ─────────────────────────────────────────────────────────────────────────────
+function showDashboard() {
+  stopPolling();
+  document.getElementById('onboarding').style.display  = 'none';
+  const dash = document.getElementById('dashboard');
+  dash.style.display = 'block';
+  dash.classList.add('fade-in');
+  renderDevices();
+  renderAlerts();
+  updateAlertCounts();
+}
+
+function navToTab(tab) {
+  // Only works when dashboard is visible
+  if (document.getElementById('dashboard').style.display === 'none') return;
+  switchTab(tab);
+  window.scrollTo({ top: document.querySelector('.main-tab-bar').offsetTop - 84, behavior: 'smooth' });
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  ['devices','alerts','configs'].forEach(t => {
+    document.getElementById('pane-'+t).className = 'tab-pane' + (t === tab ? ' active' : '');
+    document.getElementById('mt-'+t).className   = 'main-tab'  + (t === tab ? ' active' : '');
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEVICES
+// ─────────────────────────────────────────────────────────────────────────────
+function renderDevices() {
+  const tbody = document.getElementById('devTbody');
+  if (!tbody) return;
+  let html = '';
+  MOCK_DEVICES.forEach(d => {
+    const isExp = expandedDevice === d.hostname;
+    const vcls  = vendorClass(d.vendor);
+    const scls  = d.status === 'up' ? 's-up' : 's-down';
+    const sIcon = d.status === 'up' ? '↑' : '↓';
+    html += `
+    <tr class="dev-row${isExp?' expanded':''}" onclick="toggleDevice('${esc(d.hostname)}')">
+      <td><span class="status-badge ${scls}">${sIcon} ${d.status.toUpperCase()}</span></td>
+      <td><span class="hn">${esc(d.hostname)}</span><span class="chevron">›</span></td>
+      <td><span class="ip-cell">${esc(d.ip)}</span></td>
+      <td><span class="${vcls}">${esc(vendorLabel(d.vendor))}</span></td>
+      <td style="color:var(--text-muted);font-size:0.8rem;">${esc(d.type)}</td>
+      <td><span class="ls-cell">${esc(d.lastSeen)}</span></td>
+    </tr>`;
+    if (isExp) {
+      const allAlerts = [...activeAlerts, ...resolvedAlerts].filter(a => a.hostname === d.hostname).slice(0,3);
+      const alertBadges = allAlerts.length
+        ? allAlerts.map(a => `<span class="mini-badge">${alertBadgeLabel(a.type)} · ${a.ts}</span>`).join('')
+        : '<span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim);">No recent alerts</span>';
+      html += `
+      <tr class="acc-row">
+        <td colspan="6">
+          <div class="acc-inner">
+            <div class="acc-grid">
+              <div><div class="acc-label">Last config hash</div><div class="acc-val">${d.configHash ? esc(d.configHash) : '— no backup yet'}</div></div>
+              <div><div class="acc-label">Last config pulled</div><div class="acc-val">${d.configPulled ? esc(d.configPulled) : '—'}</div></div>
+            </div>
+            <div class="acc-alerts-hd">Recent alerts</div>
+            <div>${alertBadges}</div>
+          </div>
+        </td>
+      </tr>`;
+    }
+  });
+  tbody.innerHTML = html;
+}
+
+function toggleDevice(hostname) {
+  expandedDevice = expandedDevice === hostname ? null : hostname;
+  renderDevices();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ALERTS
+// ─────────────────────────────────────────────────────────────────────────────
+function updateAlertCounts() {
+  document.getElementById('activeCount').textContent   = activeAlerts.length;
+  document.getElementById('resolvedCount').textContent = resolvedAlerts.length;
+}
+
+function switchAlertTab(tab) {
+  alertSubTab = tab;
+  document.getElementById('ast-active').className   = 'alert-sub-tab' + (tab === 'active'   ? ' active' : '');
+  document.getElementById('ast-resolved').className = 'alert-sub-tab' + (tab === 'resolved' ? ' active' : '');
+  renderAlerts();
+}
+
+function renderAlerts() {
+  updateAlertCounts();
+  const list   = alertSubTab === 'active' ? activeAlerts : resolvedAlerts;
+  const showAck = alertSubTab === 'active';
+  const el     = document.getElementById('alertsList');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-st">No ${alertSubTab} alerts</div>`;
+    return;
+  }
+  let html = `<table class="al-table"><thead><tr>
+    <th>Type</th><th>Hostname</th><th>Timestamp</th><th>Message</th>${showAck ? '<th></th>' : ''}
+  </tr></thead><tbody>`;
+  list.forEach(a => {
+    html += `<tr>
+      <td><span class="al-badge ${alertBadgeClass(a.type)}">${alertBadgeLabel(a.type)}</span></td>
+      <td><span style="font-family:var(--mono);font-size:0.78rem;color:var(--text);">${esc(a.hostname)}</span></td>
+      <td><span class="al-ts">${esc(a.ts)}</span></td>
+      <td><span class="al-msg">${esc(a.msg)}</span></td>
+      ${showAck ? `<td><button class="ack-btn" onclick="acknowledgeAlert(${a.id})">Acknowledge</button></td>` : ''}
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function acknowledgeAlert(id) {
+  const idx = activeAlerts.findIndex(a => a.id === id);
+  if (idx === -1) return;
+  const alert = activeAlerts.splice(idx, 1)[0];
+  resolvedAlerts.unshift(alert);
+  renderAlerts();
+  renderDevices(); // refresh accordion alert badges
+  if (!MOCK_MODE) {
+    fetch(`${API_BASE}/api/v1/alerts/${id}/acknowledge`, {
+      method:'PATCH',
+      headers:{ 'Authorization':`Bearer ${apiKey}` }
+    }).catch(()=>{});
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIGS
+// ─────────────────────────────────────────────────────────────────────────────
+function onCfgDeviceChange(hostname) {
+  const el = document.getElementById('backupList');
+  if (!el) return;
+  if (!hostname) { el.innerHTML = ''; return; }
+
+  const data = MOCK_CONFIGS[hostname];
+  if (!data) {
+    el.innerHTML = `<div class="empty-st">No config backups yet for ${esc(hostname)}</div>`;
+    return;
+  }
+
+  let html = `<table class="bk-table"><thead><tr>
+    <th>Date &amp; Time</th><th>Hash</th><th></th>
+  </tr></thead><tbody>`;
+  data.backups.forEach(b => {
+    html += `<tr>
+      <td><span class="bk-date">${esc(b.date)}</span></td>
+      <td><span class="bk-hash">${esc(b.hash)}</span></td>
+      <td><button class="diff-btn" onclick="openModal('${esc(hostname)}',${b.id},${b.hasDiff})">View diff</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function openModal(hostname, backupId, hasDiff) {
+  const data   = MOCK_CONFIGS[hostname];
+  if (!data) return;
+  const backup = data.backups.find(b => b.id === backupId);
+  if (!backup) return;
+
+  document.getElementById('modalTitle').textContent = `${hostname} — ${backup.date}`;
+
+  // Diff
+  const diffEl = document.getElementById('modalDiff');
+  if (hasDiff) {
+    diffEl.innerHTML = data.diff.split('\n').map(line => {
+      if (line.startsWith('+'))      return `<div class="dl dl-add">${esc(line)}</div>`;
+      if (line.startsWith('-'))      return `<div class="dl dl-rem">${esc(line)}</div>`;
+      return `<div class="dl dl-ctx">${esc(line)}</div>`;
+    }).join('');
+  } else {
+    diffEl.innerHTML = `<div class="dl dl-ctx" style="font-style:italic;padding:0.5rem;">First backup — no previous config to compare.</div>`;
+  }
+
+  // Full config
+  document.getElementById('modalFullCfg').textContent = data.fullConfig;
+
+  document.getElementById('configModal').classList.add('open');
+  document.addEventListener('keydown', handleModalKey);
+}
+
+function closeModal() {
+  document.getElementById('configModal').classList.remove('open');
+  document.removeEventListener('keydown', handleModalKey);
+}
+
+function handleModalKey(e) {
+  if (e.key === 'Escape') closeModal();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>

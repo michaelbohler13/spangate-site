@@ -277,7 +277,7 @@
     </ul>
     <div class="nav-spacer"></div>
     <div class="nav-right">
-      <a href="./dashboard.html" class="nav-my-monitor" style="color:#00d4b8;">● My Network Monitor</a>
+      <a href="/netmonitor/dashboard" class="nav-my-monitor" style="color:#00d4b8;">● My Network Monitor</a>
       <a href="./login.html" class="nav-signin" id="navSignin">Sign in</a>
       <a href="./login.html" class="nav-cta" id="navCta">Get started</a>
     </div>
@@ -646,7 +646,7 @@ document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
       var s = document.getElementById('navSignin');
       var c = document.getElementById('navCta');
       if (s) { s.textContent = user.email; s.style.fontFamily = 'monospace'; s.style.fontSize = '0.72rem'; }
-      if (c) { c.textContent = 'Dashboard'; c.href = './login.html'; }
+      if (c) { c.textContent = 'Dashboard'; c.href = '/netmonitor/dashboard'; }
     }
   } catch(e) {}
 })();

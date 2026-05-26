@@ -4,6 +4,7 @@ Main entry point. Loads config, starts the ping loop, SSH pull loop,
 and heartbeat loop concurrently. Handles SIGINT/SIGTERM gracefully.
 """
 
+import argparse
 import asyncio
 import logging
 import signal
@@ -19,7 +20,7 @@ from ssh_puller import SSHPuller
 
 AGENT_VERSION = "1.0.0"
 HEARTBEAT_INTERVAL = 300  # 5 minutes
-CONFIG_PATH = Path(__file__).parent / "config.yaml"
+DEFAULT_CONFIG_PATH = Path(__file__).parent / "config.yaml"
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
 
@@ -30,6 +31,31 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
+
+
+# ── CLI arguments ─────────────────────────────────────────────────────────────
+
+def parse_args() -> argparse.Namespace:
+    """
+    Parse command-line arguments.
+
+    Returns:
+        Parsed namespace with a ``config`` attribute containing the config path.
+    """
+    parser = argparse.ArgumentParser(
+        description="SpanGate Network Monitor Agent",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--config",
+        metavar="PATH",
+        default=str(DEFAULT_CONFIG_PATH),
+        help=(
+            "Path to the agent config file "
+            f"(default: {DEFAULT_CONFIG_PATH})"
+        ),
+    )
+    return parser.parse_args()
 
 
 # ── Config loader ─────────────────────────────────────────────────────────────
@@ -55,7 +81,7 @@ def load_config(path: Path) -> dict[str, Any]:
             cfg = yaml.safe_load(fh)
         return cfg
     except yaml.YAMLError as exc:
-        logger.critical("Failed to parse config.yaml: %s", exc)
+        logger.critical("Failed to parse config file: %s", exc)
         sys.exit(1)
 
 
@@ -136,7 +162,10 @@ async def main() -> None:
     """
     Load config and run the ping, SSH pull, and heartbeat loops concurrently.
     """
-    cfg = load_config(CONFIG_PATH)
+    args = parse_args()
+    config_path = Path(args.config)
+
+    cfg = load_config(config_path)
     validate_config(cfg)
 
     agent_cfg = cfg["agent"]
