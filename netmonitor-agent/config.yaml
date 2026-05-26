@@ -1,0 +1,31 @@
+agent:
+  site_name: "Main Campus"
+  api_url: "https://api.spangate.com"
+  api_key: "YOUR_API_KEY_HERE"
+  ping_interval: 60          # seconds between ICMP pings
+  config_pull_interval: 604800  # seconds between SSH config pulls (7 days)
+
+devices:
+  - hostname: core-sw-01
+    ip: 10.1.1.1
+    vendor: cisco
+    device_type: cisco_ios
+    ssh_username: admin
+    ssh_password: "CHANGE_ME"
+    ssh_port: 22
+
+  - hostname: dist-sw-02
+    ip: 10.1.1.2
+    vendor: aruba_cx
+    device_type: aruba_osswitch
+    ssh_username: admin
+    ssh_password: "CHANGE_ME"
+    ssh_port: 22
+
+  - hostname: fw-edge-01
+    ip: 10.0.0.1
+    vendor: juniper
+    device_type: juniper_junos
+    ssh_username: admin
+    ssh_password: "CHANGE_ME"
+    ssh_port: 22
