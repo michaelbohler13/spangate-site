@@ -172,8 +172,10 @@
     <a href="/netmonitor/" class="nav-logo">Network <span style="color:#00d4b8;">Monitor</span></a>
     <ul class="nav-links">
       <li><a href="/netmonitor/">Overview</a></li>
+      <li><a href="/netmonitor/dashboard">Dashboard</a></li>
       <li><a href="/netmonitor/install-pi" class="active">Raspberry Pi</a></li>
       <li><a href="/netmonitor/install-windows">Windows</a></li>
+      <li><a href="/netmonitor/settings">Settings</a></li>
     </ul>
     <div class="nav-spacer"></div>
     <div class="nav-right">
@@ -339,9 +341,9 @@ python3 --version</code></pre>
 git clone https://github.com/michaelbohler13/spangate-site.git
 cd spangate-site/netmonitor-agent</code></pre>
       </div>
-      <div class="callout warn">
-        <span class="callout-icon">⚠</span>
-        <div class="callout-text"><strong>Note:</strong> This currently clones the full SpanGate website repo to get the agent. Once <strong>api.spangate.com</strong> is live, the agent will be distributed as a standalone download and this step will be replaced by a single install command.</div>
+      <div class="callout tip">
+        <span class="callout-icon">ℹ</span>
+        <div class="callout-text">This clones the full SpanGate site repo — the agent lives in the <code style="font-family:var(--mono);font-size:0.85em;">netmonitor-agent/</code> subdirectory. A standalone install package is planned for a future release.</div>
       </div>
     </div>
   </div>
@@ -393,7 +395,7 @@ sudo nano /etc/spangate/netmonitor/config.yaml</code></pre>
         <div class="code-bar"><span class="code-lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code><span class="yaml-key">agent</span>:
   <span class="yaml-key">site_name</span>: <span class="yaml-str">"Main Campus"</span>          <span class="yaml-cmt"># ← your site name</span>
-  <span class="yaml-key">api_url</span>:   <span class="yaml-str">"https://api.spangate.com"</span>
+  <span class="yaml-key">api_url</span>:   <span class="yaml-str">"https://spangate-site-r81b.vercel.app"</span>
   <span class="yaml-key">api_key</span>:   <span class="yaml-str">"spng_paste_your_key_here"</span> <span class="yaml-cmt"># ← your SpanGate API key</span>
   <span class="yaml-key">ping_interval</span>:        <span class="yaml-val">60</span>
   <span class="yaml-key">config_pull_interval</span>: <span class="yaml-val">604800</span>
@@ -407,7 +409,7 @@ sudo nano /etc/spangate/netmonitor/config.yaml</code></pre>
     <span class="yaml-key">ssh_password</span>: <span class="yaml-str">"your-switch-password"</span>  <span class="yaml-cmt"># ← SSH credentials</span>
     <span class="yaml-key">ssh_port</span>:    <span class="yaml-val">22</span></code></pre>
       </div>
-      <p>Save with <strong>Ctrl+X → Y → Enter</strong>. Your API key will be available in the dashboard under Settings once <strong>api.spangate.com</strong> is live.</p>
+      <p>Save with <strong>Ctrl+X → Y → Enter</strong>. Get your API key from <a href="/netmonitor/settings">Network Monitor → Settings</a>.</p>
     </div>
   </div>
 

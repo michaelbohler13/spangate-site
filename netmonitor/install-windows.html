@@ -156,8 +156,10 @@
     <a href="/netmonitor/" class="nav-logo">Network <span style="color:#00d4b8;">Monitor</span></a>
     <ul class="nav-links">
       <li><a href="/netmonitor/">Overview</a></li>
+      <li><a href="/netmonitor/dashboard">Dashboard</a></li>
       <li><a href="/netmonitor/install-pi">Raspberry Pi</a></li>
       <li><a href="/netmonitor/install-windows" class="active">Windows</a></li>
+      <li><a href="/netmonitor/settings">Settings</a></li>
     </ul>
     <div class="nav-spacer"></div>
     <div class="nav-right">
@@ -330,7 +332,7 @@ pip install -r requirements.txt</code></pre>
         <div class="code-bar"><span class="code-lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code><span class="yaml-key">agent</span>:
   <span class="yaml-key">site_name</span>: <span class="yaml-str">"Main Office"</span>             <span class="yaml-cmt"># ← your site name</span>
-  <span class="yaml-key">api_url</span>:   <span class="yaml-str">"https://api.spangate.com"</span>
+  <span class="yaml-key">api_url</span>:   <span class="yaml-str">"https://spangate-site-r81b.vercel.app"</span>
   <span class="yaml-key">api_key</span>:   <span class="yaml-str">"spng_paste_your_key_here"</span>  <span class="yaml-cmt"># ← your SpanGate API key</span>
   <span class="yaml-key">ping_interval</span>:        <span class="yaml-val">60</span>
   <span class="yaml-key">config_pull_interval</span>: <span class="yaml-val">604800</span>
