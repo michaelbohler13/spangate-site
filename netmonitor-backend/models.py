@@ -1,13 +1,14 @@
 """
 models.py — SpanGate Network Monitor Backend
-SQLAlchemy ORM models for the four core tables.
+SQLAlchemy ORM models for all database tables.
 
 Tables
 ------
-devices      — one row per monitored device per site
-configs      — running-config snapshots (30-day retention)
-config_diffs — detected config changes with unified diff text (30-day retention)
-alerts       — ping and config-change alert log (30-day retention)
+devices         — one row per monitored device per site
+agent_heartbeat — one row per site, upserted on every heartbeat
+configs         — running-config snapshots (30-day retention)
+config_diffs    — detected config changes with unified diff text (30-day retention)
+alerts          — ping and config-change alert log (30-day retention)
 """
 
 from datetime import datetime
@@ -18,6 +19,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     func,
@@ -39,13 +41,17 @@ class Device(Base):
 
     __tablename__ = "devices"
 
-    id:          Mapped[int]           = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    site_id:     Mapped[str]           = mapped_column(String(255), nullable=False, index=True)
-    hostname:    Mapped[str]           = mapped_column(String(255), nullable=False)
-    ip:          Mapped[str]           = mapped_column(String(45),  nullable=False)
-    vendor:      Mapped[str]           = mapped_column(String(100), nullable=False, default="unknown")
-    device_type: Mapped[str]           = mapped_column(String(100), nullable=False, default="unknown")
-    created_at:  Mapped[datetime]      = mapped_column(
+    id:                 Mapped[int]            = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    site_id:            Mapped[str]            = mapped_column(String(255), nullable=False, index=True)
+    hostname:           Mapped[str]            = mapped_column(String(255), nullable=False)
+    ip:                 Mapped[str]            = mapped_column(String(45),  nullable=False)
+    vendor:             Mapped[str]            = mapped_column(String(100), nullable=False, default="unknown")
+    device_type:        Mapped[str]            = mapped_column(String(100), nullable=False, default="unknown")
+    # Live status — written by the ping alert endpoint, persists across restarts
+    status:             Mapped[str]            = mapped_column(String(20),  nullable=False, default="unknown")
+    last_seen:          Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_status_change: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at:         Mapped[datetime]       = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
@@ -61,6 +67,32 @@ class Device(Base):
 
     def __repr__(self) -> str:
         return f"<Device site={self.site_id!r} hostname={self.hostname!r}>"
+
+
+# ── AgentHeartbeat ───────────────────────────────────────────────────────────
+
+class AgentHeartbeat(Base):
+    """
+    Most-recent heartbeat from the monitoring agent for a site.
+
+    One row per site_id — upserted on every heartbeat POST.
+    Replaces the in-memory heartbeat_state dict so state survives
+    serverless function restarts.
+    """
+
+    __tablename__ = "agent_heartbeat"
+
+    id:            Mapped[int]            = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    site_id:       Mapped[str]            = mapped_column(String(255), unique=True, nullable=False)
+    site_name:     Mapped[str]            = mapped_column(String(255), nullable=False, default="")
+    last_seen:     Mapped[datetime]       = mapped_column(DateTime(timezone=True), nullable=False)
+    agent_version: Mapped[Optional[str]]  = mapped_column(String(50), nullable=True)
+    device_count:  Mapped[int]            = mapped_column(Integer, nullable=False, default=0)
+    devices_up:    Mapped[int]            = mapped_column(Integer, nullable=False, default=0)
+    devices_down:  Mapped[int]            = mapped_column(Integer, nullable=False, default=0)
+
+    def __repr__(self) -> str:
+        return f"<AgentHeartbeat site={self.site_id!r} last_seen={self.last_seen}>"
 
 
 # ── Config ────────────────────────────────────────────────────────────────────

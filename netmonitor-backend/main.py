@@ -2,10 +2,12 @@
 main.py — SpanGate Network Monitor Backend v1.0.0
 FastAPI application entry point.
 
+Designed for deployment on Vercel serverless functions + Supabase PostgreSQL.
+
 On startup:
-  - Creates database tables if they don't exist (create_all)
-  - Runs an immediate data-retention cleanup (deletes rows > 30 days)
-  - Schedules cleanup to repeat every 24 hours via APScheduler
+  - Creates database tables if they don't exist (create_all).
+  - No long-running scheduler — data-retention cleanup is triggered by
+    Vercel Cron calling GET /api/v1/admin/cleanup once per day.
 
 Routers mounted at /api/v1:
   POST /agent/heartbeat
@@ -18,23 +20,21 @@ Routers mounted at /api/v1:
   GET  /devices
   GET  /devices/{hostname}
   GET  /dashboard
+  GET  /admin/cleanup   ← called by Vercel Cron
 
-GET /health  — no auth, for load-balancer probes
+GET /health  — no auth, for uptime probes
 """
 
 import logging
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import delete, text
 
-from database import AsyncSessionLocal, engine
-from models import Alert, Base, Config, ConfigDiff
-from routers import agents, alerts, configs, dashboard, devices
+from database import engine
+from models import Base
+from routers import agents, alerts, cleanup, configs, dashboard, devices
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -45,39 +45,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-RETENTION_DAYS = 30
-
-
-# ── Data-retention cleanup ────────────────────────────────────────────────────
-
-async def run_cleanup() -> None:
-    """
-    Delete configs, config_diffs, and alerts older than RETENTION_DAYS.
-
-    Called on startup and every 24 hours by APScheduler.
-    Never crashes the process — exceptions are logged and swallowed.
-    """
-    cutoff = datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)
-    try:
-        async with AsyncSessionLocal() as db:
-            for model, col in (
-                (Config,     Config.pulled_at),
-                (ConfigDiff, ConfigDiff.detected_at),
-                (Alert,      Alert.created_at),
-            ):
-                result = await db.execute(delete(model).where(col < cutoff))
-                count  = result.rowcount
-                if count:
-                    logger.info("[CLEANUP] Deleted %d row(s) from %s", count, model.__tablename__)
-            await db.commit()
-    except Exception as exc:
-        logger.error("[CLEANUP] Failed: %s", exc)
-
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
-
-_scheduler: AsyncIOScheduler | None = None
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -85,35 +54,16 @@ async def lifespan(app: FastAPI):
     Application lifespan handler.
 
     Startup:
-      1. Create all tables (idempotent — safe to run on every boot).
-      2. Run data-retention cleanup immediately.
-      3. Start APScheduler to repeat cleanup every 24 hours.
+      - Create all tables (idempotent — safe to run on every cold start).
 
-    Shutdown:
-      4. Stop the scheduler cleanly.
+    No scheduler is started here.  Data-retention cleanup runs via
+    Vercel Cron → GET /api/v1/admin/cleanup once per day.
     """
-    global _scheduler
-
-    # 1. Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables verified / created.")
-
-    # 2. Immediate cleanup
-    await run_cleanup()
-
-    # 3. Schedule recurring cleanup
-    _scheduler = AsyncIOScheduler()
-    _scheduler.add_job(run_cleanup, "interval", hours=24, id="data-retention-cleanup")
-    _scheduler.start()
-    logger.info("Cleanup scheduler started — runs every 24 hours.")
-
     logger.info("SpanGate Network Monitor Backend v1.0.0 — ready.")
     yield
-
-    # 4. Shutdown
-    if _scheduler and _scheduler.running:
-        _scheduler.shutdown(wait=False)
     logger.info("SpanGate Network Monitor Backend — shut down.")
 
 
@@ -160,9 +110,9 @@ async def log_requests(request: Request, call_next) -> Response:
     if request.url.path == "/health":
         return await call_next(request)
 
-    start   = time.perf_counter()
+    start    = time.perf_counter()
     response: Response = await call_next(request)
-    elapsed = (time.perf_counter() - start) * 1000
+    elapsed  = (time.perf_counter() - start) * 1000
 
     logger.info(
         "%s %s → %d  (%.1fms)",
@@ -173,7 +123,14 @@ async def log_requests(request: Request, call_next) -> Response:
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 
-for _router in (agents.router, alerts.router, configs.router, devices.router, dashboard.router):
+for _router in (
+    agents.router,
+    alerts.router,
+    cleanup.router,
+    configs.router,
+    dashboard.router,
+    devices.router,
+):
     app.include_router(_router, prefix="/api/v1")
 
 
@@ -181,5 +138,5 @@ for _router in (agents.router, alerts.router, configs.router, devices.router, da
 
 @app.get("/health", tags=["Meta"], include_in_schema=False)
 async def health() -> dict:
-    """No-auth health probe for load balancers and uptime monitors."""
+    """No-auth health probe for uptime monitors."""
     return {"status": "ok", "version": "1.0.0", "service": "netmonitor-backend"}

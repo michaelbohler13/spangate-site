@@ -22,7 +22,6 @@ from auth import AuthContext
 from database import get_db
 from models import Alert, Config, Device
 from schemas import AlertResponse, DeviceStatus
-from state import get_device_status
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Devices"])
@@ -59,11 +58,6 @@ async def list_devices(
 
     response: list[DeviceStatus] = []
     for device in devices:
-        # Live status from in-memory ping state
-        ping_entry = get_device_status(site_id, device.hostname)
-        status_str = ping_entry.status if ping_entry else "unknown"
-        last_seen  = ping_entry.last_seen if ping_entry else None
-
         # Latest config hash from DB
         hash_result = await db.execute(
             select(Config.config_hash)
@@ -79,8 +73,8 @@ async def list_devices(
                 ip=device.ip,
                 vendor=device.vendor,
                 device_type=device.device_type,
-                status=status_str,
-                last_seen=last_seen,
+                status=device.status,        # persisted in DB
+                last_seen=device.last_seen,  # persisted in DB
                 last_config_hash=last_config_hash,
             )
         )
@@ -129,10 +123,9 @@ async def get_device(
     if device is None:
         raise HTTPException(status_code=404, detail=f"Device '{hostname}' not found")
 
-    # Live ping status
-    ping_entry = get_device_status(site_id, hostname)
-    status_str = ping_entry.status if ping_entry else "unknown"
-    last_seen  = ping_entry.last_seen if ping_entry else None
+    # Live status from DB columns (persisted by ping alert endpoint)
+    status_str = device.status
+    last_seen  = device.last_seen
 
     # Last 5 alerts
     alert_result = await db.execute(

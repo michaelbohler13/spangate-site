@@ -34,9 +34,9 @@ async def dashboard(
 
     Aggregates:
     - Total device count from the database
-    - Live up/down counts from in-memory ping state
+    - Live up/down counts from persisted Device.status column
     - Last 10 alerts from the database
-    - Most recent heartbeat timestamp and agent version from in-memory state
+    - Most recent heartbeat timestamp and agent version from the DB
 
     Args:
         ctx: Auth context with site_id.
@@ -53,7 +53,7 @@ async def dashboard(
     )
     total_devices = count_result.scalar_one() or 0
 
-    devices_up, devices_down = get_site_status_counts(site_id)
+    devices_up, devices_down = await get_site_status_counts(db, site_id)
 
     # ── Recent alerts (last 10) ───────────────────────────────────────────────
     alert_result = await db.execute(
@@ -76,14 +76,14 @@ async def dashboard(
         for alert, hostname in alert_rows
     ]
 
-    # ── Heartbeat state (in-memory) ───────────────────────────────────────────
-    hb = get_heartbeat(site_id)
+    # ── Heartbeat state (from DB) ─────────────────────────────────────────────
+    hb = await get_heartbeat(db, site_id)
 
     return DashboardSummary(
         total_devices=total_devices,
         devices_up=devices_up,
         devices_down=devices_down,
         recent_alerts=recent_alerts,
-        last_heartbeat=hb.received_at if hb else None,
+        last_heartbeat=hb.last_seen if hb else None,
         agent_version=hb.agent_version if hb else None,
     )

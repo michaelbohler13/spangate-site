@@ -29,7 +29,7 @@ from auth import AuthContext
 from database import get_db
 from models import Alert, Config, ConfigDiff, Device
 from schemas import AlertResponse, ConfigChange, PingAlert
-from state import update_ping_status
+from state import update_device_status
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Alerts"])
@@ -116,17 +116,18 @@ async def ping_alert(
     """
     site_id = ctx["site_id"]
 
-    # Update in-memory status so /devices reflects the change immediately
-    update_ping_status(
-        site_id=site_id,
-        hostname=body.hostname,
-        ip=body.ip,
-        status=body.status,
-        last_seen=body.timestamp,
-    )
-
     try:
         device = await _get_or_create_device(db, site_id, body.hostname, body.ip)
+
+        # Persist live status to DB so it survives serverless restarts
+        await update_device_status(
+            db=db,
+            site_id=site_id,
+            hostname=body.hostname,
+            ip=body.ip,
+            status=body.status,
+            last_seen=body.timestamp,
+        )
 
         alert_type = Alert.PING_DOWN if body.status == "down" else Alert.PING_UP
         message    = (

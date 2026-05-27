@@ -25,15 +25,16 @@ class Base(DeclarativeBase):
 
 
 def _build_engine():
-    """Build the async SQLAlchemy engine from environment config."""
+    """
+    Build the async SQLAlchemy engine from environment config.
+
+    Uses NullPool so each serverless function invocation opens and closes
+    its own connection rather than holding a pool between requests.
+    Supabase's PgBouncer pooler handles connection reuse at the infra level.
+    """
+    from sqlalchemy.pool import NullPool
     url = os.environ["DATABASE_URL"]
-    return create_async_engine(
-        url,
-        echo=False,
-        pool_pre_ping=True,   # discard stale connections before use
-        pool_size=5,
-        max_overflow=10,
-    )
+    return create_async_engine(url, echo=False, poolclass=NullPool)
 
 
 engine = _build_engine()
