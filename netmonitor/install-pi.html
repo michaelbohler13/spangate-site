@@ -339,6 +339,10 @@ python3 --version</code></pre>
 git clone https://github.com/michaelbohler13/spangate-site.git
 cd spangate-site/netmonitor-agent</code></pre>
       </div>
+      <div class="callout warn">
+        <span class="callout-icon">⚠</span>
+        <div class="callout-text"><strong>Note:</strong> This currently clones the full SpanGate website repo to get the agent. Once <strong>api.spangate.com</strong> is live, the agent will be distributed as a standalone download and this step will be replaced by a single install command.</div>
+      </div>
     </div>
   </div>
 
@@ -380,6 +384,7 @@ pip install -r requirements.txt</code></pre>
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code>sudo mkdir -p /etc/spangate/netmonitor
 sudo cp config.yaml /etc/spangate/netmonitor/config.yaml
+sudo chown spangate:spangate /etc/spangate/netmonitor/config.yaml
 sudo chmod 600 /etc/spangate/netmonitor/config.yaml
 sudo nano /etc/spangate/netmonitor/config.yaml</code></pre>
       </div>
@@ -402,7 +407,7 @@ sudo nano /etc/spangate/netmonitor/config.yaml</code></pre>
     <span class="yaml-key">ssh_password</span>: <span class="yaml-str">"your-switch-password"</span>  <span class="yaml-cmt"># ← SSH credentials</span>
     <span class="yaml-key">ssh_port</span>:    <span class="yaml-val">22</span></code></pre>
       </div>
-      <p>Save with <strong>Ctrl+X → Y → Enter</strong>. Your API key is in the dashboard under Settings.</p>
+      <p>Save with <strong>Ctrl+X → Y → Enter</strong>. Your API key will be available in the dashboard under Settings once <strong>api.spangate.com</strong> is live.</p>
     </div>
   </div>
 
