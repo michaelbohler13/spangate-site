@@ -21,7 +21,7 @@
 (function () {
   'use strict';
 
-  var TURNSTILE_SITE_KEY = 'TURNSTILE_SITE_KEY_HERE';  // ← replace this
+  var TURNSTILE_SITE_KEY = '0x4AAAAAADXEZ0I36bOp0XzS';
   var API      = 'https://spangate-site-r81b.vercel.app/api/v1/feedback';
   var RATE_KEY = 'sg_fb_last';
   var RATE_MS  = 10 * 60 * 1000; // 10 minutes
