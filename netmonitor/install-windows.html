@@ -200,8 +200,7 @@
       <li>Python 3.9 or higher</li>
       <li>Network access to your managed devices — same VLAN or routed</li>
       <li>SSH enabled on all target switches and routers</li>
-      <li>Your SpanGate API key — from <a href="/netmonitor/dashboard">Network Monitor → Settings</a></li>
-      <li>Git for Windows — optional but recommended</li>
+      <li>Your SpanGate API key — from <a href="/netmonitor/settings">Network Monitor → Settings</a></li>
     </ul>
   </div>
 
@@ -240,19 +239,15 @@ pip --version</code></pre>
     <div class="step-head">
       <div class="step-badge">02</div>
       <div class="step-info">
-        <div class="step-title">Install Git <span style="font-size:0.78rem;font-weight:400;color:var(--text-dim);margin-left:4px;">(Recommended)</span></div>
-        <div class="step-desc">Git makes downloading and updating the agent much easier.</div>
+        <div class="step-title">Open PowerShell</div>
+        <div class="step-desc">The download script runs in PowerShell — open it before Step 3.</div>
       </div>
     </div>
     <div class="step-body">
-      <ol>
-        <li>Go to <a href="https://git-scm.com/download/win" target="_blank" rel="noopener">git-scm.com/download/win</a></li>
-        <li>Download and run the installer</li>
-        <li>All default settings are fine — click <strong>Next</strong> through each screen</li>
-      </ol>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>git --version</code></pre>
+      <p>Press <strong>Win + X</strong> and choose <strong>Windows PowerShell</strong> (or <strong>Terminal</strong> on Windows 11). You do not need to run it as Administrator for this step.</p>
+      <div class="callout tip">
+        <span class="callout-icon">ℹ</span>
+        <div class="callout-text">Steps 3 uses PowerShell. Steps 4 onwards use the regular <strong>Command Prompt</strong> — open a new cmd window after the download finishes.</div>
       </div>
     </div>
   </div>
@@ -458,10 +453,14 @@ pip install -r requirements.txt</code></pre>
   <!-- UPDATING -->
   <div style="margin-bottom:2.5rem;">
     <h2 class="section-head">Updating the Agent</h2>
+    <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem;">Run the first command in <strong>PowerShell</strong>, the second in an <strong>Admin Command Prompt</strong>:</p>
     <div class="code-block">
-      <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-      <pre><code>irm https://spangate-site.vercel.app/netmonitor/agent-install.ps1 | iex
-nssm restart SpangateNetMonitor</code></pre>
+      <div class="code-bar"><span class="code-lang">powershell</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>irm https://spangate-site.vercel.app/netmonitor/agent-install.ps1 | iex</code></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-bar"><span class="code-lang">cmd (admin)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>nssm restart SpangateNetMonitor</code></pre>
     </div>
   </div>
 
