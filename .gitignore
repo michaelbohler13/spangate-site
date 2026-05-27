@@ -1,0 +1,22 @@
+# Local secrets — NEVER commit these
+SECRETS.local
+.env
+.env.local
+.env.*
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editor
+.vscode/
+.idea/
+*.swp
