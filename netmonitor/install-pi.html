@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Monitor — Raspberry Pi Install Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d1117; --bg2:#0a0a0a; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#222222;
+    --border:rgba(255,255,255,0.08); --border-bright:rgba(255,255,255,0.15);
+    --text:#f5f5f7; --text-muted:#a1a1a6; --text-dim:#6e6e73;
+    --accent:#00d4b8; --teal:#2a8a78;
+    --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+
+  /* NAV */
+  nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);background:rgba(0,0,0,0.72);border-bottom:0.5px solid var(--border);}
+  .nav-top{height:36px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;border-bottom:0.5px solid rgba(255,255,255,0.06);}
+  .nav-top a{font-size:0.8rem;font-weight:500;letter-spacing:-0.01em;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;}
+  .nav-top a:hover{color:#fff;background:rgba(255,255,255,0.05);}
+  .nav-top a.active{color:#00d4b8;background:rgba(0,212,184,0.08);}
+  .nav-bottom{height:48px;display:flex;align-items:center;padding:0 2rem;}
+  .nav-logo{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px;}
+  .nav-links{display:flex;gap:1.75rem;margin-left:2.5rem;list-style:none;}
+  .nav-links a{font-size:0.78rem;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;cursor:pointer;}
+  .nav-links a:hover{color:var(--text);}
+  .nav-links a.active{color:var(--accent);}
+  .nav-spacer{flex:1;}
+  .nav-right{display:flex;align-items:center;gap:12px;}
+  .nav-my-monitor{font-size:0.78rem;font-weight:600;color:#00d4b8;text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;font-family:var(--mono);}
+  .nav-my-monitor:hover{color:#1af0d4;}
+  .nav-signin{font-size:0.78rem;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;}
+  .nav-signin:hover{color:var(--text);}
+  .nav-cta{font-size:0.78rem;font-weight:500;color:var(--text);background:rgba(0,212,184,0.12);border:0.5px solid rgba(0,212,184,0.3);border-radius:980px;padding:5px 14px;text-decoration:none;letter-spacing:-0.01em;transition:all 0.15s;}
+  .nav-cta:hover{background:rgba(0,212,184,0.2);}
+
+  /* FOOTER */
+  footer{border-top:0.5px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+  .footer-left{font-size:0.75rem;color:var(--text-dim);}
+  .footer-easter{font-family:var(--mono);font-size:0.68rem;}
+  .footer-links{display:flex;gap:1.5rem;list-style:none;}
+  .footer-links a{font-size:0.75rem;color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .footer-links a:hover{color:var(--text-muted);}
+
+  /* GUIDE LAYOUT */
+  .guide-page{max-width:780px;margin:0 auto;padding:116px 2rem 5rem;}
+
+  /* GUIDE HEADER */
+  .guide-header{margin-bottom:2.5rem;}
+  .guide-breadcrumb{font-size:0.72rem;color:var(--text-dim);font-family:var(--mono);margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
+  .guide-breadcrumb a{color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .guide-breadcrumb a:hover{color:var(--accent);}
+  .guide-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:600;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.75rem;}
+  .guide-subtitle{font-size:0.95rem;color:var(--text-muted);line-height:1.6;max-width:520px;}
+
+  /* PLATFORM SWITCHER */
+  .platform-switch{display:inline-flex;background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:2.5rem;}
+  .platform-switch a{display:flex;align-items:center;gap:7px;padding:7px 16px;border-radius:7px;font-size:0.78rem;font-weight:500;text-decoration:none;color:var(--text-muted);letter-spacing:-0.01em;transition:all 0.15s;}
+  .platform-switch a.active{background:var(--surface3);color:var(--text);border:0.5px solid var(--border-bright);}
+  .platform-switch a:not(.active):hover{color:var(--text);}
+  .plat-icon{font-size:0.9rem;}
+
+  /* REQUIREMENTS */
+  .req-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2.5rem;}
+  .req-title{font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.85rem;font-family:var(--mono);}
+  .req-list{list-style:none;display:flex;flex-direction:column;gap:6px;}
+  .req-list li{font-size:0.83rem;color:var(--text-muted);display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
+  .req-list li::before{content:'○';color:var(--accent);font-size:0.65rem;flex-shrink:0;margin-top:3px;}
+  .req-list a{color:var(--accent);text-decoration:none;}
+  .req-list a:hover{text-decoration:underline;}
+
+  /* HARDWARE TABLE */
+  .hw-table{width:100%;border-collapse:collapse;margin-bottom:2.5rem;font-size:0.82rem;}
+  .hw-table th{text-align:left;padding:8px 12px;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
+  .hw-table td{padding:10px 12px;color:var(--text-muted);border-bottom:0.5px solid var(--border);}
+  .hw-table tr:last-child td{border-bottom:none;}
+  .hw-table tr.featured td{color:var(--text);}
+  .hw-table .hw-badge{display:inline-flex;background:rgba(0,212,184,0.1);border:0.5px solid rgba(0,212,184,0.25);color:var(--accent);font-size:0.6rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;font-family:var(--mono);vertical-align:middle;margin-left:6px;}
+  .hw-table .pi-model{color:var(--text);font-weight:500;}
+
+  /* STEPS */
+  .guide-step{margin-bottom:3rem;}
+  .step-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.25rem;}
+  .step-badge{flex-shrink:0;width:32px;height:32px;border-radius:8px;background:rgba(0,212,184,0.1);border:0.5px solid rgba(0,212,184,0.25);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;font-weight:600;color:var(--accent);}
+  .step-info{}
+  .step-title{font-size:1.05rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:3px;line-height:1.2;}
+  .step-desc{font-size:0.82rem;color:var(--text-muted);line-height:1.55;}
+  .step-body{padding-left:46px;}
+  .step-body p{font-size:0.85rem;color:var(--text-muted);line-height:1.65;margin-bottom:0.85rem;}
+  .step-body ol,.step-body ul{padding-left:1.25rem;display:flex;flex-direction:column;gap:6px;margin-bottom:0.85rem;}
+  .step-body li{font-size:0.85rem;color:var(--text-muted);line-height:1.55;}
+  .step-body li strong,.step-body p strong{color:var(--text);}
+  .step-body a{color:var(--accent);text-decoration:none;}
+  .step-body a:hover{text-decoration:underline;}
+
+  /* CODE BLOCKS */
+  .code-block{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1rem;font-family:var(--mono);}
+  .code-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border-bottom:0.5px solid var(--border);}
+  .code-lang{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);}
+  .copy-btn{font-size:0.65rem;font-weight:500;color:var(--text-dim);background:none;border:0.5px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-family:var(--mono);transition:all 0.15s;}
+  .copy-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.3);}
+  .copy-btn.copied{color:var(--accent);border-color:rgba(0,212,184,0.4);}
+  .code-block pre{padding:1rem 1.1rem;overflow-x:auto;}
+  .code-block code{font-size:0.78rem;line-height:1.7;color:#cdd9e5;white-space:pre;}
+  .code-block .cm{color:var(--text-dim);}
+  .code-block .ck{color:#00d4b8;}
+  .code-block .cv{color:#79c0ff;}
+  .code-block .cs{color:#a5d6ff;}
+
+  /* EXPECTED OUTPUT */
+  .output-block{background:rgba(0,0,0,0.6);border:0.5px solid var(--border);border-left:2px solid rgba(0,212,184,0.3);border-radius:0 8px 8px 0;padding:0.85rem 1rem;margin-bottom:1rem;font-family:var(--mono);font-size:0.72rem;line-height:1.7;color:var(--text-dim);}
+  .output-block .ol{color:#00d4b8;}
+  .output-block .oi{color:#8b949e;}
+
+  /* CALLOUT */
+  .callout{display:flex;gap:10px;padding:0.9rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.82rem;line-height:1.55;}
+  .callout.tip{background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.2);}
+  .callout.warn{background:rgba(255,189,46,0.06);border:0.5px solid rgba(255,189,46,0.2);}
+  .callout-icon{flex-shrink:0;font-size:0.9rem;margin-top:1px;}
+  .callout.tip .callout-text{color:#6dcfc3;}
+  .callout.warn .callout-text{color:#d4a035;}
+
+  /* SECTION HEADING (non-step) */
+  .section-head{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:0.5px solid var(--border);}
+
+  /* SYSTEMD BLOCK */
+  .ini-block{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1rem;font-family:var(--mono);}
+  .ini-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border-bottom:0.5px solid var(--border);}
+  .ini-bar span{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);}
+  .ini-block pre{padding:1rem 1.1rem;overflow-x:auto;}
+  .ini-block code{font-size:0.78rem;line-height:1.7;color:#cdd9e5;white-space:pre;}
+  .ini-sec{color:#79c0ff;}
+  .ini-key{color:#a5d6ff;}
+  .ini-val{color:#cdd9e5;}
+  .ini-cmt{color:var(--text-dim);}
+
+  /* TROUBLESHOOTING TABLE */
+  .ts-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+  .ts-table th{text-align:left;padding:8px 12px;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
+  .ts-table td{padding:10px 12px;border-bottom:0.5px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ts-table tr:last-child td{border-bottom:none;}
+  .ts-table td:first-child{color:var(--text-muted);font-family:var(--mono);font-size:0.78rem;white-space:nowrap;}
+  .ts-table td:last-child{color:var(--text-muted);}
+  .ts-table code{font-family:var(--mono);font-size:0.75rem;background:var(--surface2);padding:1px 5px;border-radius:4px;color:var(--accent);}
+
+  /* DIVIDER */
+  .guide-divider{border:none;border-top:0.5px solid var(--border);margin:2.5rem 0;}
+
+  /* YAML */
+  .yaml-key{color:#79c0ff;}
+  .yaml-val{color:#a5d6ff;}
+  .yaml-cmt{color:var(--text-dim);}
+  .yaml-str{color:#a8d8a8;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <a href="../configwizard/">Config Wizard</a>
+    <a href="../netmonitor/" class="active">Network Monitor</a>
+    <a href="../assettracker/">Asset Tracker</a>
+  </div>
+  <div class="nav-bottom">
+    <a href="/netmonitor/" class="nav-logo">Network <span style="color:#00d4b8;">Monitor</span></a>
+    <ul class="nav-links">
+      <li><a href="/netmonitor/">Overview</a></li>
+      <li><a href="/netmonitor/install-pi" class="active">Raspberry Pi</a></li>
+      <li><a href="/netmonitor/install-windows">Windows</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <a href="/netmonitor/dashboard" class="nav-my-monitor">● My Network Monitor</a>
+      <a href="../login.html" class="nav-signin" id="navSignin">Sign in</a>
+      <a href="../login.html" class="nav-cta" id="navCta">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="guide-page">
+
+  <!-- HEADER -->
+  <div class="guide-header">
+    <div class="guide-breadcrumb">
+      <a href="/netmonitor/">Network Monitor</a>
+      <span style="color:var(--border-bright);">/</span>
+      <span style="color:var(--text-muted);">Install Guide</span>
+      <span style="color:var(--border-bright);">/</span>
+      <span style="color:var(--accent);">Raspberry Pi</span>
+    </div>
+    <h1 class="guide-title">Raspberry Pi<br><span style="color:var(--accent);">Install Guide</span></h1>
+    <p class="guide-subtitle">Get the Network Monitor agent running on a Raspberry Pi in under 15 minutes. A Pi 4 (4 GB) handles up to 150 devices.</p>
+  </div>
+
+  <!-- PLATFORM SWITCHER -->
+  <div class="platform-switch">
+    <a href="/netmonitor/install-pi" class="active"><span class="plat-icon">🍓</span> Raspberry Pi</a>
+    <a href="/netmonitor/install-windows"><span class="plat-icon">⊞</span> Windows</a>
+  </div>
+
+  <!-- REQUIREMENTS -->
+  <div class="req-card">
+    <div class="req-title">Requirements</div>
+    <ul class="req-list">
+      <li>Raspberry Pi — Zero 2W, Pi 4, or Pi 5 (Pi 4 4 GB recommended)</li>
+      <li>Raspberry Pi OS Lite, 64-bit (Bullseye or Bookworm)</li>
+      <li>Python 3.9 or higher — pre-installed on Bullseye and later</li>
+      <li>Network access to your managed devices — same VLAN or routed</li>
+      <li>SSH enabled on all target switches and routers</li>
+      <li>Your SpanGate API key — from <a href="/netmonitor/dashboard">Network Monitor → Settings</a></li>
+    </ul>
+  </div>
+
+  <!-- HARDWARE TABLE -->
+  <h2 class="section-head">Recommended Hardware</h2>
+  <table class="hw-table" style="margin-bottom:2.5rem;">
+    <thead>
+      <tr>
+        <th>Pi Model</th>
+        <th>Max Devices</th>
+        <th>Approx. Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="pi-model">Pi Zero 2W</span></td>
+        <td>25</td>
+        <td>~$15</td>
+      </tr>
+      <tr class="featured">
+        <td><span class="pi-model">Pi 4 (4 GB)</span> <span class="hw-badge">Recommended</span></td>
+        <td>150</td>
+        <td>~$55</td>
+      </tr>
+      <tr>
+        <td><span class="pi-model">Pi 5 (8 GB)</span></td>
+        <td>500</td>
+        <td>~$80</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- STEP 1 -->
+  <div class="guide-step" id="step-1">
+    <div class="step-head">
+      <div class="step-badge">01</div>
+      <div class="step-info">
+        <div class="step-title">Flash Raspberry Pi OS</div>
+        <div class="step-desc">Use Raspberry Pi Imager to write OS Lite to your microSD card with SSH pre-enabled.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Download <strong>Raspberry Pi Imager</strong> from <a href="https://raspberrypi.com/software" target="_blank" rel="noopener">raspberrypi.com/software</a></li>
+        <li>Insert a microSD card — 8 GB minimum, 16 GB recommended</li>
+        <li><strong>Choose Device</strong> → select your Pi model</li>
+        <li><strong>Choose OS</strong> → Raspberry Pi OS Lite (64-bit)</li>
+        <li><strong>Choose Storage</strong> → select your microSD card</li>
+        <li>Click the <strong>gear icon (⚙️)</strong> before clicking Write to pre-configure:</li>
+      </ol>
+      <div class="callout tip" style="margin-top:0.5rem;margin-bottom:0.85rem;">
+        <span class="callout-icon">⚙️</span>
+        <div class="callout-text">In the gear/advanced options: enable SSH, set hostname to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate-monitor</code>, set username to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate</code>, choose a strong password, and configure Wi-Fi if not using Ethernet.</div>
+      </div>
+      <ol start="7">
+        <li>Click <strong>Write</strong> and wait for it to finish</li>
+        <li>Insert the microSD into your Pi and power it on</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="guide-step" id="step-2">
+    <div class="step-head">
+      <div class="step-badge">02</div>
+      <div class="step-info">
+        <div class="step-title">Connect to Your Pi</div>
+        <div class="step-desc">Give the Pi 60 seconds to boot, then SSH in.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>ping spangate-monitor.local
+ssh spangate@spangate-monitor.local</code></pre>
+      </div>
+      <p>If <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">.local</code> doesn't resolve, check your router's DHCP table for the Pi's IP and SSH directly:</p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>ssh spangate@192.168.1.XXX</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="guide-step" id="step-3">
+    <div class="step-head">
+      <div class="step-badge">03</div>
+      <div class="step-info">
+        <div class="step-title">Update the System</div>
+        <div class="step-desc">Bring the OS fully up to date and install required packages.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3 python3-pip python3-venv git
+python3 --version</code></pre>
+      </div>
+      <div class="callout tip">
+        <span class="callout-icon">✓</span>
+        <div class="callout-text">The version must be 3.9 or higher. Raspberry Pi OS Bullseye and Bookworm both ship with Python 3.11.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="guide-step" id="step-4">
+    <div class="step-head">
+      <div class="step-badge">04</div>
+      <div class="step-info">
+        <div class="step-title">Download the Agent</div>
+        <div class="step-desc">Clone the SpanGate repo to your Pi's home directory.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>cd ~
+git clone https://github.com/michaelbohler13/spangate-site.git
+cd spangate-site/netmonitor-agent</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="guide-step" id="step-5">
+    <div class="step-head">
+      <div class="step-badge">05</div>
+      <div class="step-info">
+        <div class="step-title">Create Virtual Environment &amp; Install Dependencies</div>
+        <div class="step-desc">Isolate the agent's Python packages in a venv.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt</code></pre>
+      </div>
+      <div class="callout tip">
+        <span class="callout-icon">⏱</span>
+        <div class="callout-text">Installation takes 2–5 minutes on a Pi 4. The <code style="font-family:var(--mono);font-size:0.85em;">netmiko</code> and <code style="font-family:var(--mono);font-size:0.85em;">napalm</code> packages are the heaviest.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="guide-step" id="step-6">
+    <div class="step-head">
+      <div class="step-badge">06</div>
+      <div class="step-info">
+        <div class="step-title">Configure the Agent</div>
+        <div class="step-desc">Set your API key, site name, and add your devices.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>sudo mkdir -p /etc/spangate/netmonitor
+sudo cp config.yaml /etc/spangate/netmonitor/config.yaml
+sudo chmod 600 /etc/spangate/netmonitor/config.yaml
+sudo nano /etc/spangate/netmonitor/config.yaml</code></pre>
+      </div>
+      <p>Edit the following fields — add one entry under <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">devices:</code> for each switch or router:</p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="yaml-key">agent</span>:
+  <span class="yaml-key">site_name</span>: <span class="yaml-str">"Main Campus"</span>          <span class="yaml-cmt"># ← your site name</span>
+  <span class="yaml-key">api_url</span>:   <span class="yaml-str">"https://api.spangate.com"</span>
+  <span class="yaml-key">api_key</span>:   <span class="yaml-str">"spng_paste_your_key_here"</span> <span class="yaml-cmt"># ← your SpanGate API key</span>
+  <span class="yaml-key">ping_interval</span>:        <span class="yaml-val">60</span>
+  <span class="yaml-key">config_pull_interval</span>: <span class="yaml-val">604800</span>
+
+<span class="yaml-key">devices</span>:
+  - <span class="yaml-key">hostname</span>:     <span class="yaml-val">core-sw-01</span>
+    <span class="yaml-key">ip</span>:          <span class="yaml-val">10.1.1.1</span>             <span class="yaml-cmt"># ← your device IP</span>
+    <span class="yaml-key">vendor</span>:      <span class="yaml-val">cisco</span>
+    <span class="yaml-key">device_type</span>: <span class="yaml-val">cisco_ios</span>
+    <span class="yaml-key">ssh_username</span>: <span class="yaml-val">admin</span>
+    <span class="yaml-key">ssh_password</span>: <span class="yaml-str">"your-switch-password"</span>  <span class="yaml-cmt"># ← SSH credentials</span>
+    <span class="yaml-key">ssh_port</span>:    <span class="yaml-val">22</span></code></pre>
+      </div>
+      <p>Save with <strong>Ctrl+X → Y → Enter</strong>. Your API key is in the dashboard under Settings.</p>
+    </div>
+  </div>
+
+  <!-- STEP 7 -->
+  <div class="guide-step" id="step-7">
+    <div class="step-head">
+      <div class="step-badge">07</div>
+      <div class="step-info">
+        <div class="step-title">Test the Agent Manually</div>
+        <div class="step-desc">Run once to confirm it connects to the API and reaches your devices.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>cd ~/spangate-site/netmonitor-agent
+source venv/bin/activate
+python3 agent.py --config /etc/spangate/netmonitor/config.yaml</code></pre>
+      </div>
+      <p>Expected output:</p>
+      <div class="output-block">
+        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">SpanGate Network Monitor Agent v1.0.0 — Main Campus — 3 device(s)</span><br>
+        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[PING] Loop started — 3 device(s), interval 60s</span><br>
+        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[SSH]  Pull loop started — interval 604800s (168.0 hours)</span><br>
+        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[HB]   Heartbeat loop started — interval 300s</span><br>
+        <span class="oi">2026-05-25 14:32:02  INFO  </span><span class="ol">[PING] core-sw-01 (10.1.1.1) initial state: up</span>
+      </div>
+      <p>Stop with <strong>Ctrl+C</strong> once confirmed working.</p>
+    </div>
+  </div>
+
+  <!-- STEP 8 -->
+  <div class="guide-step" id="step-8">
+    <div class="step-head">
+      <div class="step-badge">08</div>
+      <div class="step-info">
+        <div class="step-title">Install as a Systemd Service</div>
+        <div class="step-desc">Run the agent automatically on boot — no logged-in user required.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>sudo nano /etc/systemd/system/spangate-netmonitor.service</code></pre>
+      </div>
+      <p>Paste the following (adjust username if you used something other than <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">spangate</code>):</p>
+      <div class="ini-block">
+        <div class="ini-bar"><span>systemd unit</span><button class="copy-btn" onclick="copyIni(this)">Copy</button></div>
+        <pre><code><span class="ini-sec">[Unit]</span>
+<span class="ini-key">Description</span>=<span class="ini-val">SpanGate Network Monitor Agent</span>
+<span class="ini-key">Documentation</span>=<span class="ini-val">https://spangate.com/netmonitor</span>
+<span class="ini-key">After</span>=<span class="ini-val">network-online.target</span>
+<span class="ini-key">Wants</span>=<span class="ini-val">network-online.target</span>
+
+<span class="ini-sec">[Service]</span>
+<span class="ini-key">Type</span>=<span class="ini-val">simple</span>
+<span class="ini-key">User</span>=<span class="ini-val">spangate</span>
+<span class="ini-key">WorkingDirectory</span>=<span class="ini-val">/home/spangate/spangate-site/netmonitor-agent</span>
+<span class="ini-key">ExecStart</span>=<span class="ini-val">/home/spangate/spangate-site/netmonitor-agent/venv/bin/python3 agent.py --config /etc/spangate/netmonitor/config.yaml</span>
+<span class="ini-key">Restart</span>=<span class="ini-val">always</span>
+<span class="ini-key">RestartSec</span>=<span class="ini-val">10</span>
+<span class="ini-key">StandardOutput</span>=<span class="ini-val">journal</span>
+<span class="ini-key">StandardError</span>=<span class="ini-val">journal</span>
+<span class="ini-key">SyslogIdentifier</span>=<span class="ini-val">spangate-netmonitor</span>
+
+<span class="ini-sec">[Install]</span>
+<span class="ini-key">WantedBy</span>=<span class="ini-val">multi-user.target</span></code></pre>
+      </div>
+      <p>Save with <strong>Ctrl+X → Y → Enter</strong>, then enable and start:</p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>sudo systemctl daemon-reload
+sudo systemctl enable spangate-netmonitor
+sudo systemctl start spangate-netmonitor</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 9 -->
+  <div class="guide-step" id="step-9">
+    <div class="step-head">
+      <div class="step-badge">09</div>
+      <div class="step-info">
+        <div class="step-title">Verify the Service</div>
+        <div class="step-desc">Confirm the agent is running and reporting to your dashboard.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>sudo systemctl status spangate-netmonitor</code></pre>
+      </div>
+      <p>You should see <strong>Active: active (running)</strong>. Follow live logs:</p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>sudo journalctl -u spangate-netmonitor -f</code></pre>
+      </div>
+      <div class="callout tip">
+        <span class="callout-icon">●</span>
+        <div class="callout-text">Your SpanGate dashboard should show <strong>● Agent reporting</strong> within a few minutes of the service starting.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- UPDATING -->
+  <div style="margin-bottom:2.5rem;">
+    <h2 class="section-head">Updating the Agent</h2>
+    <div class="code-block">
+      <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>cd ~/spangate-site
+git pull
+sudo systemctl restart spangate-netmonitor</code></pre>
+    </div>
+  </div>
+
+  <!-- TROUBLESHOOTING -->
+  <div>
+    <h2 class="section-head">Troubleshooting</h2>
+    <table class="ts-table">
+      <thead>
+        <tr><th>Problem</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>python3</code> shows 3.8 or lower</td>
+          <td>Run <code>sudo apt install python3.11 python3.11-venv</code> then retry</td>
+        </tr>
+        <tr>
+          <td>SSH connection refused to device</td>
+          <td>Verify SSH is enabled on the switch and port 22 is open</td>
+        </tr>
+        <tr>
+          <td>Agent starts then immediately stops</td>
+          <td>Run <code>sudo journalctl -u spangate-netmonitor -n 50</code> to read the error</td>
+        </tr>
+        <tr>
+          <td>API key rejected (401)</td>
+          <td>Copy the key from the dashboard exactly — no extra spaces</td>
+        </tr>
+        <tr>
+          <td>Device shows DOWN but is reachable</td>
+          <td>Confirm the Pi has a route: run <code>ping 10.1.1.1</code> from the Pi</td>
+        </tr>
+        <tr>
+          <td>Config pull fails for Aruba CX</td>
+          <td>Run <code>web-management ssl</code> on the switch first</td>
+        </tr>
+        <tr>
+          <td><code>netmiko</code> install fails</td>
+          <td>Run <code>sudo apt install python3-dev libssl-dev</code> then retry <code>pip install</code></td>
+        </tr>
+        <tr>
+          <td>Service says <code>failed</code> status</td>
+          <td>Check permissions: <code>ls -la /etc/spangate/netmonitor/config.yaml</code> — should be <code>-rw-------</code></td>
+        </tr>
+        <tr>
+          <td><code>.local</code> hostname not resolving</td>
+          <td>Install <code>avahi-daemon</code> on the Pi: <code>sudo apt install avahi-daemon</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /guide-page -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">Network Monitor &copy; 2026 <span class="footer-easter">00:SP:AN:GA:TE:00</span></div>
+  <ul class="footer-links">
+    <li><a href="../">SpanGate</a></li>
+    <li><a href="../configwizard/">Config Wizard</a></li>
+    <li><a href="../assettracker/">Asset Tracker</a></li>
+    <li><a href="../login.html">Sign in</a></li>
+  </ul>
+</footer>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    btn.textContent = 'Failed';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+function copyIni(btn) {
+  const code = btn.closest('.ini-block').querySelector('code').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+<script>
+(function(){
+  try {
+    var raw  = localStorage.getItem('sb-tiviipaamwvfjvoscnyk-auth-token');
+    var data = raw ? JSON.parse(raw) : null;
+    var now  = Math.floor(Date.now()/1000);
+    var user = data && data.user && (!data.expires_at || data.expires_at > now) ? data.user : null;
+    if (user) {
+      var s = document.getElementById('navSignin');
+      var c = document.getElementById('navCta');
+      if (s) { s.textContent = user.email; s.style.fontFamily = 'monospace'; s.style.fontSize = '0.72rem'; }
+      if (c) { c.textContent = 'Dashboard'; c.href = '/netmonitor/dashboard'; }
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

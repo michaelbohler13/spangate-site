@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Monitor — Windows Install Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d1117; --bg2:#0a0a0a; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#222222;
+    --border:rgba(255,255,255,0.08); --border-bright:rgba(255,255,255,0.15);
+    --text:#f5f5f7; --text-muted:#a1a1a6; --text-dim:#6e6e73;
+    --accent:#00d4b8; --teal:#2a8a78;
+    --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+
+  /* NAV */
+  nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);background:rgba(0,0,0,0.72);border-bottom:0.5px solid var(--border);}
+  .nav-top{height:36px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;border-bottom:0.5px solid rgba(255,255,255,0.06);}
+  .nav-top a{font-size:0.8rem;font-weight:500;letter-spacing:-0.01em;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;}
+  .nav-top a:hover{color:#fff;background:rgba(255,255,255,0.05);}
+  .nav-top a.active{color:#00d4b8;background:rgba(0,212,184,0.08);}
+  .nav-bottom{height:48px;display:flex;align-items:center;padding:0 2rem;}
+  .nav-logo{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px;}
+  .nav-links{display:flex;gap:1.75rem;margin-left:2.5rem;list-style:none;}
+  .nav-links a{font-size:0.78rem;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;cursor:pointer;}
+  .nav-links a:hover{color:var(--text);}
+  .nav-links a.active{color:var(--accent);}
+  .nav-spacer{flex:1;}
+  .nav-right{display:flex;align-items:center;gap:12px;}
+  .nav-my-monitor{font-size:0.78rem;font-weight:600;color:#00d4b8;text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;font-family:var(--mono);}
+  .nav-my-monitor:hover{color:#1af0d4;}
+  .nav-signin{font-size:0.78rem;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;}
+  .nav-signin:hover{color:var(--text);}
+  .nav-cta{font-size:0.78rem;font-weight:500;color:var(--text);background:rgba(0,212,184,0.12);border:0.5px solid rgba(0,212,184,0.3);border-radius:980px;padding:5px 14px;text-decoration:none;letter-spacing:-0.01em;transition:all 0.15s;}
+  .nav-cta:hover{background:rgba(0,212,184,0.2);}
+
+  /* FOOTER */
+  footer{border-top:0.5px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+  .footer-left{font-size:0.75rem;color:var(--text-dim);}
+  .footer-easter{font-family:var(--mono);font-size:0.68rem;}
+  .footer-links{display:flex;gap:1.5rem;list-style:none;}
+  .footer-links a{font-size:0.75rem;color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .footer-links a:hover{color:var(--text-muted);}
+
+  /* GUIDE LAYOUT */
+  .guide-page{max-width:780px;margin:0 auto;padding:116px 2rem 5rem;}
+
+  /* GUIDE HEADER */
+  .guide-header{margin-bottom:2.5rem;}
+  .guide-breadcrumb{font-size:0.72rem;color:var(--text-dim);font-family:var(--mono);margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
+  .guide-breadcrumb a{color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .guide-breadcrumb a:hover{color:var(--accent);}
+  .guide-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:600;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.75rem;}
+  .guide-subtitle{font-size:0.95rem;color:var(--text-muted);line-height:1.6;max-width:520px;}
+
+  /* PLATFORM SWITCHER */
+  .platform-switch{display:inline-flex;background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:2.5rem;}
+  .platform-switch a{display:flex;align-items:center;gap:7px;padding:7px 16px;border-radius:7px;font-size:0.78rem;font-weight:500;text-decoration:none;color:var(--text-muted);letter-spacing:-0.01em;transition:all 0.15s;}
+  .platform-switch a.active{background:var(--surface3);color:var(--text);border:0.5px solid var(--border-bright);}
+  .platform-switch a:not(.active):hover{color:var(--text);}
+  .plat-icon{font-size:0.9rem;}
+
+  /* REQUIREMENTS */
+  .req-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2.5rem;}
+  .req-title{font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.85rem;font-family:var(--mono);}
+  .req-list{list-style:none;display:flex;flex-direction:column;gap:6px;}
+  .req-list li{font-size:0.83rem;color:var(--text-muted);display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
+  .req-list li::before{content:'○';color:var(--accent);font-size:0.65rem;flex-shrink:0;margin-top:3px;}
+  .req-list a{color:var(--accent);text-decoration:none;}
+  .req-list a:hover{text-decoration:underline;}
+
+  /* STEPS */
+  .guide-step{margin-bottom:3rem;}
+  .step-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.25rem;}
+  .step-badge{flex-shrink:0;width:32px;height:32px;border-radius:8px;background:rgba(0,212,184,0.1);border:0.5px solid rgba(0,212,184,0.25);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;font-weight:600;color:var(--accent);}
+  .step-info{}
+  .step-title{font-size:1.05rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:3px;line-height:1.2;}
+  .step-desc{font-size:0.82rem;color:var(--text-muted);line-height:1.55;}
+  .step-body{padding-left:46px;}
+  .step-body p{font-size:0.85rem;color:var(--text-muted);line-height:1.65;margin-bottom:0.85rem;}
+  .step-body ol,.step-body ul{padding-left:1.25rem;display:flex;flex-direction:column;gap:6px;margin-bottom:0.85rem;}
+  .step-body li{font-size:0.85rem;color:var(--text-muted);line-height:1.55;}
+  .step-body li strong,.step-body p strong{color:var(--text);}
+  .step-body a{color:var(--accent);text-decoration:none;}
+  .step-body a:hover{text-decoration:underline;}
+
+  /* CODE BLOCKS */
+  .code-block{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1rem;font-family:var(--mono);}
+  .code-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border-bottom:0.5px solid var(--border);}
+  .code-lang{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);}
+  .copy-btn{font-size:0.65rem;font-weight:500;color:var(--text-dim);background:none;border:0.5px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-family:var(--mono);transition:all 0.15s;}
+  .copy-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.3);}
+  .copy-btn.copied{color:var(--accent);border-color:rgba(0,212,184,0.4);}
+  .code-block pre{padding:1rem 1.1rem;overflow-x:auto;}
+  .code-block code{font-size:0.78rem;line-height:1.7;color:#cdd9e5;white-space:pre;}
+
+  /* EXPECTED OUTPUT */
+  .output-block{background:rgba(0,0,0,0.6);border:0.5px solid var(--border);border-left:2px solid rgba(0,212,184,0.3);border-radius:0 8px 8px 0;padding:0.85rem 1rem;margin-bottom:1rem;font-family:var(--mono);font-size:0.72rem;line-height:1.7;color:var(--text-dim);}
+  .output-block .ol{color:#00d4b8;}
+  .output-block .oi{color:#8b949e;}
+
+  /* CALLOUT */
+  .callout{display:flex;gap:10px;padding:0.9rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.82rem;line-height:1.55;}
+  .callout.tip{background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.2);}
+  .callout.warn{background:rgba(255,189,46,0.06);border:0.5px solid rgba(255,189,46,0.2);}
+  .callout-icon{flex-shrink:0;font-size:0.9rem;margin-top:1px;}
+  .callout.tip .callout-text{color:#6dcfc3;}
+  .callout.warn .callout-text{color:#d4a035;}
+
+  /* SECTION HEADING */
+  .section-head{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:0.5px solid var(--border);}
+
+  /* NSSM TABLE */
+  .nssm-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1rem;}
+  .nssm-table th{text-align:left;padding:7px 12px;font-size:0.62rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
+  .nssm-table td{padding:9px 12px;color:var(--text-muted);border-bottom:0.5px solid var(--border);vertical-align:top;font-size:0.82rem;line-height:1.5;}
+  .nssm-table tr:last-child td{border-bottom:none;}
+  .nssm-table td:first-child{color:var(--text);font-weight:500;white-space:nowrap;font-family:var(--mono);font-size:0.75rem;}
+  .nssm-table code{font-family:var(--mono);font-size:0.75rem;background:var(--surface2);padding:1px 5px;border-radius:4px;color:var(--accent);}
+
+  /* TROUBLESHOOTING TABLE */
+  .ts-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+  .ts-table th{text-align:left;padding:8px 12px;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
+  .ts-table td{padding:10px 12px;border-bottom:0.5px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ts-table tr:last-child td{border-bottom:none;}
+  .ts-table td:first-child{color:var(--text-muted);font-family:var(--mono);font-size:0.78rem;}
+  .ts-table td:last-child{color:var(--text-muted);}
+  .ts-table code{font-family:var(--mono);font-size:0.75rem;background:var(--surface2);padding:1px 5px;border-radius:4px;color:var(--accent);}
+
+  /* YAML */
+  .yaml-key{color:#79c0ff;}
+  .yaml-val{color:#a5d6ff;}
+  .yaml-cmt{color:var(--text-dim);}
+  .yaml-str{color:#a8d8a8;}
+
+  /* DIVIDER */
+  .guide-divider{border:none;border-top:0.5px solid var(--border);margin:2.5rem 0;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <a href="../configwizard/">Config Wizard</a>
+    <a href="../netmonitor/" class="active">Network Monitor</a>
+    <a href="../assettracker/">Asset Tracker</a>
+  </div>
+  <div class="nav-bottom">
+    <a href="/netmonitor/" class="nav-logo">Network <span style="color:#00d4b8;">Monitor</span></a>
+    <ul class="nav-links">
+      <li><a href="/netmonitor/">Overview</a></li>
+      <li><a href="/netmonitor/install-pi">Raspberry Pi</a></li>
+      <li><a href="/netmonitor/install-windows" class="active">Windows</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <a href="/netmonitor/dashboard" class="nav-my-monitor">● My Network Monitor</a>
+      <a href="../login.html" class="nav-signin" id="navSignin">Sign in</a>
+      <a href="../login.html" class="nav-cta" id="navCta">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="guide-page">
+
+  <!-- HEADER -->
+  <div class="guide-header">
+    <div class="guide-breadcrumb">
+      <a href="/netmonitor/">Network Monitor</a>
+      <span style="color:var(--border-bright);">/</span>
+      <span style="color:var(--text-muted);">Install Guide</span>
+      <span style="color:var(--border-bright);">/</span>
+      <span style="color:var(--accent);">Windows</span>
+    </div>
+    <h1 class="guide-title">Windows<br><span style="color:var(--accent);">Install Guide</span></h1>
+    <p class="guide-subtitle">Run the Network Monitor agent on Windows 10 or 11 as a background service using NSSM. Survives reboots — no logged-in user required.</p>
+  </div>
+
+  <!-- PLATFORM SWITCHER -->
+  <div class="platform-switch">
+    <a href="/netmonitor/install-pi"><span class="plat-icon">🍓</span> Raspberry Pi</a>
+    <a href="/netmonitor/install-windows" class="active"><span class="plat-icon">⊞</span> Windows</a>
+  </div>
+
+  <!-- REQUIREMENTS -->
+  <div class="req-card">
+    <div class="req-title">Requirements</div>
+    <ul class="req-list">
+      <li>Windows 10 (version 1903 or later) or Windows 11</li>
+      <li>Python 3.9 or higher</li>
+      <li>Network access to your managed devices — same VLAN or routed</li>
+      <li>SSH enabled on all target switches and routers</li>
+      <li>Your SpanGate API key — from <a href="/netmonitor/dashboard">Network Monitor → Settings</a></li>
+      <li>Git for Windows — optional but recommended</li>
+    </ul>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="guide-step" id="step-1">
+    <div class="step-head">
+      <div class="step-badge">01</div>
+      <div class="step-info">
+        <div class="step-title">Install Python</div>
+        <div class="step-desc">Python 3.9 or higher is required. The installer must add Python to your PATH.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Go to <a href="https://python.org/downloads" target="_blank" rel="noopener">python.org/downloads</a></li>
+        <li>Click <strong>Download Python 3.11.x</strong> (or any 3.9+ release)</li>
+        <li>Run the installer</li>
+        <li>✅ <strong>Check "Add Python to PATH"</strong> on the first screen — do not skip this</li>
+        <li>Click <strong>Install Now</strong></li>
+      </ol>
+      <p style="margin-top:0.75rem;">Verify in Command Prompt:</p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>python --version
+pip --version</code></pre>
+      </div>
+      <div class="callout warn">
+        <span class="callout-icon">⚠</span>
+        <div class="callout-text">Both commands must succeed. If <code style="font-family:var(--mono);font-size:0.85em;">python</code> is not recognized, re-run the installer and ensure "Add to PATH" is checked.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="guide-step" id="step-2">
+    <div class="step-head">
+      <div class="step-badge">02</div>
+      <div class="step-info">
+        <div class="step-title">Install Git <span style="font-size:0.78rem;font-weight:400;color:var(--text-dim);margin-left:4px;">(Recommended)</span></div>
+        <div class="step-desc">Git makes downloading and updating the agent much easier.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Go to <a href="https://git-scm.com/download/win" target="_blank" rel="noopener">git-scm.com/download/win</a></li>
+        <li>Download and run the installer</li>
+        <li>All default settings are fine — click <strong>Next</strong> through each screen</li>
+      </ol>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>git --version</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="guide-step" id="step-3">
+    <div class="step-head">
+      <div class="step-badge">03</div>
+      <div class="step-info">
+        <div class="step-title">Download the Agent</div>
+        <div class="step-desc">Clone the repo into your Documents folder, or download and extract the ZIP.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p><strong>Option A — Git (recommended):</strong></p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>cd %USERPROFILE%\Documents
+git clone https://github.com/michaelbohler13/spangate-site.git
+cd spangate-site\netmonitor-agent</code></pre>
+      </div>
+      <p><strong>Option B — Manual download:</strong></p>
+      <ol>
+        <li>Go to <a href="https://github.com/michaelbohler13/spangate-site" target="_blank" rel="noopener">github.com/michaelbohler13/spangate-site</a></li>
+        <li>Click <strong>Code → Download ZIP</strong></li>
+        <li>Extract the ZIP to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">Documents\spangate-site</code></li>
+        <li>Open Command Prompt and navigate there:</li>
+      </ol>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>cd %USERPROFILE%\Documents\spangate-site\netmonitor-agent</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="guide-step" id="step-4">
+    <div class="step-head">
+      <div class="step-badge">04</div>
+      <div class="step-info">
+        <div class="step-title">Create Virtual Environment &amp; Install Dependencies</div>
+        <div class="step-desc">Isolate the agent's packages from your system Python.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>python -m venv venv
+venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt</code></pre>
+      </div>
+      <div class="callout tip">
+        <span class="callout-icon">✓</span>
+        <div class="callout-text">You should see <code style="font-family:var(--mono);font-size:0.85em;">(venv)</code> at the start of your prompt when the virtual environment is active. Installation takes 2–5 minutes.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="guide-step" id="step-5">
+    <div class="step-head">
+      <div class="step-badge">05</div>
+      <div class="step-info">
+        <div class="step-title">Configure the Agent</div>
+        <div class="step-desc">Set your API key, site name, and add your devices.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>In File Explorer, navigate to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">Documents\spangate-site\netmonitor-agent</code></li>
+        <li>Copy <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">config.yaml</code> and rename the copy to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">my-config.yaml</code></li>
+        <li>Open <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">my-config.yaml</code> in Notepad or VS Code</li>
+        <li>Edit the following fields:</li>
+      </ol>
+      <div class="code-block" style="margin-top:0.75rem;">
+        <div class="code-bar"><span class="code-lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="yaml-key">agent</span>:
+  <span class="yaml-key">site_name</span>: <span class="yaml-str">"Main Office"</span>             <span class="yaml-cmt"># ← your site name</span>
+  <span class="yaml-key">api_url</span>:   <span class="yaml-str">"https://api.spangate.com"</span>
+  <span class="yaml-key">api_key</span>:   <span class="yaml-str">"spng_paste_your_key_here"</span>  <span class="yaml-cmt"># ← your SpanGate API key</span>
+  <span class="yaml-key">ping_interval</span>:        <span class="yaml-val">60</span>
+  <span class="yaml-key">config_pull_interval</span>: <span class="yaml-val">604800</span>
+
+<span class="yaml-key">devices</span>:
+  - <span class="yaml-key">hostname</span>:     <span class="yaml-val">core-sw-01</span>
+    <span class="yaml-key">ip</span>:          <span class="yaml-val">10.1.1.1</span>              <span class="yaml-cmt"># ← your device IP</span>
+    <span class="yaml-key">vendor</span>:      <span class="yaml-val">cisco</span>
+    <span class="yaml-key">device_type</span>: <span class="yaml-val">cisco_ios</span>
+    <span class="yaml-key">ssh_username</span>: <span class="yaml-val">admin</span>
+    <span class="yaml-key">ssh_password</span>: <span class="yaml-str">"your-switch-password"</span>   <span class="yaml-cmt"># ← SSH credentials</span>
+    <span class="yaml-key">ssh_port</span>:    <span class="yaml-val">22</span></code></pre>
+      </div>
+      <p>Add one entry under <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">devices:</code> for each switch or router. Save the file.</p>
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="guide-step" id="step-6">
+    <div class="step-head">
+      <div class="step-badge">06</div>
+      <div class="step-info">
+        <div class="step-title">Test the Agent Manually</div>
+        <div class="step-desc">Run once to confirm it connects to the API and reaches your devices.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Make sure the virtual environment is active (<code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">(venv)</code> in prompt), then:</p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>python agent.py --config my-config.yaml</code></pre>
+      </div>
+      <p>Expected output:</p>
+      <div class="output-block">
+        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">SpanGate Network Monitor Agent v1.0.0 — Main Office — 3 device(s)</span><br>
+        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[PING] Loop started — 3 device(s), interval 60s</span><br>
+        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[SSH]  Pull loop started — interval 604800s (168.0 hours)</span><br>
+        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[HB]   Heartbeat loop started — interval 300s</span><br>
+        <span class="oi">2026-05-25 14:32:02  INFO  </span><span class="ol">[PING] core-sw-01 (10.1.1.1) initial state: up</span>
+      </div>
+      <p>Stop with <strong>Ctrl+C</strong> once confirmed working.</p>
+    </div>
+  </div>
+
+  <!-- STEP 7 -->
+  <div class="guide-step" id="step-7">
+    <div class="step-head">
+      <div class="step-badge">07</div>
+      <div class="step-info">
+        <div class="step-title">Run as a Windows Service with NSSM</div>
+        <div class="step-desc">NSSM keeps the agent alive across reboots without needing a logged-in user.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p><strong>Install NSSM:</strong></p>
+      <ol>
+        <li>Go to <a href="https://nssm.cc/download" target="_blank" rel="noopener">nssm.cc/download</a></li>
+        <li>Download the latest release ZIP</li>
+        <li>Extract it and copy <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">nssm.exe</code> from the <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">win64</code> folder to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">C:\Windows\System32\</code></li>
+      </ol>
+      <p style="margin-top:0.85rem;"><strong>Install the service — open Command Prompt as Administrator:</strong></p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd (admin)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>nssm install SpangateNetMonitor</code></pre>
+      </div>
+      <p>Fill in the NSSM GUI as follows — use your actual username (check with <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">echo %USERNAME%</code>):</p>
+      <table class="nssm-table">
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Tab</td>
+            <td><strong>Application</strong></td>
+          </tr>
+          <tr>
+            <td>Path</td>
+            <td><code>C:\Users\YourName\Documents\spangate-site\netmonitor-agent\venv\Scripts\python.exe</code></td>
+          </tr>
+          <tr>
+            <td>Startup directory</td>
+            <td><code>C:\Users\YourName\Documents\spangate-site\netmonitor-agent</code></td>
+          </tr>
+          <tr>
+            <td>Arguments</td>
+            <td><code>agent.py --config my-config.yaml</code></td>
+          </tr>
+          <tr>
+            <td>Tab</td>
+            <td><strong>Details</strong></td>
+          </tr>
+          <tr>
+            <td>Display name</td>
+            <td>SpanGate Network Monitor</td>
+          </tr>
+          <tr>
+            <td>Description</td>
+            <td>SpanGate Technology — Network Monitor Agent</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        <span class="callout-icon">⚠</span>
+        <div class="callout-text">Always use <strong>absolute paths</strong> in NSSM. The Path must point to <code style="font-family:var(--mono);font-size:0.85em;">venv\Scripts\python.exe</code> — not the system Python.</div>
+      </div>
+      <p>Click <strong>Install service</strong>, then start it:</p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd (admin)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>nssm start SpangateNetMonitor</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 8 -->
+  <div class="guide-step" id="step-8">
+    <div class="step-head">
+      <div class="step-badge">08</div>
+      <div class="step-info">
+        <div class="step-title">Verify the Service</div>
+        <div class="step-desc">Confirm the agent is running and reporting to your dashboard.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Open <strong>Services</strong> — press <strong>Win+R</strong>, type <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">services.msc</code>, press Enter. Find <strong>SpanGate Network Monitor</strong> — status should be <strong>Running</strong>.</p>
+      <div class="callout tip">
+        <span class="callout-icon">●</span>
+        <div class="callout-text">Your SpanGate dashboard should show <strong>● Agent reporting</strong> within a few minutes of the service starting.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- UPDATING -->
+  <div style="margin-bottom:2.5rem;">
+    <h2 class="section-head">Updating the Agent</h2>
+    <div class="code-block">
+      <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>cd %USERPROFILE%\Documents\spangate-site
+git pull
+nssm restart SpangateNetMonitor</code></pre>
+    </div>
+  </div>
+
+  <!-- WINDOWS FIREWALL NOTE -->
+  <div style="margin-bottom:2.5rem;">
+    <h2 class="section-head">Windows Firewall Note</h2>
+    <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.65;margin-bottom:1rem;">The agent uses ICMP (ping) for device status checks. Windows Firewall may block outbound ICMP on some configurations. If devices show as DOWN even though they're reachable:</p>
+    <ol style="padding-left:1.25rem;display:flex;flex-direction:column;gap:6px;">
+      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Open <strong style="color:var(--text);">Windows Defender Firewall with Advanced Security</strong></li>
+      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Go to <strong style="color:var(--text);">Outbound Rules → New Rule</strong></li>
+      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Rule type: <strong style="color:var(--text);">Custom</strong></li>
+      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Protocol: <strong style="color:var(--text);">ICMPv4</strong></li>
+      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Action: <strong style="color:var(--text);">Allow the connection</strong></li>
+      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Apply to all profiles, name it <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">SpanGate ICMP Out</code>, click <strong style="color:var(--text);">Finish</strong></li>
+    </ol>
+  </div>
+
+  <!-- TROUBLESHOOTING -->
+  <div>
+    <h2 class="section-head">Troubleshooting</h2>
+    <table class="ts-table">
+      <thead>
+        <tr><th>Problem</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>python</code> not recognized</td>
+          <td>Re-run the installer and check "Add Python to PATH"</td>
+        </tr>
+        <tr>
+          <td><code>pip install</code> fails on netmiko</td>
+          <td>Run <code>pip install --upgrade pip</code> first, then retry</td>
+        </tr>
+        <tr>
+          <td>ICMP ping shows all devices DOWN</td>
+          <td>Allow outbound ICMPv4 in Windows Defender Firewall (see above)</td>
+        </tr>
+        <tr>
+          <td>SSH connection refused to device</td>
+          <td>Verify SSH is enabled on the switch and port 22 is open</td>
+        </tr>
+        <tr>
+          <td>Service won't start</td>
+          <td>Use absolute paths in NSSM — not relative paths</td>
+        </tr>
+        <tr>
+          <td>Agent runs manually but not as service</td>
+          <td>The Path must point to <code>venv\Scripts\python.exe</code>, not the system Python</td>
+        </tr>
+        <tr>
+          <td>Config pull fails</td>
+          <td>Ensure the Windows machine has a route to the device management IP</td>
+        </tr>
+        <tr>
+          <td>API key rejected (401)</td>
+          <td>Copy the key from the dashboard exactly — no extra spaces</td>
+        </tr>
+        <tr>
+          <td><code>nssm</code> not found</td>
+          <td>Verify <code>nssm.exe</code> is in <code>C:\Windows\System32\</code> and re-open Command Prompt</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /guide-page -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">Network Monitor &copy; 2026 <span class="footer-easter">00:SP:AN:GA:TE:00</span></div>
+  <ul class="footer-links">
+    <li><a href="../">SpanGate</a></li>
+    <li><a href="../configwizard/">Config Wizard</a></li>
+    <li><a href="../assettracker/">Asset Tracker</a></li>
+    <li><a href="../login.html">Sign in</a></li>
+  </ul>
+</footer>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    btn.textContent = 'Failed';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+</script>
+<script>
+(function(){
+  try {
+    var raw  = localStorage.getItem('sb-tiviipaamwvfjvoscnyk-auth-token');
+    var data = raw ? JSON.parse(raw) : null;
+    var now  = Math.floor(Date.now()/1000);
+    var user = data && data.user && (!data.expires_at || data.expires_at > now) ? data.user : null;
+    if (user) {
+      var s = document.getElementById('navSignin');
+      var c = document.getElementById('navCta');
+      if (s) { s.textContent = user.email; s.style.fontFamily = 'monospace'; s.style.fontSize = '0.72rem'; }
+      if (c) { c.textContent = 'Dashboard'; c.href = '/netmonitor/dashboard'; }
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
