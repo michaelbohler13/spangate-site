@@ -1,6 +1,6 @@
 agent:
   site_name: "Main Campus"
-  api_url: "https://api.spangate.com"
+  api_url: "https://spangate-site-r81b.vercel.app"
   api_key: "YOUR_API_KEY_HERE"
   ping_interval: 60          # seconds between ICMP pings
   config_pull_interval: 604800  # seconds between SSH config pulls (7 days)

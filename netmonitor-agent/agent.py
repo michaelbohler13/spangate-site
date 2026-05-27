@@ -7,6 +7,7 @@ and heartbeat loop concurrently. Handles SIGINT/SIGTERM gracefully.
 import argparse
 import asyncio
 import logging
+import platform
 import signal
 import sys
 from pathlib import Path
@@ -189,8 +190,13 @@ async def main() -> None:
     ssh_puller = SSHPuller(devices, api, pull_interval)
 
     loop = asyncio.get_event_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, _handle_signal, sig, loop)
+
+    # loop.add_signal_handler is not supported on Windows (raises NotImplementedError).
+    # On Windows, asyncio handles KeyboardInterrupt (Ctrl+C) natively; NSSM sends a
+    # termination event that Python catches as SystemExit, so graceful shutdown still works.
+    if platform.system() != "Windows":
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, _handle_signal, sig, loop)
 
     try:
         await asyncio.gather(

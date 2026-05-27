@@ -8,6 +8,7 @@ Ping results are held in memory only — nothing is written to disk.
 
 import asyncio
 import logging
+import platform
 import subprocess
 from datetime import datetime, timezone
 from typing import Any
@@ -16,10 +17,18 @@ from api_client import APIClient
 
 logger = logging.getLogger(__name__)
 
+# Build the ping command once at import time based on the current OS.
+# Linux/macOS: -c (count) and -W (timeout in seconds)
+# Windows:     -n (count) and -w (timeout in milliseconds)
+_IS_WINDOWS = platform.system() == "Windows"
+
 
 def _ping_once(ip: str) -> bool:
     """
     Send a single ICMP echo request using the system ping binary.
+
+    Uses platform-appropriate flags: Linux/macOS use ``-c``/``-W``,
+    Windows uses ``-n``/``-w``.
 
     Args:
         ip: Target IP address.
@@ -27,9 +36,13 @@ def _ping_once(ip: str) -> bool:
     Returns:
         True if the host replied within the timeout, False otherwise.
     """
+    if _IS_WINDOWS:
+        cmd = ["ping", "-n", "1", "-w", "2000", ip]
+    else:
+        cmd = ["ping", "-c", "1", "-W", "2", ip]
     try:
         result = subprocess.run(
-            ["ping", "-c", "1", "-W", "2", ip],
+            cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             timeout=5,
