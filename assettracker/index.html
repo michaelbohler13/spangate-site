@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1311,7 +1311,7 @@
       <div class="footer-col">
         <h4>Company</h4>
         <a href="../">SpanGate</a>
-        <a href="mailto:hello@spangate.com">hello@spangate.com</a>
+        <a href="javascript:void(0)" onclick="openFeedback(event)">Contact Us</a>
       </div>
     </div>
   </div>
@@ -1449,5 +1449,6 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
   } catch(e) {}
 })();
 </script>
+<script src="/feedback-widget.js"></script>
 </body>
 </html>

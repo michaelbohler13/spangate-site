@@ -204,3 +204,34 @@ class Alert(Base):
 
     def __repr__(self) -> str:
         return f"<Alert type={self.alert_type!r} device_id={self.device_id}>"
+
+
+# ── Feedback ──────────────────────────────────────────────────────────────────
+
+class Feedback(Base):
+    """
+    A feedback / help request submitted via the site's Feedback modal.
+
+    Kept indefinitely (no automatic purge) so every message can be reviewed.
+    ip_hash is a one-way SHA-256 digest of the submitter's IP — used for
+    server-side rate limiting without storing PII.
+    """
+
+    __tablename__ = "feedback"
+
+    id:         Mapped[int]           = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    name:       Mapped[str]           = mapped_column(String(200), nullable=False)
+    email:      Mapped[str]           = mapped_column(String(255), nullable=False)
+    subject:    Mapped[str]           = mapped_column(String(100), nullable=False, default="General Feedback")
+    message:    Mapped[str]           = mapped_column(Text,        nullable=False)
+    ip_hash:    Mapped[Optional[str]] = mapped_column(String(64),  nullable=True)
+    created_at: Mapped[datetime]      = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_feedback_created_at", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Feedback id={self.id} subject={self.subject!r}>"
