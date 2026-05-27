@@ -31,10 +31,17 @@ def _build_engine():
     Uses NullPool so each serverless function invocation opens and closes
     its own connection rather than holding a pool between requests.
     Supabase's PgBouncer pooler handles connection reuse at the infra level.
+
+    Supabase requires SSL on all connections.  asyncpg accepts ssl="require"
+    via connect_args; this is added automatically when the URL contains
+    supabase.co.  You can also append ?ssl=require to DATABASE_URL manually.
     """
     from sqlalchemy.pool import NullPool
     url = os.environ["DATABASE_URL"]
-    return create_async_engine(url, echo=False, poolclass=NullPool)
+    connect_args: dict = {}
+    if "supabase.co" in url and "ssl=" not in url:
+        connect_args["ssl"] = "require"
+    return create_async_engine(url, echo=False, poolclass=NullPool, connect_args=connect_args)
 
 
 engine = _build_engine()

@@ -59,9 +59,14 @@ async def lifespan(app: FastAPI):
     No scheduler is started here.  Data-retention cleanup runs via
     Vercel Cron → GET /api/v1/admin/cleanup once per day.
     """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables verified / created.")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables verified / created.")
+    except Exception as exc:
+        # Log but don't crash — lets /health respond even if DB is unreachable
+        # on cold start.  Individual endpoints will still fail if DB is down.
+        logger.warning("DB create_all failed on startup (tables may not exist): %s", exc)
     logger.info("SpanGate Network Monitor Backend v1.0.0 — ready.")
     yield
     logger.info("SpanGate Network Monitor Backend — shut down.")
