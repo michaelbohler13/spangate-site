@@ -6,17 +6,28 @@
  * Opens with:  openFeedback()  or  openFeedback(event)
  * Closes with: closeFeedback() or Escape or clicking outside
  *
- * Spam protection:
- *   1. Honeypot field   — bots fill hidden inputs; humans can't see them
- *   2. localStorage TTL — 10-minute client-side cooldown per browser
- *   3. Server-side rate limit — max 3/IP/hour enforced by the backend
+ * Spam protection (layered):
+ *   1. Cloudflare Turnstile CAPTCHA — invisible managed challenge
+ *   2. Honeypot field — bots fill hidden inputs; humans can't see them
+ *   3. localStorage TTL — 10-minute client-side cooldown per browser
+ *   4. Server-side IP rate limit — max 3/IP/hour enforced by the backend
+ *
+ * ─── SETUP ───────────────────────────────────────────────────────────────────
+ * Replace TURNSTILE_SITE_KEY_HERE with your real Cloudflare Turnstile site key.
+ * Get one free at: https://dash.cloudflare.com → Turnstile → Add site
+ * Also set TURNSTILE_SECRET as an env var in your Vercel backend project.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 (function () {
   'use strict';
 
-  const API       = 'https://spangate-site-r81b.vercel.app/api/v1/feedback';
-  const RATE_KEY  = 'sg_fb_last';
-  const RATE_MS   = 10 * 60 * 1000; // 10 minutes
+  var TURNSTILE_SITE_KEY = 'TURNSTILE_SITE_KEY_HERE';  // ← replace this
+  var API      = 'https://spangate-site-r81b.vercel.app/api/v1/feedback';
+  var RATE_KEY = 'sg_fb_last';
+  var RATE_MS  = 10 * 60 * 1000; // 10 minutes
+
+  var _tsToken    = '';   // current Turnstile token
+  var _tsWidgetId = null; // Turnstile widget ID (for reset)
 
   // ── Inject CSS ─────────────────────────────────────────────────────────────
   var css = document.createElement('style');
@@ -49,10 +60,12 @@
     '.sg-fb-field textarea{resize:vertical;min-height:96px;}',
     '.sg-fb-field select option{background:#161b22;}',
     '#sg-fb-hp{position:absolute;left:-9999px;opacity:0;height:0;overflow:hidden;}',
+    '#sg-fb-turnstile{margin:10px 0 4px;min-height:65px;display:flex;',
+      'align-items:center;}',
     '#sg-fb-submit{width:100%;background:rgba(0,212,184,.12);',
       'border:0.5px solid rgba(0,212,184,.3);border-radius:8px;color:#00d4b8;',
       'font-size:.82rem;font-weight:600;padding:10px;cursor:pointer;',
-      'transition:all .15s;margin-top:2px;font-family:inherit;letter-spacing:-.01em;}',
+      'transition:all .15s;font-family:inherit;letter-spacing:-.01em;}',
     '#sg-fb-submit:hover:not(:disabled){background:rgba(0,212,184,.22);}',
     '#sg-fb-submit:disabled{opacity:.45;cursor:not-allowed;}',
     '#sg-fb-msg{font-size:.75rem;text-align:center;margin-top:9px;min-height:18px;}',
@@ -117,6 +130,8 @@
             '<label for="sg-fb-message">Message</label>' +
             '<textarea id="sg-fb-message" name="message" placeholder="Tell us what\'s on your mind…" maxlength="2000" required></textarea>' +
           '</div>' +
+          /* Turnstile CAPTCHA widget — Cloudflare renders here */
+          '<div id="sg-fb-turnstile"></div>' +
           /* honeypot — hidden from real users via absolute off-screen positioning */
           '<div id="sg-fb-hp" aria-hidden="true">' +
             '<label>Website<input type="text" name="website" tabindex="-1" autocomplete="off" value=""></label>' +
@@ -129,13 +144,56 @@
       '<div id="sg-fb-success">' +
         '<div id="sg-fb-success-icon">✓</div>' +
         '<h3>Message sent!</h3>' +
-        '<p>Thanks for reaching out. We’ll get back to you soon.</p>' +
+        '<p>Thanks for reaching out. We\'ll get back to you soon.</p>' +
         '<button id="sg-fb-done">Done</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(overlay);
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ── Turnstile helpers ──────────────────────────────────────────────────────
+  function _tsTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function _renderTurnstile() {
+    if (typeof window.turnstile === 'undefined') return;
+    var container = document.getElementById('sg-fb-turnstile');
+    if (!container) return;
+
+    if (_tsWidgetId !== null) {
+      // Already rendered — just reset the challenge
+      try { window.turnstile.reset(_tsWidgetId); } catch (e) {}
+      _tsToken = '';
+      return;
+    }
+
+    _tsToken    = '';
+    _tsWidgetId = window.turnstile.render('#sg-fb-turnstile', {
+      sitekey:           TURNSTILE_SITE_KEY,
+      theme:             _tsTheme(),
+      callback:          function (token) { _tsToken = token; },
+      'expired-callback':  function ()      { _tsToken = ''; },
+      'error-callback':    function ()      { _tsToken = ''; },
+    });
+  }
+
+  function _loadTurnstile() {
+    if (typeof window.turnstile !== 'undefined') {
+      _renderTurnstile();
+      return;
+    }
+    // Already injecting? Wait for it.
+    if (document.getElementById('sg-ts-script')) return;
+
+    var s    = document.createElement('script');
+    s.id     = 'sg-ts-script';
+    s.src    = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    s.async  = true;
+    s.onload = function () { _renderTurnstile(); };
+    document.head.appendChild(s);
+  }
+
+  // ── General helpers ────────────────────────────────────────────────────────
   function setMsg(text, cls) {
     var el = document.getElementById('sg-fb-msg');
     if (!el) return;
@@ -151,13 +209,18 @@
     document.getElementById('sg-fb-success').style.display   = 'none';
     var btn = document.getElementById('sg-fb-submit');
     if (btn) btn.disabled = false;
+    // Reset Turnstile token + challenge
+    _tsToken = '';
+    if (_tsWidgetId !== null && typeof window.turnstile !== 'undefined') {
+      try { window.turnstile.reset(_tsWidgetId); } catch (e) {}
+    }
   }
 
   // ── Open / close ───────────────────────────────────────────────────────────
   function openFeedback(e) {
     if (e && e.preventDefault) e.preventDefault();
     overlay.classList.add('open');
-    // Delay focus until the overlay is visible
+    _loadTurnstile();
     setTimeout(function () {
       var n = document.getElementById('sg-fb-name');
       if (n) n.focus();
@@ -180,7 +243,7 @@
     if (e.key === 'Escape' && overlay.classList.contains('open')) closeFeedback();
   });
 
-  // ── Submit ────────────────────────────────────────────────────────────────
+  // ── Submit ─────────────────────────────────────────────────────────────────
   document.getElementById('sg-fb-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
@@ -190,11 +253,17 @@
     var message = (document.getElementById('sg-fb-message').value || '').trim();
     var hp      =  document.querySelector('#sg-fb-hp input').value || '';
 
-    // Client-side validation
-    if (!name)                        { setMsg('Please enter your name.',         'err'); return; }
-    if (!email || !email.includes('@')) { setMsg('Please enter a valid email.',   'err'); return; }
-    if (!message)                     { setMsg('Please enter a message.',         'err'); return; }
+    // Basic validation
+    if (!name)                        { setMsg('Please enter your name.',       'err'); return; }
+    if (!email || !email.includes('@')) { setMsg('Please enter a valid email.', 'err'); return; }
+    if (!message)                     { setMsg('Please enter a message.',       'err'); return; }
     if (hp)                           { return; } // honeypot — silently discard
+
+    // CAPTCHA check
+    if (!_tsToken) {
+      setMsg('Please complete the CAPTCHA above.', 'err');
+      return;
+    }
 
     // Client-side rate limit
     var last = parseInt(localStorage.getItem(RATE_KEY) || '0', 10);
@@ -212,7 +281,14 @@
     fetch(API, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ name: name, email: email, subject: subject, message: message, website: hp }),
+      body:    JSON.stringify({
+        name:     name,
+        email:    email,
+        subject:  subject,
+        message:  message,
+        website:  hp,
+        cf_token: _tsToken,
+      }),
     })
     .then(function (res) {
       if (res.ok) {
@@ -222,6 +298,12 @@
       } else if (res.status === 429) {
         setMsg('Too many requests. Please try again later.', 'err');
         btn.disabled = false;
+      } else if (res.status === 400) {
+        setMsg('CAPTCHA failed. Please refresh and try again.', 'err');
+        btn.disabled = false;
+        if (_tsWidgetId !== null && typeof window.turnstile !== 'undefined') {
+          try { window.turnstile.reset(_tsWidgetId); _tsToken = ''; } catch (e) {}
+        }
       } else {
         setMsg('Something went wrong. Please try again.', 'err');
         btn.disabled = false;

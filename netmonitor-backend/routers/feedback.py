@@ -15,8 +15,10 @@ Spam protection layers
 
 import hashlib
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, field_validator
 from sqlalchemy import func, select
@@ -33,6 +35,8 @@ RATE_LIMIT_MAX   = 3    # submissions allowed per IP within the window
 RATE_LIMIT_HOURS = 1    # rolling window length in hours
 MAX_NAME_LEN     = 100
 MAX_MESSAGE_LEN  = 2000
+
+TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 
 VALID_SUBJECTS = {
     "General Feedback",
@@ -51,7 +55,8 @@ class FeedbackIn(BaseModel):
     email:   str
     subject: str = "General Feedback"
     message: str
-    website: str = ""   # honeypot — must always be empty for real users
+    website:  str = ""   # honeypot — must always be empty for real users
+    cf_token: str = ""   # Cloudflare Turnstile challenge token
 
     @field_validator("name")
     @classmethod
@@ -85,6 +90,38 @@ class FeedbackIn(BaseModel):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+async def _verify_turnstile(token: str, ip: str) -> bool:
+    """
+    Verify a Cloudflare Turnstile challenge token.
+
+    Returns True (allow) in two safe-fallback cases:
+      - TURNSTILE_SECRET env var not configured (dev/test environment)
+      - Cloudflare's API is unreachable (fail open to avoid blocking real users)
+
+    Returns False when Cloudflare explicitly says the token is invalid.
+    """
+    secret = os.environ.get("TURNSTILE_SECRET", "")
+    if not secret:
+        logger.warning("TURNSTILE_SECRET not set — skipping Turnstile check")
+        return True
+
+    if not token:
+        return False
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.post(
+                TURNSTILE_VERIFY_URL,
+                data={"secret": secret, "response": token, "remoteip": ip},
+            )
+            result = resp.json()
+            return bool(result.get("success", False))
+    except Exception as exc:
+        # Fail open — Cloudflare outage shouldn't block legitimate feedback
+        logger.warning("Turnstile verification error (failing open): %s", exc)
+        return True
+
 
 def _hash_ip(ip: str) -> str:
     """One-way SHA-256 digest of a client IP — used for rate limiting only."""
@@ -123,8 +160,13 @@ async def submit_feedback(
         logger.info("Feedback honeypot triggered — silent 201")
         return {"ok": True}
 
-    # ── 2. IP rate limit ──────────────────────────────────────────────────────
-    ip_hash      = _hash_ip(_client_ip(request))
+    # ── 2. Turnstile CAPTCHA ──────────────────────────────────────────────────
+    client_ip = _client_ip(request)
+    if not await _verify_turnstile(payload.cf_token, client_ip):
+        raise HTTPException(status_code=400, detail="CAPTCHA verification failed. Please try again.")
+
+    # ── 3. IP rate limit ──────────────────────────────────────────────────────
+    ip_hash      = _hash_ip(client_ip)
     window_start = datetime.now(timezone.utc) - timedelta(hours=RATE_LIMIT_HOURS)
 
     count_result = await db.execute(
