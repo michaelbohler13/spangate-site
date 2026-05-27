@@ -331,21 +331,18 @@ python3 --version</code></pre>
       <div class="step-badge">04</div>
       <div class="step-info">
         <div class="step-title">Download the Agent</div>
-        <div class="step-desc">Download just the agent files — no full repo clone required.</div>
+        <div class="step-desc">Run one command to download the agent files to your Pi.</div>
       </div>
     </div>
     <div class="step-body">
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>cd ~
-git clone --filter=blob:none --sparse https://github.com/michaelbohler13/spangate-site.git spangate-agent
-cd spangate-agent
-git sparse-checkout set netmonitor-agent
-cd netmonitor-agent</code></pre>
+        <pre><code>curl -fsSL https://spangate-site.vercel.app/netmonitor/agent-install.sh | bash
+cd ~/spangate-agent/netmonitor-agent</code></pre>
       </div>
       <div class="callout tip">
         <span class="callout-icon">✓</span>
-        <div class="callout-text">Sparse checkout downloads only the agent files — not the full website repo. To update later, run <code style="font-family:var(--mono);font-size:0.85em;">git pull</code> from <code style="font-family:var(--mono);font-size:0.85em;">~/spangate-agent</code>.</div>
+        <div class="callout-text">The script downloads only the agent files to <code style="font-family:var(--mono);font-size:0.85em;">~/spangate-agent/netmonitor-agent</code>. To update later, re-run the same curl command.</div>
       </div>
     </div>
   </div>
@@ -523,8 +520,7 @@ sudo systemctl start spangate-netmonitor</code></pre>
     <h2 class="section-head">Updating the Agent</h2>
     <div class="code-block">
       <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-      <pre><code>cd ~/spangate-agent
-git pull
+      <pre><code>curl -fsSL https://spangate-site.vercel.app/netmonitor/agent-install.sh | bash
 sudo systemctl restart spangate-netmonitor</code></pre>
     </div>
   </div>
