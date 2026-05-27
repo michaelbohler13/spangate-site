@@ -760,7 +760,7 @@ async function initApp() {
   // Load API key from Supabase profiles table
   if (db) {
     const { data: profile } = await db
-      .from('profiles')
+      .from('nm_profiles')
       .select('api_key')
       .eq('id', user.id)
       .maybeSingle();

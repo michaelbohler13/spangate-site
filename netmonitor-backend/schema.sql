@@ -19,17 +19,17 @@
 -- and a site_id that scopes all their devices/alerts to their account.
 -- Created automatically when the user first visits the Settings page.
 
-create table if not exists profiles (
+create table if not exists nm_profiles (
     id          uuid        primary key references auth.users(id) on delete cascade,
     api_key     text        unique,          -- Bearer token the agent sends
     site_id     text        not null default gen_random_uuid()::text,
     site_name   text
 );
 
-alter table profiles enable row level security;
+alter table nm_profiles enable row level security;
 
-create policy "profiles: owner all"
-    on profiles for all using (auth.uid() = id);
+create policy "nm_profiles: owner all"
+    on nm_profiles for all using (auth.uid() = id);
 
 
 -- ── devices ──────────────────────────────────────────────────────────────────

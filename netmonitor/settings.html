@@ -319,7 +319,7 @@ async function initPage() {
 
 async function loadProfile() {
   const { data, error } = await db
-    .from('profiles')
+    .from('nm_profiles')
     .select('api_key, site_id')
     .eq('id', _userId)
     .maybeSingle();
@@ -411,7 +411,7 @@ async function saveKey() {
   const newSiteId = _siteId || crypto.randomUUID();
 
   const { error } = await db
-    .from('profiles')
+    .from('nm_profiles')
     .upsert({
       id:       _userId,
       api_key:  newKey,

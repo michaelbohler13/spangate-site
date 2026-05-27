@@ -5,20 +5,20 @@ API-key authentication dependency.
 The agent sends:
     Authorization: Bearer <raw_api_key>
 
-We validate the key by querying the `profiles` table in Supabase for a row
+We validate the key by querying the `nm_profiles` table in Supabase for a row
 where `api_key` matches.  On success we attach site_id to request state and
 return an auth context dict for use in route handlers.  On failure we raise
 HTTP 401.
 
 Required Supabase table (run in SQL editor if not present):
-    create table if not exists profiles (
+    create table if not exists nm_profiles (
       id        uuid    primary key references auth.users(id) on delete cascade,
       api_key   text    unique,
       site_id   text    not null default gen_random_uuid()::text,
       site_name text
     );
-    alter table profiles enable row level security;
-    create policy "owner" on profiles for all using (auth.uid() = id);
+    alter table nm_profiles enable row level security;
+    create policy "owner" on nm_profiles for all using (auth.uid() = id);
 """
 
 import logging
@@ -56,7 +56,7 @@ async def verify_api_key(
     """
     FastAPI dependency that validates a Bearer API key against Supabase.
 
-    Looks up the raw key in the ``profiles`` table (``api_key`` column).
+    Looks up the raw key in the ``nm_profiles`` table (``api_key`` column).
     On success, attaches ``site_id`` and ``user_id`` to ``request.state``
     and returns an auth context dict.
 
@@ -69,7 +69,7 @@ async def verify_api_key(
 
     Raises:
         HTTPException 401: If the header is missing, malformed, or the key
-            is not found in the profiles table.
+            is not found in the nm_profiles table.
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
@@ -83,7 +83,7 @@ async def verify_api_key(
     try:
         client = _get_supabase()
         result = (
-            client.table("profiles")
+            client.table("nm_profiles")
             .select("id, site_id")
             .eq("api_key", raw_key)
             .single()
