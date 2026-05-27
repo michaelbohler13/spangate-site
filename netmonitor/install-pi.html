@@ -331,19 +331,21 @@ python3 --version</code></pre>
       <div class="step-badge">04</div>
       <div class="step-info">
         <div class="step-title">Download the Agent</div>
-        <div class="step-desc">Clone the SpanGate repo to your Pi's home directory.</div>
+        <div class="step-desc">Download just the agent files — no full repo clone required.</div>
       </div>
     </div>
     <div class="step-body">
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code>cd ~
-git clone https://github.com/michaelbohler13/spangate-site.git
-cd spangate-site/netmonitor-agent</code></pre>
+git clone --filter=blob:none --sparse https://github.com/michaelbohler13/spangate-site.git spangate-agent
+cd spangate-agent
+git sparse-checkout set netmonitor-agent
+cd netmonitor-agent</code></pre>
       </div>
       <div class="callout tip">
-        <span class="callout-icon">ℹ</span>
-        <div class="callout-text">This clones the full SpanGate site repo — the agent lives in the <code style="font-family:var(--mono);font-size:0.85em;">netmonitor-agent/</code> subdirectory. A standalone install package is planned for a future release.</div>
+        <span class="callout-icon">✓</span>
+        <div class="callout-text">Sparse checkout downloads only the agent files — not the full website repo. To update later, run <code style="font-family:var(--mono);font-size:0.85em;">git pull</code> from <code style="font-family:var(--mono);font-size:0.85em;">~/spangate-agent</code>.</div>
       </div>
     </div>
   </div>
@@ -425,7 +427,7 @@ sudo nano /etc/spangate/netmonitor/config.yaml</code></pre>
     <div class="step-body">
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>cd ~/spangate-site/netmonitor-agent
+        <pre><code>cd ~/spangate-agent/netmonitor-agent
 source venv/bin/activate
 python3 agent.py --config /etc/spangate/netmonitor/config.yaml</code></pre>
       </div>
@@ -467,8 +469,8 @@ python3 agent.py --config /etc/spangate/netmonitor/config.yaml</code></pre>
 <span class="ini-sec">[Service]</span>
 <span class="ini-key">Type</span>=<span class="ini-val">simple</span>
 <span class="ini-key">User</span>=<span class="ini-val">spangate</span>
-<span class="ini-key">WorkingDirectory</span>=<span class="ini-val">/home/spangate/spangate-site/netmonitor-agent</span>
-<span class="ini-key">ExecStart</span>=<span class="ini-val">/home/spangate/spangate-site/netmonitor-agent/venv/bin/python3 agent.py --config /etc/spangate/netmonitor/config.yaml</span>
+<span class="ini-key">WorkingDirectory</span>=<span class="ini-val">/home/spangate/spangate-agent/netmonitor-agent</span>
+<span class="ini-key">ExecStart</span>=<span class="ini-val">/home/spangate/spangate-agent/netmonitor-agent/venv/bin/python3 agent.py --config /etc/spangate/netmonitor/config.yaml</span>
 <span class="ini-key">Restart</span>=<span class="ini-val">always</span>
 <span class="ini-key">RestartSec</span>=<span class="ini-val">10</span>
 <span class="ini-key">StandardOutput</span>=<span class="ini-val">journal</span>
@@ -521,7 +523,7 @@ sudo systemctl start spangate-netmonitor</code></pre>
     <h2 class="section-head">Updating the Agent</h2>
     <div class="code-block">
       <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-      <pre><code>cd ~/spangate-site
+      <pre><code>cd ~/spangate-agent
 git pull
 sudo systemctl restart spangate-netmonitor</code></pre>
     </div>

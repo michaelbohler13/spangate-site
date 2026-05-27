@@ -263,27 +263,21 @@ pip --version</code></pre>
       <div class="step-badge">03</div>
       <div class="step-info">
         <div class="step-title">Download the Agent</div>
-        <div class="step-desc">Clone the repo into your Documents folder, or download and extract the ZIP.</div>
+        <div class="step-desc">Download just the agent files — no full repo clone required.</div>
       </div>
     </div>
     <div class="step-body">
-      <p><strong>Option A — Git (recommended):</strong></p>
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code>cd %USERPROFILE%\Documents
-git clone https://github.com/michaelbohler13/spangate-site.git
-cd spangate-site\netmonitor-agent</code></pre>
+git clone --filter=blob:none --sparse https://github.com/michaelbohler13/spangate-site.git spangate-agent
+cd spangate-agent
+git sparse-checkout set netmonitor-agent
+cd netmonitor-agent</code></pre>
       </div>
-      <p><strong>Option B — Manual download:</strong></p>
-      <ol>
-        <li>Go to <a href="https://github.com/michaelbohler13/spangate-site" target="_blank" rel="noopener">github.com/michaelbohler13/spangate-site</a></li>
-        <li>Click <strong>Code → Download ZIP</strong></li>
-        <li>Extract the ZIP to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">Documents\spangate-site</code></li>
-        <li>Open Command Prompt and navigate there:</li>
-      </ol>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>cd %USERPROFILE%\Documents\spangate-site\netmonitor-agent</code></pre>
+      <div class="callout tip">
+        <span class="callout-icon">✓</span>
+        <div class="callout-text">Sparse checkout downloads only the agent files — not the full website repo. To update later, run <code style="font-family:var(--mono);font-size:0.85em;">git pull</code> from <code style="font-family:var(--mono);font-size:0.85em;">Documents\spangate-agent</code>.</div>
       </div>
     </div>
   </div>
@@ -323,7 +317,7 @@ pip install -r requirements.txt</code></pre>
     </div>
     <div class="step-body">
       <ol>
-        <li>In File Explorer, navigate to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">Documents\spangate-site\netmonitor-agent</code></li>
+        <li>In File Explorer, navigate to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">Documents\spangate-agent\netmonitor-agent</code></li>
         <li>Copy <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">config.yaml</code> and rename the copy to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">my-config.yaml</code></li>
         <li>Open <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">my-config.yaml</code> in Notepad or VS Code</li>
         <li>Edit the following fields:</li>
@@ -408,11 +402,11 @@ pip install -r requirements.txt</code></pre>
           </tr>
           <tr>
             <td>Path</td>
-            <td><code>C:\Users\YourName\Documents\spangate-site\netmonitor-agent\venv\Scripts\python.exe</code></td>
+            <td><code>C:\Users\YourName\Documents\spangate-agent\netmonitor-agent\venv\Scripts\python.exe</code></td>
           </tr>
           <tr>
             <td>Startup directory</td>
-            <td><code>C:\Users\YourName\Documents\spangate-site\netmonitor-agent</code></td>
+            <td><code>C:\Users\YourName\Documents\spangate-agent\netmonitor-agent</code></td>
           </tr>
           <tr>
             <td>Arguments</td>
@@ -469,7 +463,7 @@ pip install -r requirements.txt</code></pre>
     <h2 class="section-head">Updating the Agent</h2>
     <div class="code-block">
       <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-      <pre><code>cd %USERPROFILE%\Documents\spangate-site
+      <pre><code>cd %USERPROFILE%\Documents\spangate-agent
 git pull
 nssm restart SpangateNetMonitor</code></pre>
     </div>
