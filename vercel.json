@@ -12,6 +12,7 @@
     { "source": "/netmonitor/dashboard", "destination": "/netmonitor/dashboard.html" },
     { "source": "/netmonitor/install-pi", "destination": "/netmonitor/install-pi.html" },
     { "source": "/netmonitor/install-windows", "destination": "/netmonitor/install-windows.html" },
+    { "source": "/netmonitor/settings", "destination": "/netmonitor/settings.html" },
     { "source": "/assettracker", "destination": "/assettracker/index.html" }
   ],
   "headers": [

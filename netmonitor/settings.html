@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Monitor — Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d1117; --bg2:#0a0a0a; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#222222;
+  --border:rgba(255,255,255,0.08); --border-bright:rgba(255,255,255,0.15);
+  --text:#f5f5f7; --text-muted:#a1a1a6; --text-dim:#6e6e73;
+  --accent:#00d4b8; --teal:#2a8a78; --red:#ff453a;
+  --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  background:rgba(0,0,0,0.72);border-bottom:0.5px solid var(--border);}
+.nav-top{height:36px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;
+  border-bottom:0.5px solid rgba(255,255,255,0.06);}
+.nav-top a{font-size:0.8rem;font-weight:500;letter-spacing:-0.01em;color:#8b949e;
+  text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;}
+.nav-top a:hover{color:#fff;background:rgba(255,255,255,0.05);}
+.nav-top a.active{color:var(--accent);background:rgba(0,212,184,0.08);}
+.nav-bottom{height:48px;display:flex;align-items:center;padding:0 2rem;}
+.nav-logo{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);
+  text-decoration:none;display:flex;align-items:center;gap:8px;}
+.nav-links{display:flex;gap:1.75rem;margin-left:2.5rem;list-style:none;}
+.nav-links a{font-size:0.78rem;color:var(--text-muted);text-decoration:none;
+  letter-spacing:-0.01em;transition:color 0.15s;cursor:pointer;}
+.nav-links a.active{color:var(--text);}
+.nav-links a:hover{color:var(--text);}
+.nav-spacer{flex:1;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-user{font-size:0.78rem;color:var(--text-muted);font-family:var(--mono);}
+.nav-signout{font-size:0.78rem;color:var(--text-dim);background:none;border:none;
+  cursor:pointer;font-family:var(--sans);transition:color 0.15s;padding:0;}
+.nav-signout:hover{color:var(--text);}
+
+/* ── PAGE ────────────────────────────────────────────────────────────────── */
+.page-wrap{padding-top:84px;min-height:100vh;}
+.page-content{max-width:720px;margin:0 auto;padding:3rem 2rem 5rem;}
+
+/* ── HEADING ─────────────────────────────────────────────────────────────── */
+.page-title{font-size:1.6rem;font-weight:600;letter-spacing:-0.04em;margin-bottom:0.35rem;}
+.page-sub{font-size:0.85rem;color:var(--text-muted);line-height:1.6;}
+
+/* ── SECTION CARD ────────────────────────────────────────────────────────── */
+.section{background:var(--surface);border:0.5px solid var(--border-bright);
+  border-radius:14px;margin-top:2rem;overflow:hidden;}
+.section-hdr{padding:1.1rem 1.5rem;border-bottom:0.5px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.section-title{font-size:0.9rem;font-weight:600;letter-spacing:-0.02em;}
+.section-body{padding:1.5rem;}
+.section-desc{font-size:0.82rem;color:var(--text-muted);line-height:1.65;margin-bottom:1.25rem;}
+
+/* ── KEY DISPLAY ─────────────────────────────────────────────────────────── */
+.key-row{display:flex;align-items:center;gap:10px;
+  background:var(--surface2);border:0.5px solid var(--border-bright);
+  border-radius:10px;padding:0.7rem 1rem;}
+.key-val{font-family:var(--mono);font-size:0.88rem;color:var(--accent);
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.key-val.placeholder{color:var(--text-dim);font-style:italic;}
+.key-btn{flex-shrink:0;background:var(--surface3);border:0.5px solid var(--border-bright);
+  color:var(--text-muted);font-size:0.75rem;font-family:var(--sans);
+  padding:5px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+.key-btn:hover{color:var(--text);border-color:rgba(0,212,184,0.4);}
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;
+  border-radius:980px;font-family:var(--sans);font-size:0.85rem;font-weight:500;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;border:none;}
+.btn-primary{background:var(--teal);color:#fff;}
+.btn-primary:hover{opacity:0.88;transform:scale(1.02);}
+.btn-primary:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(255,69,58,0.35);}
+.btn-danger:hover{background:rgba(255,69,58,0.07);border-color:var(--red);}
+.btn-ghost{background:transparent;color:var(--text-muted);border:0.5px solid var(--border-bright);}
+.btn-ghost:hover{color:var(--text);}
+
+.btn-row{display:flex;align-items:center;gap:12px;margin-top:1.25rem;flex-wrap:wrap;}
+
+/* ── CONFIG SNIPPET ──────────────────────────────────────────────────────── */
+.snippet-wrap{position:relative;margin-top:1rem;}
+.snippet{background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;
+  padding:1rem 1rem 1rem 1.1rem;font-family:var(--mono);font-size:0.8rem;
+  color:var(--text-muted);line-height:1.7;overflow-x:auto;white-space:pre;}
+.snippet .hi{color:var(--accent);}
+.snippet-copy{position:absolute;top:8px;right:8px;background:var(--surface3);
+  border:0.5px solid var(--border-bright);color:var(--text-dim);
+  font-size:0.72rem;font-family:var(--sans);padding:4px 10px;
+  border-radius:5px;cursor:pointer;transition:all 0.15s;}
+.snippet-copy:hover{color:var(--text);}
+
+/* ── INFO ROWS ───────────────────────────────────────────────────────────── */
+.info-grid{display:grid;grid-template-columns:auto 1fr;gap:0.45rem 1.5rem;margin-top:0.5rem;}
+.info-label{font-size:0.75rem;color:var(--text-dim);font-weight:500;
+  text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;padding-top:2px;}
+.info-val{font-family:var(--mono);font-size:0.82rem;color:var(--text-muted);
+  word-break:break-all;}
+
+/* ── DANGER ZONE ─────────────────────────────────────────────────────────── */
+.danger-note{font-size:0.8rem;color:var(--text-dim);line-height:1.6;margin-bottom:1rem;}
+
+/* ── MODAL ───────────────────────────────────────────────────────────────── */
+#revealModal{display:none;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;}
+#revealModal.open{display:flex;}
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,0.75);}
+.modal-box{position:relative;z-index:1;background:var(--surface2);
+  border:0.5px solid var(--border-bright);border-radius:16px;
+  padding:2rem;max-width:520px;width:calc(100% - 2rem);}
+.modal-title{font-size:1.1rem;font-weight:600;letter-spacing:-0.03em;margin-bottom:0.5rem;}
+.modal-warn{font-size:0.82rem;color:#ff9f0a;background:rgba(255,159,10,0.1);
+  border:1px solid rgba(255,159,10,0.25);border-radius:8px;
+  padding:0.65rem 0.9rem;margin:1rem 0;line-height:1.55;}
+.modal-key-box{background:var(--surface);border:1px solid rgba(0,212,184,0.35);
+  border-radius:10px;padding:0.9rem 1rem;margin-bottom:1rem;}
+.modal-key{font-family:var(--mono);font-size:0.9rem;color:var(--accent);
+  word-break:break-all;line-height:1.5;}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:1.25rem;}
+
+/* ── STATUS ──────────────────────────────────────────────────────────────── */
+.status-msg{font-size:0.8rem;padding:8px 14px;border-radius:8px;margin-top:1rem;display:none;}
+.status-msg.ok{background:rgba(0,212,184,0.1);color:var(--accent);border:1px solid rgba(0,212,184,0.2);}
+.status-msg.err{background:rgba(255,69,58,0.1);color:var(--red);border:1px solid rgba(255,69,58,0.2);}
+
+/* ── LOADING ─────────────────────────────────────────────────────────────── */
+#loadingState{display:flex;align-items:center;gap:10px;
+  padding:2rem 0;color:var(--text-dim);font-size:0.85rem;}
+.spinner{width:16px;height:16px;border:2px solid var(--surface3);
+  border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <a href="../configwizard/">Config Wizard</a>
+    <a href="../netmonitor/" class="active">Network Monitor</a>
+    <a href="../assettracker/">Asset Tracker</a>
+  </div>
+  <div class="nav-bottom">
+    <a href="/netmonitor/" class="nav-logo">Network <span style="color:#00d4b8;">Monitor</span></a>
+    <ul class="nav-links">
+      <li><a href="/netmonitor/dashboard">Dashboard</a></li>
+      <li><a href="/netmonitor/install-pi">Pi/Windows Guide</a></li>
+      <li><a href="/netmonitor/settings" class="active">Settings</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <span class="nav-user" id="navUser"></span>
+      <button class="nav-signout" id="navSignOut" onclick="signOut()" style="display:none;">Sign out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-wrap">
+<div class="page-content">
+
+  <h1 class="page-title">Settings</h1>
+  <p class="page-sub">Manage your API key and site configuration for the Network Monitor agent.</p>
+
+  <!-- Loading state -->
+  <div id="loadingState">
+    <div class="spinner"></div>
+    Loading your settings…
+  </div>
+
+  <!-- Main content (hidden until loaded) -->
+  <div id="mainContent" style="display:none;">
+
+    <!-- ── API KEY ─────────────────────────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-hdr">
+        <span class="section-title">API Key</span>
+        <span id="keyStatusBadge" style="font-size:0.72rem;font-family:var(--mono);color:var(--text-dim);"></span>
+      </div>
+      <div class="section-body">
+        <p class="section-desc">
+          Your agent uses this key to authenticate with the SpanGate backend.
+          Paste it into your <code style="font-family:var(--mono);color:var(--accent)">config.yaml</code> on the Pi or Windows machine.
+          The full key is only shown immediately after generation — copy it before closing.
+        </p>
+
+        <div class="key-row">
+          <span class="key-val" id="keyDisplay">—</span>
+          <button class="key-btn" id="copyKeyBtn" onclick="copyKey()" style="display:none;">Copy</button>
+        </div>
+
+        <div id="noKeyMsg" style="display:none;font-size:0.8rem;color:var(--text-dim);margin-top:0.75rem;">
+          No API key yet. Generate one below to connect your agent.
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="generateBtn" onclick="generateKey()">Generate API Key</button>
+        </div>
+
+        <div id="statusMsg" class="status-msg"></div>
+      </div>
+    </div>
+
+    <!-- ── CONFIG SNIPPET ─────────────────────────────────────────────────── -->
+    <div class="section" id="snippetSection" style="display:none;">
+      <div class="section-hdr">
+        <span class="section-title">Agent config.yaml snippet</span>
+      </div>
+      <div class="section-body">
+        <p class="section-desc">Copy the <code style="font-family:var(--mono);color:var(--accent)">agent:</code> block into your agent's <code style="font-family:var(--mono);color:var(--accent)">config.yaml</code> file.</p>
+        <div class="snippet-wrap">
+          <button class="snippet-copy" onclick="copySnippet(this)">Copy</button>
+          <pre class="snippet" id="configSnippet">agent:
+  site_name: "My Site"
+  api_url:   "<span class="hi">https://api.spangate.com</span>"
+  api_key:   "<span class="hi" id="snippetKey">YOUR_API_KEY_HERE</span>"
+  ping_interval:        60
+  config_pull_interval: 604800</pre>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:0.75rem;">
+          Full install instructions → <a href="/netmonitor/install-pi" style="color:var(--accent);text-decoration:none;">Raspberry Pi guide</a> &nbsp;·&nbsp; <a href="/netmonitor/install-windows" style="color:var(--accent);text-decoration:none;">Windows guide</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- ── ACCOUNT INFO ───────────────────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-hdr">
+        <span class="section-title">Account</span>
+      </div>
+      <div class="section-body">
+        <div class="info-grid">
+          <span class="info-label">Email</span>
+          <span class="info-val" id="infoEmail">—</span>
+          <span class="info-label">Site ID</span>
+          <span class="info-val" id="infoSiteId">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DANGER ZONE ────────────────────────────────────────────────────── -->
+    <div class="section" style="border-color:rgba(255,69,58,0.2);">
+      <div class="section-hdr" style="border-bottom-color:rgba(255,69,58,0.15);">
+        <span class="section-title" style="color:var(--red);">Danger zone</span>
+      </div>
+      <div class="section-body">
+        <p class="danger-note">
+          Regenerating your API key immediately invalidates the old one.
+          Your agent will stop reporting until you update <code style="font-family:var(--mono)">config.yaml</code> with the new key and restart the service.
+        </p>
+        <button class="btn btn-danger" id="regenBtn" onclick="confirmRegen()" style="display:none;">Regenerate API Key</button>
+      </div>
+    </div>
+
+  </div><!-- /mainContent -->
+</div>
+</div>
+
+<!-- ── KEY REVEAL MODAL ──────────────────────────────────────────────────────── -->
+<div id="revealModal">
+  <div class="modal-bg" onclick="closeReveal()"></div>
+  <div class="modal-box">
+    <div class="modal-title">Your new API key</div>
+    <div class="modal-warn">⚠ Copy this key now — it will not be shown again in full. Store it securely.</div>
+    <div class="modal-key-box">
+      <div class="modal-key" id="revealKey">—</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" style="padding:8px 20px;font-size:0.82rem;" onclick="copyRevealKey(this)">Copy key</button>
+      <button class="btn btn-primary" style="padding:8px 20px;font-size:0.82rem;" onclick="closeReveal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../spangate-auth.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://tiviipaamwvfjvoscnyk.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let _userId   = null;
+let _email    = null;
+let _siteId   = null;
+let _hasKey   = false;
+let _newKey   = null;  // plaintext key after generation — cleared when modal closes
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+async function initPage() {
+  // Require login
+  const user = await SpanGate.requireLogin('netmonitor');
+  if (!user) return;  // requireLogin already redirected
+
+  _userId = user.id;
+  _email  = user.email;
+
+  // Show email in nav
+  const nu = document.getElementById('navUser');
+  const ns = document.getElementById('navSignOut');
+  if (nu) nu.textContent = user.email;
+  if (ns) ns.style.display = '';
+
+  // Load profile from Supabase
+  await loadProfile();
+}
+
+async function loadProfile() {
+  const { data, error } = await db
+    .from('profiles')
+    .select('api_key, site_id')
+    .eq('id', _userId)
+    .maybeSingle();
+
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('mainContent').style.display = '';
+
+  if (error) {
+    showStatus('Failed to load profile: ' + error.message, 'err');
+  }
+
+  _siteId = data?.site_id || null;
+  _hasKey = !!(data?.api_key);
+
+  // Account info
+  document.getElementById('infoEmail').textContent  = _email || '—';
+  document.getElementById('infoSiteId').textContent = _siteId || '(will be assigned on first key generation)';
+
+  if (_hasKey) {
+    renderKeyExists(data.api_key);
+  } else {
+    renderNoKey();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER STATES
+// ─────────────────────────────────────────────────────────────────────────────
+function renderNoKey() {
+  _hasKey = false;
+  document.getElementById('keyDisplay').textContent = 'No key generated yet';
+  document.getElementById('keyDisplay').classList.add('placeholder');
+  document.getElementById('copyKeyBtn').style.display = 'none';
+  document.getElementById('noKeyMsg').style.display = '';
+  document.getElementById('generateBtn').style.display = '';
+  document.getElementById('regenBtn').style.display = 'none';
+  document.getElementById('keyStatusBadge').textContent = '';
+  document.getElementById('snippetSection').style.display = 'none';
+}
+
+function renderKeyExists(apiKey) {
+  _hasKey = true;
+  // Show masked key: first 12 chars + dots
+  const visible = apiKey.length > 12 ? apiKey.substring(0, 12) + '••••••••••••' : apiKey;
+  document.getElementById('keyDisplay').textContent = visible;
+  document.getElementById('keyDisplay').classList.remove('placeholder');
+  document.getElementById('copyKeyBtn').style.display = 'none';   // can't copy masked
+  document.getElementById('noKeyMsg').style.display   = 'none';
+  document.getElementById('generateBtn').style.display = 'none';
+  document.getElementById('regenBtn').style.display    = '';
+  document.getElementById('keyStatusBadge').textContent = '● Active';
+  document.getElementById('keyStatusBadge').style.color = 'var(--accent)';
+
+  // Snippet: show masked key — user must copy from modal after regen
+  document.getElementById('snippetSection').style.display = '';
+  document.getElementById('snippetKey').textContent = visible;
+  document.getElementById('infoSiteId').textContent = _siteId || '—';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GENERATE / REGENERATE
+// ─────────────────────────────────────────────────────────────────────────────
+function generateApiKey() {
+  // spng_ + 40 random hex chars
+  const arr = new Uint8Array(20);
+  crypto.getRandomValues(arr);
+  return 'spng_' + Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function generateKey() {
+  await saveKey();
+}
+
+function confirmRegen() {
+  if (confirm('Regenerate your API key? This will immediately invalidate the current key. Your agent will stop reporting until you update config.yaml with the new key.')) {
+    saveKey();
+  }
+}
+
+async function saveKey() {
+  const btn = _hasKey
+    ? document.getElementById('regenBtn')
+    : document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  clearStatus();
+
+  const newKey    = generateApiKey();
+  const newSiteId = _siteId || crypto.randomUUID();
+
+  const { error } = await db
+    .from('profiles')
+    .upsert({
+      id:       _userId,
+      api_key:  newKey,
+      site_id:  newSiteId,
+    }, { onConflict: 'id' });
+
+  btn.disabled = false;
+  btn.textContent = _hasKey ? 'Regenerate API Key' : 'Generate API Key';
+
+  if (error) {
+    showStatus('Failed to save API key: ' + error.message, 'err');
+    return;
+  }
+
+  _siteId = newSiteId;
+  _newKey = newKey;
+
+  // Update snippet with full key
+  document.getElementById('snippetKey').textContent = newKey;
+  document.getElementById('snippetSection').style.display = '';
+  document.getElementById('infoSiteId').textContent = newSiteId;
+
+  // Update key display to masked
+  renderKeyExists(newKey);
+
+  // Show the reveal modal
+  document.getElementById('revealKey').textContent = newKey;
+  document.getElementById('revealModal').classList.add('open');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COPY HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function copyKey() {
+  if (!_newKey) return;
+  navigator.clipboard.writeText(_newKey).catch(() => {});
+  const btn = document.getElementById('copyKeyBtn');
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+
+function copyRevealKey(btn) {
+  const key = document.getElementById('revealKey').textContent;
+  navigator.clipboard.writeText(key).catch(() => {});
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => btn.textContent = 'Copy key', 2000);
+}
+
+function copySnippet(btn) {
+  // Build plain text version of snippet (strip HTML tags)
+  const pre = document.getElementById('configSnippet');
+  navigator.clipboard.writeText(pre.innerText).catch(() => {});
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function closeReveal() {
+  document.getElementById('revealModal').classList.remove('open');
+  _newKey = null;  // clear plaintext from memory
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATUS
+// ─────────────────────────────────────────────────────────────────────────────
+function showStatus(msg, type) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg ' + type;
+  el.style.display = 'block';
+}
+
+function clearStatus() {
+  const el = document.getElementById('statusMsg');
+  el.style.display = 'none';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────────────────────────────────────────
+function signOut() {
+  if (typeof SpanGate !== 'undefined') SpanGate.signOut();
+  else window.location.href = '../login.html';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────────────────
+initPage();
+</script>
+</body>
+</html>

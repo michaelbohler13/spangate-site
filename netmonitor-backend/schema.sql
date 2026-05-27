@@ -13,6 +13,25 @@
 -- ============================================================================
 
 
+-- ── profiles ─────────────────────────────────────────────────────────────────
+-- One row per Supabase auth user.
+-- Stores the user's API key (plain text — shown to user once, never logged)
+-- and a site_id that scopes all their devices/alerts to their account.
+-- Created automatically when the user first visits the Settings page.
+
+create table if not exists profiles (
+    id          uuid        primary key references auth.users(id) on delete cascade,
+    api_key     text        unique,          -- Bearer token the agent sends
+    site_id     text        not null default gen_random_uuid()::text,
+    site_name   text
+);
+
+alter table profiles enable row level security;
+
+create policy "profiles: owner all"
+    on profiles for all using (auth.uid() = id);
+
+
 -- ── devices ──────────────────────────────────────────────────────────────────
 -- One row per monitored device per site.
 -- Devices are auto-created when the backend first receives a ping or config
