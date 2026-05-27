@@ -6,6 +6,8 @@
 <title>Network Monitor — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../spangate-auth.js"></script>
 <style>
 :root {
   --bg:#0d1117; --bg2:#0a0a0a; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#222222;
@@ -186,6 +188,7 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   border-radius:980px;font-size:0.67rem;font-weight:600;font-family:var(--mono);}
 .s-up{background:rgba(0,212,184,0.14);color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);}
 .s-down{background:rgba(255,95,87,0.14);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.3);}
+.s-unknown{background:rgba(255,255,255,0.06);color:var(--text-dim);border:0.5px solid rgba(255,255,255,0.1);}
 .v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;}
 .hn{font-family:var(--mono);font-size:0.78rem;color:var(--text);}
 .ip-cell{font-family:var(--mono);font-size:0.74rem;color:var(--text-muted);}
@@ -655,9 +658,11 @@ devices:
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
-const MOCK_MODE  = true;
-const MOCK_STATE = 'live';   // 'live' | 'onboarding'
-const API_BASE   = 'https://api.spangate.com';
+const MOCK_MODE  = false;
+const API_BASE   = 'https://spangate-site-r81b.vercel.app';
+const SUPABASE_URL  = 'https://tiviipaamwvfjvoscnyk.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
+const db = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOCK DATA
@@ -692,10 +697,11 @@ const MOCK_CONFIGS = {
 // ─────────────────────────────────────────────────────────────────────────────
 // MUTABLE STATE
 // ─────────────────────────────────────────────────────────────────────────────
-let activeAlerts   = MOCK_ALERTS_ACTIVE_INIT.map(a => ({...a}));
-let resolvedAlerts = MOCK_ALERTS_RESOLVED_INIT.map(a => ({...a}));
+let activeAlerts   = [];
+let resolvedAlerts = [];
+let liveDevices    = [];
 let expandedDevice = null;
-let apiKey         = MOCK_API_KEY;
+let apiKey         = null;
 let currentStep    = 1;
 let activeTab      = 'devices';
 let alertSubTab    = 'active';
@@ -741,62 +747,94 @@ function alertBadgeLabel(t) {
 // AUTH
 // ─────────────────────────────────────────────────────────────────────────────
 async function initApp() {
-  // Inject API key into config code blocks
-  injectApiKey(apiKey);
+  // Require login — redirects to login page if not authenticated
+  const user = await SpanGate.requireLogin('netmonitor');
+  if (!user) return;
 
-  // Show sign-out in nav if SpanGate available
-  if (typeof SpanGate !== 'undefined') {
-    try {
-      const user = await SpanGate.getUser();
-      if (user) {
-        const nu = document.getElementById('navUser');
-        const ns = document.getElementById('navSignOut');
-        if (nu) nu.textContent = user.email;
-        if (ns) ns.style.display = '';
-      }
-      if (!MOCK_MODE) {
-        const ok = await SpanGate.hasAccess('netmonitor');
-        if (!ok) { window.location.href = '../login.html?product=netmonitor'; return; }
-        // In live mode, get real API key from user metadata
-        if (user && user.user_metadata && user.user_metadata.api_key) {
-          apiKey = user.user_metadata.api_key;
-          injectApiKey(apiKey);
-        }
-      }
-    } catch(e) {
-      if (!MOCK_MODE) {
-        window.location.href = '../login.html?product=netmonitor';
-        return;
-      }
+  // Show user email + sign-out in nav
+  const nu = document.getElementById('navUser');
+  const ns = document.getElementById('navSignOut');
+  if (nu) nu.textContent = user.email;
+  if (ns) ns.style.display = '';
+
+  // Load API key from Supabase profiles table
+  if (db) {
+    const { data: profile } = await db
+      .from('profiles')
+      .select('api_key')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (profile?.api_key) {
+      apiKey = profile.api_key;
+      injectApiKey(apiKey);
     }
-  } else if (!MOCK_MODE) {
-    window.location.href = '../login.html?product=netmonitor';
+  }
+
+  // No API key yet — prompt user to go to Settings
+  if (!apiKey) {
+    showNoKeyBanner();
+    showOnboarding();
     return;
   }
 
-  // Show mock banner
-  if (MOCK_MODE) {
-    document.getElementById('mockBanner').style.display = 'flex';
-  }
-
-  // Determine state
-  if (MOCK_MODE) {
-    if (MOCK_STATE === 'onboarding') showOnboarding();
-    else showDashboard();
-  } else {
-    await determineState();
-  }
+  await determineState();
 }
 
 async function determineState() {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/agent/heartbeat`, {
+    const res = await fetch(`${API_BASE}/api/v1/dashboard`, {
       headers: { 'Authorization': `Bearer ${apiKey}` }
     });
-    if (res.ok) showDashboard();
-    else showOnboarding();
+    if (!res.ok) { showOnboarding(); return; }
+    const data = await res.json();
+    if (data.last_heartbeat) {
+      await loadLiveData();
+      showDashboard();
+    } else {
+      showOnboarding();
+    }
   } catch(e) {
     showOnboarding();
+  }
+}
+
+function showNoKeyBanner() {
+  const b = document.getElementById('mockBanner');
+  if (b) {
+    b.innerHTML = `<span>No API key found.</span>
+      <a href="/netmonitor/settings" style="color:var(--accent);text-decoration:none;margin-left:8px;">
+        Go to Settings to generate one →
+      </a>`;
+    b.style.display = 'flex';
+  }
+}
+
+async function loadLiveData() {
+  const headers = { 'Authorization': `Bearer ${apiKey}` };
+  const [devRes, alertRes] = await Promise.all([
+    fetch(`${API_BASE}/api/v1/devices`, { headers }),
+    fetch(`${API_BASE}/api/v1/alerts`,  { headers }),
+  ]);
+
+  if (devRes.ok) {
+    liveDevices = await devRes.json();
+    // Populate configs device dropdown
+    const sel = document.getElementById('cfgDeviceSelect');
+    if (sel) {
+      sel.innerHTML = '<option value="">Select device...</option>' +
+        liveDevices.map(d => `<option value="${esc(d.hostname)}">${esc(d.hostname)}</option>`).join('');
+    }
+  }
+
+  if (alertRes.ok) {
+    const allAlerts = await alertRes.json();
+    // active = down + config change  |  resolved = up events
+    activeAlerts   = allAlerts.filter(a => a.alert_type === 'ping_down' || a.alert_type === 'config_change')
+                               .map(a => ({ id: a.id, type: a.alert_type, hostname: a.hostname,
+                                            ts: new Date(a.created_at).toLocaleString(), msg: a.message }));
+    resolvedAlerts = allAlerts.filter(a => a.alert_type === 'ping_up')
+                               .map(a => ({ id: a.id, type: a.alert_type, hostname: a.hostname,
+                                            ts: new Date(a.created_at).toLocaleString(), msg: a.message }));
   }
 }
 
@@ -881,15 +919,20 @@ function simulateConnect() {
 function startPolling() {
   stopPolling();
   pollTimer = setInterval(async () => {
+    if (!apiKey) return;
     try {
-      const res = await fetch(`${API_BASE}/api/v1/agent/heartbeat`, {
+      const res = await fetch(`${API_BASE}/api/v1/dashboard`, {
         headers: { 'Authorization': `Bearer ${apiKey}` }
       });
       if (res.ok) {
-        stopPolling();
-        const flash = document.getElementById('connFlash');
-        if (flash) { flash.style.display = 'block'; }
-        setTimeout(showDashboard, 900);
+        const data = await res.json();
+        if (data.last_heartbeat) {
+          stopPolling();
+          await loadLiveData();
+          const flash = document.getElementById('connFlash');
+          if (flash) flash.style.display = 'block';
+          setTimeout(showDashboard, 900);
+        }
       }
     } catch(e) {}
   }, 10000);
@@ -934,33 +977,39 @@ function switchTab(tab) {
 function renderDevices() {
   const tbody = document.getElementById('devTbody');
   if (!tbody) return;
+  if (!liveDevices.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-st">No devices yet — start your agent to populate this list.</td></tr>`;
+    return;
+  }
   let html = '';
-  MOCK_DEVICES.forEach(d => {
-    const isExp = expandedDevice === d.hostname;
-    const vcls  = vendorClass(d.vendor);
-    const scls  = d.status === 'up' ? 's-up' : 's-down';
-    const sIcon = d.status === 'up' ? '↑' : '↓';
+  liveDevices.forEach(d => {
+    const isExp  = expandedDevice === d.hostname;
+    const vcls   = vendorClass(d.vendor);
+    const status = d.status || 'unknown';
+    const scls   = status === 'up' ? 's-up' : status === 'down' ? 's-down' : 's-unknown';
+    const sIcon  = status === 'up' ? '↑' : status === 'down' ? '↓' : '?';
+    const lastSeen = d.last_seen ? new Date(d.last_seen).toLocaleString() : '—';
     html += `
     <tr class="dev-row${isExp?' expanded':''}" onclick="toggleDevice('${esc(d.hostname)}')">
-      <td><span class="status-badge ${scls}">${sIcon} ${d.status.toUpperCase()}</span></td>
+      <td><span class="status-badge ${scls}">${sIcon} ${status.toUpperCase()}</span></td>
       <td><span class="hn">${esc(d.hostname)}</span><span class="chevron">›</span></td>
       <td><span class="ip-cell">${esc(d.ip)}</span></td>
       <td><span class="${vcls}">${esc(vendorLabel(d.vendor))}</span></td>
-      <td style="color:var(--text-muted);font-size:0.8rem;">${esc(d.type)}</td>
-      <td><span class="ls-cell">${esc(d.lastSeen)}</span></td>
+      <td style="color:var(--text-muted);font-size:0.8rem;">${esc(d.device_type || '—')}</td>
+      <td><span class="ls-cell">${esc(lastSeen)}</span></td>
     </tr>`;
     if (isExp) {
-      const allAlerts = [...activeAlerts, ...resolvedAlerts].filter(a => a.hostname === d.hostname).slice(0,3);
-      const alertBadges = allAlerts.length
-        ? allAlerts.map(a => `<span class="mini-badge">${alertBadgeLabel(a.type)} · ${a.ts}</span>`).join('')
+      const devAlerts = [...activeAlerts, ...resolvedAlerts].filter(a => a.hostname === d.hostname).slice(0,3);
+      const alertBadges = devAlerts.length
+        ? devAlerts.map(a => `<span class="mini-badge">${alertBadgeLabel(a.type)} · ${a.ts}</span>`).join('')
         : '<span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim);">No recent alerts</span>';
       html += `
       <tr class="acc-row">
         <td colspan="6">
           <div class="acc-inner">
             <div class="acc-grid">
-              <div><div class="acc-label">Last config hash</div><div class="acc-val">${d.configHash ? esc(d.configHash) : '— no backup yet'}</div></div>
-              <div><div class="acc-label">Last config pulled</div><div class="acc-val">${d.configPulled ? esc(d.configPulled) : '—'}</div></div>
+              <div><div class="acc-label">Last config hash</div><div class="acc-val">${d.last_config_hash ? esc(d.last_config_hash) : '— no backup yet'}</div></div>
+              <div><div class="acc-label">Vendor</div><div class="acc-val">${esc(vendorLabel(d.vendor))}</div></div>
             </div>
             <div class="acc-alerts-hd">Recent alerts</div>
             <div>${alertBadges}</div>
@@ -1036,59 +1085,84 @@ function acknowledgeAlert(id) {
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGS
 // ─────────────────────────────────────────────────────────────────────────────
-function onCfgDeviceChange(hostname) {
+async function onCfgDeviceChange(hostname) {
   const el = document.getElementById('backupList');
   if (!el) return;
   if (!hostname) { el.innerHTML = ''; return; }
 
-  const data = MOCK_CONFIGS[hostname];
-  if (!data) {
+  el.innerHTML = '<div class="empty-st">Loading…</div>';
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/configs/${encodeURIComponent(hostname)}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    if (!res.ok) throw new Error('not found');
+    const backups = await res.json();
+    if (!backups.length) {
+      el.innerHTML = `<div class="empty-st">No config backups yet for ${esc(hostname)}</div>`;
+      return;
+    }
+    let html = `<table class="bk-table"><thead><tr>
+      <th>Date &amp; Time</th><th>Hash</th><th></th>
+    </tr></thead><tbody>`;
+    backups.forEach(b => {
+      html += `<tr>
+        <td><span class="bk-date">${esc(new Date(b.pulled_at).toLocaleString())}</span></td>
+        <td><span class="bk-hash">${esc(b.config_hash.substring(0,12))}…</span></td>
+        <td><button class="diff-btn" onclick="openModal('${esc(hostname)}',${b.id})">View</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) {
     el.innerHTML = `<div class="empty-st">No config backups yet for ${esc(hostname)}</div>`;
-    return;
   }
-
-  let html = `<table class="bk-table"><thead><tr>
-    <th>Date &amp; Time</th><th>Hash</th><th></th>
-  </tr></thead><tbody>`;
-  data.backups.forEach(b => {
-    html += `<tr>
-      <td><span class="bk-date">${esc(b.date)}</span></td>
-      <td><span class="bk-hash">${esc(b.hash)}</span></td>
-      <td><button class="diff-btn" onclick="openModal('${esc(hostname)}',${b.id},${b.hasDiff})">View diff</button></td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  el.innerHTML = html;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MODAL
 // ─────────────────────────────────────────────────────────────────────────────
-function openModal(hostname, backupId, hasDiff) {
-  const data   = MOCK_CONFIGS[hostname];
-  if (!data) return;
-  const backup = data.backups.find(b => b.id === backupId);
-  if (!backup) return;
-
-  document.getElementById('modalTitle').textContent = `${hostname} — ${backup.date}`;
-
-  // Diff
-  const diffEl = document.getElementById('modalDiff');
-  if (hasDiff) {
-    diffEl.innerHTML = data.diff.split('\n').map(line => {
-      if (line.startsWith('+'))      return `<div class="dl dl-add">${esc(line)}</div>`;
-      if (line.startsWith('-'))      return `<div class="dl dl-rem">${esc(line)}</div>`;
-      return `<div class="dl dl-ctx">${esc(line)}</div>`;
-    }).join('');
-  } else {
-    diffEl.innerHTML = `<div class="dl dl-ctx" style="font-style:italic;padding:0.5rem;">First backup — no previous config to compare.</div>`;
-  }
-
-  // Full config
-  document.getElementById('modalFullCfg').textContent = data.fullConfig;
-
+async function openModal(hostname, backupId) {
+  document.getElementById('modalTitle').textContent = `${hostname} — Loading…`;
+  document.getElementById('modalDiff').innerHTML    = '<div class="dl dl-ctx">Loading…</div>';
+  document.getElementById('modalFullCfg').textContent = '';
   document.getElementById('configModal').classList.add('open');
   document.addEventListener('keydown', handleModalKey);
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/configs/${encodeURIComponent(hostname)}/${backupId}`,
+      { headers: { 'Authorization': `Bearer ${apiKey}` } }
+    );
+    if (!res.ok) throw new Error('fetch failed');
+    const b = await res.json();
+
+    document.getElementById('modalTitle').textContent = `${hostname} — ${new Date(b.pulled_at).toLocaleString()}`;
+    document.getElementById('modalFullCfg').textContent = b.config_text;
+
+    // Fetch diff if available
+    const diffEl = document.getElementById('modalDiff');
+    try {
+      const dRes = await fetch(
+        `${API_BASE}/api/v1/configs/${encodeURIComponent(hostname)}/${backupId}/diff`,
+        { headers: { 'Authorization': `Bearer ${apiKey}` } }
+      );
+      if (dRes.ok) {
+        const dData = await dRes.json();
+        if (dData.diff_text) {
+          diffEl.innerHTML = dData.diff_text.split('\n').map(line => {
+            if (line.startsWith('+')) return `<div class="dl dl-add">${esc(line)}</div>`;
+            if (line.startsWith('-')) return `<div class="dl dl-rem">${esc(line)}</div>`;
+            return `<div class="dl dl-ctx">${esc(line)}</div>`;
+          }).join('');
+          return;
+        }
+      }
+    } catch(e) {}
+    diffEl.innerHTML = `<div class="dl dl-ctx" style="font-style:italic;padding:0.5rem;">First backup — no previous config to compare.</div>`;
+
+  } catch(e) {
+    document.getElementById('modalDiff').innerHTML = `<div class="dl dl-ctx" style="color:var(--text-dim);">Could not load config.</div>`;
+  }
 }
 
 function closeModal() {
