@@ -28,6 +28,13 @@ error()   { echo -e "${RED}[ERROR]${RESET} $*"; exit 1; }
 IMAGE="spangate/netmonitor-agent:latest"
 SETUP_DIR="$HOME/spangate-agent"
 
+# Optional: pre-fill values from environment variables so the dashboard
+# can inject them into the one-liner command shown to users.
+#   export SPNG_API_KEY="spng_..."
+#   curl -fsSL .../setup.sh | bash
+API_KEY="${SPNG_API_KEY:-}"
+SITE_NAME="${SPNG_SITE_NAME:-}"
+
 # ── Banner ────────────────────────────────────────────────────────────────────
 clear
 echo ""
@@ -101,26 +108,34 @@ echo -e "${BOLD}  Step 1 of 2 — Your SpanGate API Key${RESET}"
 echo -e "${BOLD}──────────────────────────────────────────────────────${RESET}"
 echo ""
 
-while true; do
-  echo -e "${BOLD}  Paste your API key (starts with spng_):${RESET}"
-  read -rp "  > " API_KEY
-  API_KEY="$(echo "$API_KEY" | tr -d '[:space:]')"
-  if [[ "$API_KEY" == spng_* ]] && [[ ${#API_KEY} -gt 10 ]]; then
-    success "API key accepted."
-    break
-  fi
-  warn "That doesn't look right — the key should start with 'spng_'. Try again."
-done
+if [[ "$API_KEY" == spng_* ]] && [[ ${#API_KEY} -gt 10 ]]; then
+  success "API key pre-filled from dashboard."
+else
+  while true; do
+    echo -e "${BOLD}  Paste your API key (starts with spng_):${RESET}"
+    read -rp "  > " API_KEY
+    API_KEY="$(echo "$API_KEY" | tr -d '[:space:]')"
+    if [[ "$API_KEY" == spng_* ]] && [[ ${#API_KEY} -gt 10 ]]; then
+      success "API key accepted."
+      break
+    fi
+    warn "That doesn't look right — the key should start with 'spng_'. Try again."
+  done
+fi
 
 echo ""
 echo -e "${BOLD}──────────────────────────────────────────────────────${RESET}"
 echo -e "${BOLD}  Step 2 of 2 — Site Name & Ping Interval${RESET}"
 echo -e "${BOLD}──────────────────────────────────────────────────────${RESET}"
 echo ""
-echo -e "${BOLD}  What should this site be called?${RESET}"
-echo "  (e.g. Main Campus, District Office, Elementary School)"
-read -rp "  > " SITE_NAME
-SITE_NAME="${SITE_NAME:-My Site}"
+if [ -n "$SITE_NAME" ]; then
+  success "Site name pre-filled: $SITE_NAME"
+else
+  echo -e "${BOLD}  What should this site be called?${RESET}"
+  echo "  (e.g. Main Campus, District Office, Elementary School)"
+  read -rp "  > " SITE_NAME
+  SITE_NAME="${SITE_NAME:-My Site}"
+fi
 
 echo ""
 echo -e "${BOLD}  Ping interval in seconds? [60]${RESET}"

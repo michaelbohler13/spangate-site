@@ -76,14 +76,21 @@ Write-Host "  Step 1 of 2 — Your SpanGate API Key" -ForegroundColor White
 Write-Host "  ──────────────────────────────────────────────────────" -ForegroundColor DarkGray
 Write-Host ""
 
-$API_KEY = ''
-while ($true) {
-    $API_KEY = (Read-Host "  Paste your API key (starts with spng_)").Trim()
-    if ($API_KEY -match '^spng_.{10,}') {
-        Write-OK "API key accepted."
-        break
+# Optional: pre-fill from env vars set by the dashboard one-liner
+#   $env:SPNG_API_KEY = "spng_..."; irm .../setup.ps1 | iex
+$API_KEY = if ($env:SPNG_API_KEY -match '^spng_.{10,}') { $env:SPNG_API_KEY } else { '' }
+
+if ($API_KEY) {
+    Write-OK "API key pre-filled from dashboard."
+} else {
+    while ($true) {
+        $API_KEY = (Read-Host "  Paste your API key (starts with spng_)").Trim()
+        if ($API_KEY -match '^spng_.{10,}') {
+            Write-OK "API key accepted."
+            break
+        }
+        Write-Warn "That doesn't look right — the key should start with 'spng_'. Try again."
     }
-    Write-Warn "That doesn't look right — the key should start with 'spng_'. Try again."
 }
 
 Write-Host ""
@@ -91,10 +98,15 @@ Write-Host "  ──────────────────────
 Write-Host "  Step 2 of 2 — Site Name & Ping Interval" -ForegroundColor White
 Write-Host "  ──────────────────────────────────────────────────────" -ForegroundColor DarkGray
 Write-Host ""
-Write-Host "  What should this site be called?"
-Write-Host "  (e.g. Main Campus, District Office, Elementary School)"
-$SITE_NAME = (Read-Host "  >").Trim()
-if (-not $SITE_NAME) { $SITE_NAME = 'My Site' }
+$SITE_NAME = if ($env:SPNG_SITE_NAME) { $env:SPNG_SITE_NAME } else { '' }
+if ($SITE_NAME) {
+    Write-OK "Site name pre-filled: $SITE_NAME"
+} else {
+    Write-Host "  What should this site be called?"
+    Write-Host "  (e.g. Main Campus, District Office, Elementary School)"
+    $SITE_NAME = (Read-Host "  >").Trim()
+    if (-not $SITE_NAME) { $SITE_NAME = 'My Site' }
+}
 
 Write-Host ""
 Write-Host "  Ping interval in seconds? (default: 60)"

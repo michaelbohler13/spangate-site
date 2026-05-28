@@ -443,180 +443,92 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   <!-- ── STEP 2 — Install ──────────────────────────────────────────────────── -->
   <div id="step2" class="ob-body" style="display:none;">
     <div class="ob-title">Install the Agent</div>
-    <div class="ob-desc">Choose your platform and follow the steps below. The agent runs silently in the background on your local network.</div>
+    <div class="ob-desc">Pick your platform — the setup wizard handles everything automatically. Your API key is already filled in below.</div>
 
     <div class="os-tabs">
-      <button class="os-tab active" id="tabPi" onclick="switchOs('pi')">Raspberry Pi</button>
-      <button class="os-tab" id="tabWin" onclick="switchOs('win')">Windows</button>
+      <button class="os-tab active" id="tabPi"  onclick="switchOs('pi')">🫐 Raspberry Pi</button>
+      <button class="os-tab"        id="tabWin" onclick="switchOs('win')">🪟 Windows</button>
+      <button class="os-tab"        id="tabMac" onclick="switchOs('mac')">🍎 Mac</button>
     </div>
 
-    <!-- Pi steps -->
+    <!-- ── Pi ── -->
     <div class="os-pane active" id="panePi">
       <div class="sub-steps">
         <div class="sub-step">
           <div class="sub-step-num">1</div>
           <div class="sub-step-body">
-            <div class="sub-step-title">Flash Raspberry Pi OS</div>
-            <div class="sub-step-text">Download Raspberry Pi Imager from raspberrypi.com/software. Flash Raspberry Pi OS Lite (64-bit). In Imager settings (⚙️): enable SSH, set a username and password, configure WiFi if needed.</div>
+            <div class="sub-step-title">Flash Raspberry Pi OS Lite</div>
+            <div class="sub-step-text">Download <strong>Raspberry Pi Imager</strong> from <a href="https://raspberrypi.com/software" target="_blank" style="color:var(--accent);">raspberrypi.com/software</a>. Flash <strong>Raspberry Pi OS Lite (64-bit)</strong>. In the ⚙️ settings before flashing: enable SSH, set a username/password, and configure Wi-Fi if needed.</div>
           </div>
         </div>
         <div class="sub-step">
           <div class="sub-step-num">2</div>
           <div class="sub-step-body">
-            <div class="sub-step-title">Connect and update</div>
+            <div class="sub-step-title">SSH into your Pi and run this one command</div>
+            <div class="sub-step-text">This installs Docker, pulls the agent image, and starts it automatically. Your API key is already included.</div>
             <div class="code-block">
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>sudo apt update && sudo apt upgrade -y
-sudo apt install -y python3 python3-pip python3-venv git
-python3 --version</pre>
+              <pre>export SPNG_API_KEY="<span class="inject-api-key">YOUR_API_KEY</span>"
+curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash</pre>
             </div>
-            <div class="sub-step-note">Python 3.9 or higher required</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">3</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Clone and install</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>git clone https://github.com/michaelbohler13/spangate-site.git
-cd spangate-site/netmonitor-agent
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt</pre>
-            </div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">4</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Configure</div>
-            <div class="sub-step-text">Create your config file with your API key and device list:</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre id="piConfigBlock">agent:
-  site_name: "My Network"
-  api_url: "https://spangate-site-r81b.vercel.app"
-  api_key: "sg_live_mock_key_abc123xyz"
-devices:
-  - hostname: "core-sw-01"
-    ip: "192.168.1.1"
-    vendor: "cisco"
-    ssh_username: "admin"
-    ssh_password: "your_password"</pre>
-            </div>
-            <div class="sub-step-note">Supported vendors: cisco · aruba_cx · juniper</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">5</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Run the agent</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>python3 agent.py --config /etc/spangate/netmonitor/config.yaml</pre>
-            </div>
-            <div class="sub-step-note">You should see: [INFO] SpanGate Network Monitor Agent v1.0.0 — connected</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">6</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Install as system service</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>sudo systemctl enable spangate-netmonitor
-sudo systemctl start spangate-netmonitor
-sudo systemctl status spangate-netmonitor</pre>
-            </div>
+            <div class="sub-step-note">The wizard will ask for your site name, then the agent starts automatically and restarts on reboot.</div>
           </div>
         </div>
       </div>
     </div><!-- /panePi -->
 
-    <!-- Windows steps -->
+    <!-- ── Windows ── -->
     <div class="os-pane" id="paneWin">
       <div class="sub-steps">
         <div class="sub-step">
           <div class="sub-step-num">1</div>
           <div class="sub-step-body">
-            <div class="sub-step-title">Install Python</div>
-            <div class="sub-step-text">Download Python 3.11 from python.org/downloads. Run the installer — check "Add Python to PATH" before clicking Install.</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>python --version</pre>
-            </div>
+            <div class="sub-step-title">Install Docker Desktop</div>
+            <div class="sub-step-text">Download from <a href="https://www.docker.com/products/docker-desktop" target="_blank" style="color:var(--accent);">docker.com/products/docker-desktop</a>, install it, then start it. You'll see the Docker whale icon in your taskbar when it's ready.</div>
           </div>
         </div>
         <div class="sub-step">
           <div class="sub-step-num">2</div>
           <div class="sub-step-body">
-            <div class="sub-step-title">Clone the repo</div>
+            <div class="sub-step-title">Open PowerShell as Administrator and run</div>
+            <div class="sub-step-text">Right-click the Start menu → <strong>Terminal (Admin)</strong> or <strong>Windows PowerShell (Admin)</strong>, then paste:</div>
             <div class="code-block">
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>cd %USERPROFILE%\Documents
-git clone https://github.com/michaelbohler13/spangate-site.git
-cd spangate-site\netmonitor-agent</pre>
+              <pre>$env:SPNG_API_KEY = "<span class="inject-api-key">YOUR_API_KEY</span>"
+irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex</pre>
             </div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">3</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Install dependencies</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt</pre>
-            </div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">4</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Configure</div>
-            <div class="sub-step-text">Create your config file with your API key and device list:</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre id="winConfigBlock">agent:
-  site_name: "My Network"
-  api_url: "https://spangate-site-r81b.vercel.app"
-  api_key: "sg_live_mock_key_abc123xyz"
-devices:
-  - hostname: "core-sw-01"
-    ip: "192.168.1.1"
-    vendor: "cisco"
-    ssh_username: "admin"
-    ssh_password: "your_password"</pre>
-            </div>
-            <div class="sub-step-note">Supported vendors: cisco · aruba_cx · juniper</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">5</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Test the agent</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>python agent.py --config my-config.yaml</pre>
-            </div>
-            <div class="sub-step-note">You should see: [INFO] SpanGate Network Monitor Agent v1.0.0 — connected</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">6</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Install as Windows service</div>
-            <div class="sub-step-text">Download NSSM from nssm.cc/download. Copy nssm.exe to C:\Windows\System32\ then run as Administrator:</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>nssm install SpangateNetMonitor</pre>
-            </div>
-            <div class="sub-step-text" style="margin-top:0.5rem;">In the NSSM GUI set:<br>· Path: full path to venv\Scripts\python.exe<br>· Startup directory: full path to netmonitor-agent\<br>· Arguments: agent.py --config my-config.yaml<br><br>Then: <code style="font-family:var(--mono);font-size:0.79rem;color:var(--accent);">nssm start SpangateNetMonitor</code></div>
+            <div class="sub-step-note">The wizard will ask for your site name, then the agent starts as a Docker container that restarts automatically.</div>
           </div>
         </div>
       </div>
     </div><!-- /paneWin -->
+
+    <!-- ── Mac ── -->
+    <div class="os-pane" id="paneMac">
+      <div class="sub-steps">
+        <div class="sub-step">
+          <div class="sub-step-num">1</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Install Docker Desktop</div>
+            <div class="sub-step-text">Download from <a href="https://www.docker.com/products/docker-desktop" target="_blank" style="color:var(--accent);">docker.com/products/docker-desktop</a> — choose the version for your chip (Apple Silicon or Intel). Install it and start it from your Applications folder.</div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">2</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Open Terminal and run</div>
+            <div class="sub-step-text">Press <strong>⌘ Space</strong>, type <strong>Terminal</strong>, press Enter, then paste:</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>export SPNG_API_KEY="<span class="inject-api-key">YOUR_API_KEY</span>"
+curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash</pre>
+            </div>
+            <div class="sub-step-note">The wizard will ask for your site name, then the agent starts as a Docker container that restarts automatically.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /paneMac -->
+
   </div><!-- /step2 body -->
   <div class="ob-footer" id="foot2" style="display:none;">
     <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
@@ -1187,22 +1099,18 @@ function goStep(n) {
 }
 
 function switchOs(os) {
-  document.getElementById('tabPi').className  = 'os-tab' + (os === 'pi' ? ' active' : '');
-  document.getElementById('tabWin').className = 'os-tab' + (os === 'win' ? ' active' : '');
-  document.getElementById('panePi').className  = 'os-pane' + (os === 'pi' ? ' active' : '');
-  document.getElementById('paneWin').className = 'os-pane' + (os === 'win' ? ' active' : '');
+  ['pi','win','mac'].forEach(p => {
+    document.getElementById('tab' + p.charAt(0).toUpperCase() + p.slice(1)).className =
+      'os-tab' + (os === p ? ' active' : '');
+    document.getElementById('pane' + p.charAt(0).toUpperCase() + p.slice(1)).className =
+      'os-pane' + (os === p ? ' active' : '');
+  });
 }
 
 function injectApiKey(key) {
-  const blocks = ['piConfigBlock','winConfigBlock'];
-  blocks.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = el.textContent.replace(/api_key:.*/, `api_key: "${key}"`);
-  });
   const disp = document.getElementById('apiKeyDisplay');
   if (disp) disp.textContent = key;
-  // Also update any standalone api_key display spans
+  // Inject into all spans with class inject-api-key (command blocks + API key display)
   document.querySelectorAll('.inject-api-key').forEach(el => {
     el.textContent = key;
   });
