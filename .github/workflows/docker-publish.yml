@@ -53,15 +53,16 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Build for:
-      #   linux/amd64   — standard x86-64 (Intel/AMD PCs, cloud VMs)
-      #   linux/arm64   — Raspberry Pi 4/5 (64-bit), Apple Silicon Macs
-      #   linux/arm/v7  — Raspberry Pi 2/3 (32-bit Raspbian)
+      #   linux/amd64  — standard x86-64 (Intel/AMD PCs, cloud VMs, Mac Intel)
+      #   linux/arm64  — Raspberry Pi 3/4/5 (64-bit OS), Apple Silicon Macs
+      # Note: linux/arm/v7 (32-bit Pi) is excluded — our setup guide requires
+      # Raspberry Pi OS Lite 64-bit, and cryptography has no arm/v7 wheels.
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: ./netmonitor-agent
           file: ./netmonitor-agent/Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             spangate/netmonitor-agent:latest
