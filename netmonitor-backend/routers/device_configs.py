@@ -30,7 +30,7 @@ from models import DeviceConfig
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Device Configs"])
 
-VALID_VENDORS = {"cisco", "aruba_cx", "juniper", "other"}
+VALID_VENDORS = {"cisco", "aruba_cx", "juniper", "other", "internet"}
 
 # Default netmiko device_type per vendor
 VENDOR_DEFAULT_TYPE: dict[str, str] = {
@@ -38,6 +38,7 @@ VENDOR_DEFAULT_TYPE: dict[str, str] = {
     "aruba_cx": "aruba_osswitch",
     "juniper":  "juniper_junos",
     "other":    "linux",
+    "internet": "ping_only",
 }
 
 
@@ -74,7 +75,7 @@ class DeviceConfigIn(BaseModel):
     @classmethod
     def val_vendor(cls, v: str) -> str:
         v = v.strip().lower()
-        return v if v in VALID_VENDORS else "cisco"
+        return v if v in VALID_VENDORS else "other"
 
     @field_validator("ssh_port")
     @classmethod

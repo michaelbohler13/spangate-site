@@ -189,7 +189,7 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .s-up{background:rgba(0,212,184,0.14);color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);}
 .s-down{background:rgba(255,95,87,0.14);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.3);}
 .s-unknown{background:rgba(255,255,255,0.06);color:var(--text-dim);border:0.5px solid rgba(255,255,255,0.1);}
-.v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;}
+.v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;} .v-internet{color:#a78bfa;}
 .hn{font-family:var(--mono);font-size:0.78rem;color:var(--text);}
 .ip-cell{font-family:var(--mono);font-size:0.74rem;color:var(--text-muted);}
 .ls-cell{font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);}
@@ -724,23 +724,24 @@ devices:
         <div class="dm-field">
           <label class="dm-label" for="dmVendor">Vendor</label>
           <div class="cfg-select-wrap" style="display:block;width:100%;">
-            <select id="dmVendor" class="cfg-select dm-select">
+            <select id="dmVendor" class="cfg-select dm-select" onchange="dmVendorChange()">
               <option value="cisco">Cisco</option>
               <option value="aruba_cx">Aruba CX</option>
               <option value="juniper">Juniper</option>
               <option value="other">Other</option>
+              <option value="internet">Internet / Website</option>
             </select>
           </div>
         </div>
-        <div class="dm-field">
+        <div class="dm-field" id="dmSshPortField">
           <label class="dm-label" for="dmSshPort">SSH Port</label>
           <input id="dmSshPort" class="dm-input" type="number" value="22" min="1" max="65535" />
         </div>
-        <div class="dm-field">
+        <div class="dm-field" id="dmSshUsernameField">
           <label class="dm-label" for="dmSshUsername">SSH Username</label>
           <input id="dmSshUsername" class="dm-input" type="text" placeholder="admin (optional)" autocomplete="off" />
         </div>
-        <div class="dm-field">
+        <div class="dm-field" id="dmSshPasswordField">
           <label class="dm-label" for="dmSshPassword">SSH Password</label>
           <input id="dmSshPassword" class="dm-input" type="password" placeholder="optional" autocomplete="new-password" />
         </div>
@@ -756,7 +757,7 @@ devices:
             <span class="dm-slider"></span>
           </label>
         </div>
-        <div class="dm-toggle-row">
+        <div class="dm-toggle-row" id="dmSshToggleRow">
           <div>
             <div class="dm-toggle-label">SSH Config Pull</div>
             <div class="dm-toggle-desc">Pull running config via SSH (weekly)</div>
@@ -857,10 +858,10 @@ function cpFullCfg(btn) {
   setTimeout(() => { btn.textContent = 'Copy full config'; }, 2000);
 }
 function vendorLabel(v) {
-  return {cisco:'Cisco', aruba_cx:'Aruba CX', juniper:'Juniper'}[v] || v;
+  return {cisco:'Cisco', aruba_cx:'Aruba CX', juniper:'Juniper', internet:'Internet'}[v] || v;
 }
 function vendorClass(v) {
-  return {cisco:'v-cisco', aruba_cx:'v-aruba', juniper:'v-juniper'}[v] || '';
+  return {cisco:'v-cisco', aruba_cx:'v-aruba', juniper:'v-juniper', internet:'v-internet'}[v] || '';
 }
 function alertBadgeClass(t) {
   return {ping_down:'al-ping-down', ping_up:'al-ping-up', config_change:'al-config'}[t] || '';
@@ -1346,6 +1347,16 @@ function handleModalKey(e) {
 // DEVICE MANAGEMENT  (Add / Edit / Delete via /api/v1/device-configs)
 // ─────────────────────────────────────────────────────────────────────────────
 
+function dmVendorChange() {
+  const isInternet = document.getElementById('dmVendor').value === 'internet';
+  const hide = isInternet ? 'none' : '';
+  document.getElementById('dmSshPortField').style.display     = hide;
+  document.getElementById('dmSshUsernameField').style.display = hide;
+  document.getElementById('dmSshPasswordField').style.display = hide;
+  document.getElementById('dmSshToggleRow').style.display     = hide;
+  if (isInternet) document.getElementById('dmSshEnabled').checked = false;
+}
+
 function openAddDevice() {
   editingDeviceId = null;
   document.getElementById('dmTitle').textContent      = 'Add Device';
@@ -1361,6 +1372,7 @@ function openAddDevice() {
   document.getElementById('dmSshEnabled').checked      = false;
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Add Device';
+  dmVendorChange();
   document.getElementById('deviceModal').classList.add('open');
   document.addEventListener('keydown', _dmKey);
   setTimeout(() => document.getElementById('dmHostname').focus(), 60);
@@ -1384,6 +1396,7 @@ function openEditDevice(id, event) {
   document.getElementById('dmSshEnabled').checked      = cfg.ssh_enabled  === true;
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Save Changes';
+  dmVendorChange();
   document.getElementById('deviceModal').classList.add('open');
   document.addEventListener('keydown', _dmKey);
   setTimeout(() => document.getElementById('dmIp').focus(), 60);
