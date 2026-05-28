@@ -27,6 +27,40 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Devices"])
 
 
+# ── DELETE /devices/{hostname} ────────────────────────────────────────────────
+
+@router.delete("/devices/{hostname}", status_code=204)
+async def delete_device(
+    hostname: str,
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """
+    Remove a device and all its associated alerts and config snapshots.
+
+    Used by the dashboard to delete a device that appeared via the agent's
+    config.yaml but has no corresponding device_configs entry.
+
+    Args:
+        hostname: Device hostname to remove.
+        ctx: Auth context with site_id.
+        db: Async database session.
+
+    Raises:
+        HTTPException 404: If the device is not found for this site.
+    """
+    result = await db.execute(
+        select(Device).where(Device.site_id == ctx["site_id"], Device.hostname == hostname)
+    )
+    device = result.scalar_one_or_none()
+    if device is None:
+        raise HTTPException(status_code=404, detail=f"Device '{hostname}' not found")
+
+    await db.delete(device)
+    await db.commit()
+    logger.info("Device deleted: site=%s hostname=%s", ctx["site_id"], hostname)
+
+
 # ── GET /devices ──────────────────────────────────────────────────────────────
 
 @router.get("/devices", response_model=list[DeviceStatus])

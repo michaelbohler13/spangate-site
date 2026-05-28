@@ -47,6 +47,17 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 /* ── PAGE WRAP ────────────────────────────────────────────────────────────── */
 .page-wrap{padding-top:84px;min-height:100vh;}
 
+/* ── LOADING OVERLAY ─────────────────────────────────────────────────────── */
+#loadingOverlay{position:fixed;inset:0;z-index:9999;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1.25rem;transition:opacity 0.35s ease;}
+#loadingOverlay.hidden{opacity:0;pointer-events:none;}
+.ld-spinner{width:38px;height:38px;border:2.5px solid rgba(0,212,184,0.18);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:ldSpin 0.75s linear infinite;}
+@keyframes ldSpin{to{transform:rotate(360deg);}}
+.ld-msg{font-size:0.82rem;color:var(--text-dim);letter-spacing:-0.01em;}
+
 /* ── MOCK BANNER ──────────────────────────────────────────────────────────── */
 #mockBanner{display:flex;align-items:center;gap:10px;padding:9px 2rem;
   background:var(--surface2);border-left:3px solid var(--accent);
@@ -387,6 +398,12 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 </nav>
 
 <div class="page-wrap">
+
+<!-- ── LOADING OVERLAY ───────────────────────────────────────────────────────── -->
+<div id="loadingOverlay">
+  <div class="ld-spinner"></div>
+  <div class="ld-msg">Connecting to SpanGate…</div>
+</div>
 
 <!-- ── MOCK BANNER ──────────────────────────────────────────────────────────── -->
 <div id="mockBanner" style="display:none;">
@@ -1119,7 +1136,15 @@ function signOut() {
 // ─────────────────────────────────────────────────────────────────────────────
 // ONBOARDING
 // ─────────────────────────────────────────────────────────────────────────────
+function hideLoader() {
+  const ol = document.getElementById('loadingOverlay');
+  if (!ol || ol.classList.contains('hidden')) return;
+  ol.classList.add('hidden');
+  setTimeout(() => ol.remove(), 400);
+}
+
 function showOnboarding() {
+  hideLoader();
   stopLiveRefresh();
   document.getElementById('onboarding').style.display = 'flex';
   document.getElementById('dashboard').style.display  = 'none';
@@ -1236,6 +1261,7 @@ async function manualRefresh() {
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 function showDashboard(agentOnline, lastHeartbeat) {
+  hideLoader();
   stopPolling();
   document.getElementById('onboarding').style.display  = 'none';
   const dash = document.getElementById('dashboard');
@@ -1384,7 +1410,7 @@ function renderDevices() {
     const actionCell = cfg
       ? `<button class="dev-action-btn dev-edit-btn" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
         ><button class="dev-action-btn dev-del-btn" onclick="deleteDevice(${cfg.id},'${esc(hostname)}',event)" title="Remove device">✕</button>`
-      : `<span style="font-size:0.62rem;color:var(--text-dim);font-family:var(--mono);">config.yaml</span>`;
+      : `<button class="dev-action-btn dev-del-btn" onclick="deleteLiveDevice('${esc(hostname)}',event)" title="Remove device">✕</button>`;
 
     let rows = `
     <tr class="dev-row${isExp?' expanded':''}" onclick="toggleDevice('${esc(hostname)}')">
@@ -1800,6 +1826,26 @@ async function deleteDevice(id, hostname, event) {
     }
     await _reloadDeviceConfigs();
     renderDevices();
+  } catch(e) {
+    alert('Network error — could not remove device.');
+  }
+}
+
+async function deleteLiveDevice(hostname, event) {
+  if (event) event.stopPropagation();
+  if (!confirm(`Remove "${hostname}" from the dashboard?\n\nThis removes the live status record. If your agent still has this device in config.yaml it will reappear on the next ping cycle.`)) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/devices/${encodeURIComponent(hostname)}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (res.ok || res.status === 204) {
+      liveDevices = liveDevices.filter(d => d.hostname !== hostname);
+      renderDevices();
+    } else {
+      alert('Could not remove device — please try again.');
+    }
   } catch(e) {
     alert('Network error — could not remove device.');
   }
