@@ -299,20 +299,37 @@
       <div class="step-badge">02</div>
       <div class="step-info">
         <div class="step-title">Connect to Your Pi</div>
-        <div class="step-desc">Give the Pi 60 seconds to boot, then SSH in.</div>
+        <div class="step-desc">Give the Pi 60 seconds to boot, then SSH in. Find your Pi's IP address using one of the methods below.</div>
       </div>
     </div>
     <div class="step-body">
+
+      <p><strong>Option A — Try hostname first</strong> (works on most home networks):</p>
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>ping spangate-monitor.local
-ssh spangate@spangate-monitor.local</code></pre>
+        <pre><code>ssh spangate@spangate-monitor.local</code></pre>
       </div>
-      <p>If <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">.local</code> doesn't resolve, check your router's DHCP table for the Pi's IP and SSH directly:</p>
+
+      <p><strong>Option B — Find the IP via your router</strong> (most reliable):<br>
+      Log into your router admin page (usually <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">192.168.1.1</code> or <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">192.168.0.1</code>) and look under <strong>DHCP Clients</strong> or <strong>Connected Devices</strong> for <strong>spangate-monitor</strong>. Then SSH using the IP shown:</p>
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code>ssh spangate@192.168.1.XXX</code></pre>
       </div>
+
+      <p><strong>Option C — Scan for the Pi on Windows</strong>:<br>
+      Open <strong>Command Prompt</strong> and run:</p>
+      <div class="code-block">
+        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>arp -a</code></pre>
+      </div>
+      <p>Look for a device with hostname <strong>spangate-monitor</strong> or a Raspberry Pi MAC address starting with <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">b8-27-eb</code>, <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">dc-a6-32</code>, or <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">e4-5f-01</code>. Alternatively, download <a href="https://www.advanced-ip-scanner.com/" target="_blank" rel="noopener" style="color:var(--accent);">Advanced IP Scanner</a> (free) — it lists every device on your network with its IP.</p>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-text">First time connecting? Your terminal will ask <em>"Are you sure you want to continue connecting?"</em> — type <strong>yes</strong> and press Enter. This is normal and only happens once.</div>
+      </div>
+
     </div>
   </div>
 
