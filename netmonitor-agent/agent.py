@@ -20,8 +20,9 @@ from pinger import PingLoop
 from ssh_puller import SSHPuller
 
 AGENT_VERSION = "1.0.0"
-HEARTBEAT_INTERVAL = 300  # 5 minutes
-DEFAULT_CONFIG_PATH = Path(__file__).parent / "config.yaml"
+HEARTBEAT_INTERVAL   = 300   # 5 minutes
+DEVICE_POLL_INTERVAL = 300   # 5 minutes — how often to refresh devices from dashboard
+DEFAULT_CONFIG_PATH  = Path(__file__).parent / "config.yaml"
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
 
@@ -86,6 +87,21 @@ def load_config(path: Path) -> dict[str, Any]:
         sys.exit(1)
 
 
+def _apply_device_list(
+    devices: list[dict[str, Any]],
+    new_devices: list[dict[str, Any]],
+) -> None:
+    """
+    Replace the contents of *devices* in-place with *new_devices*.
+
+    Mutates the existing list so PingLoop and SSHPuller — which hold a
+    reference to the same object — automatically see the updated list on
+    their next iteration.
+    """
+    devices.clear()
+    devices.extend(new_devices)
+
+
 def validate_config(cfg: dict[str, Any]) -> None:
     """
     Validate required configuration fields and exit with a clear message if any
@@ -109,12 +125,41 @@ def validate_config(cfg: dict[str, Any]) -> None:
             "Set your real API key in config.yaml before starting the agent."
         )
         sys.exit(1)
-    if not cfg.get("devices"):
-        logger.critical("No devices defined in config.yaml")
-        sys.exit(1)
+    # devices section is now optional — agent will fetch from dashboard if absent
 
 
 # ── Heartbeat loop ────────────────────────────────────────────────────────────
+
+async def device_config_loop(
+    api: APIClient,
+    devices: list[dict[str, Any]],
+) -> None:
+    """
+    Poll the dashboard every DEVICE_POLL_INTERVAL seconds for the latest
+    device list and update the shared *devices* list in-place.
+
+    This means devices added, edited, or removed in the dashboard take effect
+    within 5 minutes without touching config.yaml or restarting the agent.
+
+    Args:
+        api:     Authenticated API client.
+        devices: The shared device list mutated in-place on each update.
+    """
+    logger.info("[DC] Device config loop started — polling every %ds", DEVICE_POLL_INTERVAL)
+    while True:
+        await asyncio.sleep(DEVICE_POLL_INTERVAL)
+        new_devices = api.get_device_list()
+        if new_devices is None:
+            logger.warning("[DC] Could not reach backend — keeping current device list (%d devices)", len(devices))
+        elif not new_devices:
+            logger.info("[DC] Dashboard has no devices configured yet — keeping current list")
+        else:
+            if new_devices != devices:
+                _apply_device_list(devices, new_devices)
+                logger.info("[DC] Device list updated from dashboard — %d device(s)", len(devices))
+            else:
+                logger.debug("[DC] Device list unchanged")
+
 
 async def heartbeat_loop(
     api: APIClient,
@@ -186,6 +231,27 @@ async def main() -> None:
     )
 
     api = APIClient(api_url, api_key)
+
+    # ── Device list: try dashboard first, fall back to config.yaml ────────────
+    remote_devices = api.get_device_list()
+    if remote_devices:
+        logger.info(
+            "Loaded %d device(s) from dashboard (config.yaml devices section ignored)",
+            len(remote_devices),
+        )
+        devices = remote_devices
+    elif devices:
+        logger.info(
+            "Dashboard returned no devices — using %d device(s) from config.yaml",
+            len(devices),
+        )
+    else:
+        logger.warning(
+            "No devices in dashboard or config.yaml — add devices at "
+            "%s/netmonitor/dashboard and the agent will pick them up within 5 minutes.",
+            api_url,
+        )
+
     ping_loop = PingLoop(devices, api, ping_interval)
     ssh_puller = SSHPuller(devices, api, pull_interval)
 
@@ -203,6 +269,7 @@ async def main() -> None:
             ping_loop.run(),
             ssh_puller.run(),
             heartbeat_loop(api, site_name, len(devices), ping_loop),
+            device_config_loop(api, devices),
         )
     except asyncio.CancelledError:
         logger.info("Agent shut down cleanly.")

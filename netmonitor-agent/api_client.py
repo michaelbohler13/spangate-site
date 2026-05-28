@@ -156,6 +156,23 @@ class APIClient:
         logger.debug("Posting config backup for %s", hostname)
         return self._post("/api/v1/configs/backup", payload)
 
+    def get_device_list(self) -> list[dict] | None:
+        """
+        Fetch the latest device list from the dashboard.
+
+        Returns:
+            List of device dicts on success, or None on failure.
+            An empty list means the user has no devices configured yet.
+        """
+        url = f"{self.api_url}/api/v1/agent/device-list"
+        try:
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+            return response.json().get("devices", [])
+        except requests.RequestException as exc:
+            logger.warning("Failed to fetch device list from backend: %s", exc)
+            return None
+
     def heartbeat(
         self,
         site_name: str,

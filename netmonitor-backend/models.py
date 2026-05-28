@@ -16,6 +16,7 @@ from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     ForeignKey,
     Index,
@@ -235,3 +236,42 @@ class Feedback(Base):
 
     def __repr__(self) -> str:
         return f"<Feedback id={self.id} subject={self.subject!r}>"
+
+
+# ── DeviceConfig ──────────────────────────────────────────────────────────────
+
+class DeviceConfig(Base):
+    """
+    A user-configured device to be monitored.
+
+    Created / edited / deleted via the dashboard UI.
+    The agent polls GET /api/v1/agent/device-list every few minutes to pick up
+    changes without needing a config.yaml edit or restart.
+
+    Separate from the `devices` table, which stores live ping status written
+    by the agent.  Both tables share the same site_id key.
+    """
+
+    __tablename__ = "device_configs"
+
+    id:           Mapped[int]           = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    site_id:      Mapped[str]           = mapped_column(String(255), nullable=False, index=True)
+    hostname:     Mapped[str]           = mapped_column(String(255), nullable=False)
+    ip:           Mapped[str]           = mapped_column(String(45),  nullable=False)
+    vendor:       Mapped[str]           = mapped_column(String(100), nullable=False, default="cisco")
+    device_type:  Mapped[str]           = mapped_column(String(100), nullable=False, default="cisco_ios")
+    ssh_username: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    ssh_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    ssh_port:     Mapped[int]           = mapped_column(Integer,     nullable=False, default=22)
+    ping_enabled: Mapped[bool]          = mapped_column(Boolean,     nullable=False, default=True)
+    ssh_enabled:  Mapped[bool]          = mapped_column(Boolean,     nullable=False, default=False)
+    created_at:   Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at:   Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        # Hostname must be unique within a site
+        Index("ix_device_configs_site_hostname", "site_id", "hostname", unique=True),
+    )
+
+    def __repr__(self) -> str:
+        return f"<DeviceConfig site={self.site_id!r} hostname={self.hostname!r}>"

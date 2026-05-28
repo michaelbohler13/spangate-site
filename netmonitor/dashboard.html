@@ -277,6 +277,51 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 /* ── UTILS ───────────────────────────────────────────────────────────────── */
 .fade-in{animation:fadeIn 0.35s ease forwards;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── DEVICE MANAGEMENT ────────────────────────────────────────────────────── */
+.pane-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;}
+.dev-action-btn{background:transparent;border:0.5px solid var(--border-bright);border-radius:5px;
+  padding:3px 9px;font-size:0.72rem;cursor:pointer;transition:all 0.15s;
+  line-height:1.4;font-family:var(--sans);}
+.dev-edit-btn{color:var(--text-muted);}
+.dev-edit-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.4);}
+.dev-del-btn{color:var(--text-dim);margin-left:4px;}
+.dev-del-btn:hover{color:#ff5f57;border-color:rgba(255,95,87,0.4);}
+.s-configured{background:rgba(255,255,255,0.05);color:var(--text-dim);
+  border:0.5px solid rgba(255,255,255,0.1);}
+#deviceModal{position:fixed;inset:0;z-index:1000;display:none;align-items:flex-start;
+  justify-content:center;padding:2.5rem 1.25rem;overflow-y:auto;}
+#deviceModal.open{display:flex;}
+.dm-box{max-width:580px;}
+.dm-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1.1rem;}
+.dm-field{display:flex;flex-direction:column;gap:5px;}
+.dm-label{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--text-dim);font-family:var(--mono);}
+.dm-input{background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:8px;
+  padding:8px 12px;font-family:var(--mono);font-size:0.81rem;color:var(--text);
+  outline:none;transition:border-color 0.15s;width:100%;}
+.dm-input:focus{border-color:var(--accent);}
+.dm-input::placeholder{color:var(--text-dim);}
+.dm-input:disabled{opacity:0.45;cursor:not-allowed;}
+.dm-select{width:100%;}
+.dm-toggles{display:flex;flex-direction:column;padding-top:0.75rem;
+  border-top:0.5px solid var(--border);}
+.dm-toggle-row{display:flex;align-items:center;justify-content:space-between;
+  padding:0.6rem 0;border-bottom:0.5px solid var(--border);}
+.dm-toggle-row:last-child{border-bottom:none;}
+.dm-toggle-label{font-size:0.82rem;font-weight:500;color:var(--text);margin-bottom:2px;}
+.dm-toggle-desc{font-size:0.7rem;color:var(--text-dim);}
+.dm-switch{position:relative;display:inline-block;width:38px;height:22px;
+  flex-shrink:0;margin-left:1rem;}
+.dm-switch input{opacity:0;width:0;height:0;}
+.dm-slider{position:absolute;cursor:pointer;inset:0;background:var(--surface3);
+  border-radius:22px;transition:background 0.2s;border:0.5px solid var(--border-bright);}
+.dm-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;
+  background:var(--text-dim);border-radius:50%;transition:transform 0.2s,background 0.2s;}
+.dm-switch input:checked+.dm-slider{background:rgba(0,212,184,0.22);
+  border-color:rgba(0,212,184,0.4);}
+.dm-switch input:checked+.dm-slider::before{transform:translateX(16px);background:var(--accent);}
+.dm-error{color:#ff5f57;font-size:0.79rem;min-height:1.2em;margin-bottom:0.5rem;}
 </style>
 </head>
 <body>
@@ -587,6 +632,9 @@ devices:
 
   <!-- ── DEVICES PANE ──────────────────────────────────────────────────────── -->
   <div class="tab-pane active" id="pane-devices">
+    <div class="pane-toolbar">
+      <button class="btn btn-outline" onclick="openAddDevice()" style="font-size:0.8rem;padding:7px 18px;">+ Add Device</button>
+    </div>
     <table class="dev-table" id="devTable">
       <thead>
         <tr>
@@ -596,6 +644,7 @@ devices:
           <th>Vendor</th>
           <th>Type</th>
           <th>Last Seen</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="devTbody"></tbody>
@@ -654,6 +703,81 @@ devices:
   </div>
 </div>
 
+<!-- ── DEVICE MODAL ─────────────────────────────────────────────────────────── -->
+<div id="deviceModal">
+  <div class="modal-bg" onclick="closeDeviceModal()"></div>
+  <div class="modal-box dm-box">
+    <div class="modal-hdr">
+      <span class="modal-title" id="dmTitle">Add Device</span>
+      <button class="modal-x" onclick="closeDeviceModal()">×</button>
+    </div>
+    <div class="modal-sec">
+      <div class="dm-grid">
+        <div class="dm-field">
+          <label class="dm-label" for="dmHostname">Hostname</label>
+          <input id="dmHostname" class="dm-input" type="text" placeholder="core-sw-01" autocomplete="off" />
+        </div>
+        <div class="dm-field">
+          <label class="dm-label" for="dmIp">IP Address</label>
+          <input id="dmIp" class="dm-input" type="text" placeholder="10.1.1.1" autocomplete="off" />
+        </div>
+        <div class="dm-field">
+          <label class="dm-label" for="dmVendor">Vendor</label>
+          <div class="cfg-select-wrap" style="display:block;width:100%;">
+            <select id="dmVendor" class="cfg-select dm-select">
+              <option value="cisco">Cisco</option>
+              <option value="aruba_cx">Aruba CX</option>
+              <option value="juniper">Juniper</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="dm-field">
+          <label class="dm-label" for="dmSshPort">SSH Port</label>
+          <input id="dmSshPort" class="dm-input" type="number" value="22" min="1" max="65535" />
+        </div>
+        <div class="dm-field">
+          <label class="dm-label" for="dmSshUsername">SSH Username</label>
+          <input id="dmSshUsername" class="dm-input" type="text" placeholder="admin (optional)" autocomplete="off" />
+        </div>
+        <div class="dm-field">
+          <label class="dm-label" for="dmSshPassword">SSH Password</label>
+          <input id="dmSshPassword" class="dm-input" type="password" placeholder="optional" autocomplete="new-password" />
+        </div>
+      </div>
+      <div class="dm-toggles">
+        <div class="dm-toggle-row">
+          <div>
+            <div class="dm-toggle-label">Ping Monitoring</div>
+            <div class="dm-toggle-desc">Check if device responds to ICMP ping</div>
+          </div>
+          <label class="dm-switch">
+            <input type="checkbox" id="dmPingEnabled" checked>
+            <span class="dm-slider"></span>
+          </label>
+        </div>
+        <div class="dm-toggle-row">
+          <div>
+            <div class="dm-toggle-label">SSH Config Pull</div>
+            <div class="dm-toggle-desc">Pull running config via SSH (weekly)</div>
+          </div>
+          <label class="dm-switch">
+            <input type="checkbox" id="dmSshEnabled">
+            <span class="dm-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-sec">
+      <div class="dm-error" id="dmError"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeDeviceModal()">Cancel</button>
+        <button class="btn btn-primary" id="dmSaveBtn" onclick="saveDevice()">Add Device</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -700,7 +824,9 @@ const MOCK_CONFIGS = {
 let activeAlerts   = [];
 let resolvedAlerts = [];
 let liveDevices    = [];
+let deviceConfigs  = [];
 let expandedDevice = null;
+let editingDeviceId = null;
 let apiKey         = null;
 let currentStep    = 1;
 let activeTab      = 'devices';
@@ -811,9 +937,10 @@ function showNoKeyBanner() {
 
 async function loadLiveData() {
   const headers = { 'Authorization': `Bearer ${apiKey}` };
-  const [devRes, alertRes] = await Promise.all([
-    fetch(`${API_BASE}/api/v1/devices`, { headers }),
-    fetch(`${API_BASE}/api/v1/alerts`,  { headers }),
+  const [devRes, alertRes, dcRes] = await Promise.all([
+    fetch(`${API_BASE}/api/v1/devices`,        { headers }),
+    fetch(`${API_BASE}/api/v1/alerts`,         { headers }),
+    fetch(`${API_BASE}/api/v1/device-configs`, { headers }),
   ]);
 
   if (devRes.ok) {
@@ -836,6 +963,8 @@ async function loadLiveData() {
                                .map(a => ({ id: a.id, type: a.alert_type, hostname: a.hostname,
                                             ts: new Date(a.created_at).toLocaleString(), msg: a.message }));
   }
+
+  if (dcRes.ok) deviceConfigs = await dcRes.json();
 }
 
 function signOut() {
@@ -981,39 +1110,74 @@ function switchTab(tab) {
 function renderDevices() {
   const tbody = document.getElementById('devTbody');
   if (!tbody) return;
-  if (!liveDevices.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-st">No devices yet — start your agent to populate this list.</td></tr>`;
+
+  // Build lookup maps — hostname is the shared key
+  const cfgMap  = {};
+  deviceConfigs.forEach(c => { cfgMap[c.hostname] = c; });
+  const liveMap = {};
+  liveDevices.forEach(d => { liveMap[d.hostname] = d; });
+
+  // Union of all known hostnames, alpha sorted
+  const allHostnames = [...new Set([
+    ...Object.keys(liveMap),
+    ...Object.keys(cfgMap),
+  ])].sort((a, b) => a.localeCompare(b));
+
+  if (!allHostnames.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-st">No devices yet — click <strong style="color:var(--text-muted);">+ Add Device</strong> above to get started.</td></tr>`;
     return;
   }
+
   let html = '';
-  liveDevices.forEach(d => {
-    const isExp  = expandedDevice === d.hostname;
-    const vcls   = vendorClass(d.vendor);
-    const status = d.status || 'unknown';
-    const scls   = status === 'up' ? 's-up' : status === 'down' ? 's-down' : 's-unknown';
-    const sIcon  = status === 'up' ? '↑' : status === 'down' ? '↓' : '?';
-    const lastSeen = d.last_seen ? new Date(d.last_seen).toLocaleString() : '—';
+  allHostnames.forEach(hostname => {
+    const d   = liveMap[hostname] || {};
+    const cfg = cfgMap[hostname];
+    const isExp = expandedDevice === hostname;
+
+    const status = d.status || (cfg ? 'configured' : 'unknown');
+    const scls   = status === 'up' ? 's-up' : status === 'down' ? 's-down'
+                 : status === 'configured' ? 's-configured' : 's-unknown';
+    const sIcon  = status === 'up' ? '↑' : status === 'down' ? '↓' : '–';
+    const sLabel = status === 'configured' ? 'CONFIGURED' : status.toUpperCase();
+
+    const ip          = d.ip         || cfg?.ip          || '—';
+    const vendor      = d.vendor     || cfg?.vendor      || '';
+    const device_type = d.device_type || cfg?.device_type || '—';
+    const vcls        = vendorClass(vendor);
+    const lastSeen    = d.last_seen
+      ? new Date(d.last_seen).toLocaleString()
+      : (cfg ? 'Not seen yet' : '—');
+
+    // Action buttons: devices managed via dashboard get Edit/Remove;
+    // legacy config.yaml-only devices show a small label
+    const actionCell = cfg
+      ? `<button class="dev-action-btn dev-edit-btn" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
+        ><button class="dev-action-btn dev-del-btn" onclick="deleteDevice(${cfg.id},'${esc(hostname)}',event)" title="Remove device">✕</button>`
+      : `<span style="font-size:0.62rem;color:var(--text-dim);font-family:var(--mono);">config.yaml</span>`;
+
     html += `
-    <tr class="dev-row${isExp?' expanded':''}" onclick="toggleDevice('${esc(d.hostname)}')">
-      <td><span class="status-badge ${scls}">${sIcon} ${status.toUpperCase()}</span></td>
-      <td><span class="hn">${esc(d.hostname)}</span><span class="chevron">›</span></td>
-      <td><span class="ip-cell">${esc(d.ip)}</span></td>
-      <td><span class="${vcls}">${esc(vendorLabel(d.vendor))}</span></td>
-      <td style="color:var(--text-muted);font-size:0.8rem;">${esc(d.device_type || '—')}</td>
+    <tr class="dev-row${isExp?' expanded':''}" onclick="toggleDevice('${esc(hostname)}')">
+      <td><span class="status-badge ${scls}">${sIcon} ${sLabel}</span></td>
+      <td><span class="hn">${esc(hostname)}</span><span class="chevron">›</span></td>
+      <td><span class="ip-cell">${esc(ip)}</span></td>
+      <td><span class="${vcls}">${esc(vendorLabel(vendor))}</span></td>
+      <td style="color:var(--text-muted);font-size:0.8rem;">${esc(device_type)}</td>
       <td><span class="ls-cell">${esc(lastSeen)}</span></td>
+      <td onclick="event.stopPropagation()" style="text-align:right;white-space:nowrap;padding-right:0.5rem;">${actionCell}</td>
     </tr>`;
+
     if (isExp) {
-      const devAlerts = [...activeAlerts, ...resolvedAlerts].filter(a => a.hostname === d.hostname).slice(0,3);
+      const devAlerts = [...activeAlerts, ...resolvedAlerts].filter(a => a.hostname === hostname).slice(0,3);
       const alertBadges = devAlerts.length
         ? devAlerts.map(a => `<span class="mini-badge">${alertBadgeLabel(a.type)} · ${a.ts}</span>`).join('')
         : '<span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim);">No recent alerts</span>';
       html += `
       <tr class="acc-row">
-        <td colspan="6">
+        <td colspan="7">
           <div class="acc-inner">
             <div class="acc-grid">
               <div><div class="acc-label">Last config hash</div><div class="acc-val">${d.last_config_hash ? esc(d.last_config_hash) : '— no backup yet'}</div></div>
-              <div><div class="acc-label">Vendor</div><div class="acc-val">${esc(vendorLabel(d.vendor))}</div></div>
+              <div><div class="acc-label">Vendor</div><div class="acc-val">${esc(vendorLabel(vendor))}</div></div>
             </div>
             <div class="acc-alerts-hd">Recent alerts</div>
             <div>${alertBadges}</div>
@@ -1176,6 +1340,153 @@ function closeModal() {
 
 function handleModalKey(e) {
   if (e.key === 'Escape') closeModal();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEVICE MANAGEMENT  (Add / Edit / Delete via /api/v1/device-configs)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function openAddDevice() {
+  editingDeviceId = null;
+  document.getElementById('dmTitle').textContent      = 'Add Device';
+  document.getElementById('dmHostname').value          = '';
+  document.getElementById('dmHostname').disabled       = false;
+  document.getElementById('dmIp').value                = '';
+  document.getElementById('dmVendor').value            = 'cisco';
+  document.getElementById('dmSshPort').value           = '22';
+  document.getElementById('dmSshUsername').value       = '';
+  document.getElementById('dmSshPassword').value       = '';
+  document.getElementById('dmSshPassword').placeholder = 'optional';
+  document.getElementById('dmPingEnabled').checked     = true;
+  document.getElementById('dmSshEnabled').checked      = false;
+  document.getElementById('dmError').textContent       = '';
+  document.getElementById('dmSaveBtn').textContent     = 'Add Device';
+  document.getElementById('deviceModal').classList.add('open');
+  document.addEventListener('keydown', _dmKey);
+  setTimeout(() => document.getElementById('dmHostname').focus(), 60);
+}
+
+function openEditDevice(id, event) {
+  if (event) event.stopPropagation();
+  const cfg = deviceConfigs.find(c => c.id === id);
+  if (!cfg) return;
+  editingDeviceId = id;
+  document.getElementById('dmTitle').textContent      = `Edit — ${cfg.hostname}`;
+  document.getElementById('dmHostname').value          = cfg.hostname;
+  document.getElementById('dmHostname').disabled       = true;   // hostname is the unique key
+  document.getElementById('dmIp').value                = cfg.ip || '';
+  document.getElementById('dmVendor').value            = cfg.vendor || 'cisco';
+  document.getElementById('dmSshPort').value           = cfg.ssh_port || 22;
+  document.getElementById('dmSshUsername').value       = cfg.ssh_username || '';
+  document.getElementById('dmSshPassword').value       = '';
+  document.getElementById('dmSshPassword').placeholder = 'leave blank to keep current';
+  document.getElementById('dmPingEnabled').checked     = cfg.ping_enabled !== false;
+  document.getElementById('dmSshEnabled').checked      = cfg.ssh_enabled  === true;
+  document.getElementById('dmError').textContent       = '';
+  document.getElementById('dmSaveBtn').textContent     = 'Save Changes';
+  document.getElementById('deviceModal').classList.add('open');
+  document.addEventListener('keydown', _dmKey);
+  setTimeout(() => document.getElementById('dmIp').focus(), 60);
+}
+
+function closeDeviceModal() {
+  document.getElementById('deviceModal').classList.remove('open');
+  document.removeEventListener('keydown', _dmKey);
+}
+
+function _dmKey(e) { if (e.key === 'Escape') closeDeviceModal(); }
+
+async function saveDevice() {
+  const btn   = document.getElementById('dmSaveBtn');
+  const errEl = document.getElementById('dmError');
+  errEl.textContent = '';
+
+  const hostname = document.getElementById('dmHostname').value.trim();
+  const ip       = document.getElementById('dmIp').value.trim();
+  const vendor   = document.getElementById('dmVendor').value;
+  const sshPort  = parseInt(document.getElementById('dmSshPort').value, 10) || 22;
+  const sshUser  = document.getElementById('dmSshUsername').value.trim();
+  const sshPass  = document.getElementById('dmSshPassword').value;
+  const pingEn   = document.getElementById('dmPingEnabled').checked;
+  const sshEn    = document.getElementById('dmSshEnabled').checked;
+
+  if (!hostname) { errEl.textContent = 'Hostname is required.';    return; }
+  if (!ip)       { errEl.textContent = 'IP address is required.';  return; }
+
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    let res;
+    if (editingDeviceId === null) {
+      // ── ADD ──
+      const body = { hostname, ip, vendor, ssh_port: sshPort,
+                     ping_enabled: pingEn, ssh_enabled: sshEn };
+      if (sshUser) body.ssh_username = sshUser;
+      if (sshPass) body.ssh_password = sshPass;
+      res = await fetch(`${API_BASE}/api/v1/device-configs`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } else {
+      // ── EDIT ──
+      const body = { ip, vendor, ssh_port: sshPort,
+                     ssh_username: sshUser || null,   // null clears the field
+                     ping_enabled: pingEn, ssh_enabled: sshEn };
+      if (sshPass) body.ssh_password = sshPass;       // omit = keep existing
+      res = await fetch(`${API_BASE}/api/v1/device-configs/${editingDeviceId}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      errEl.textContent = err.detail || `Server error ${res.status} — please try again.`;
+      return;
+    }
+
+    closeDeviceModal();
+    await _reloadDeviceConfigs();
+    renderDevices();
+
+  } catch(e) {
+    errEl.textContent = 'Network error — please try again.';
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = editingDeviceId ? 'Save Changes' : 'Add Device';
+  }
+}
+
+async function deleteDevice(id, hostname, event) {
+  if (event) event.stopPropagation();
+  if (!confirm(`Remove "${hostname}" from monitoring?\n\nThe agent will stop monitoring this device within 5 minutes. Live status history is kept.`)) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/device-configs/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok && res.status !== 204) {
+      alert('Could not remove device — please try again.');
+      return;
+    }
+    await _reloadDeviceConfigs();
+    renderDevices();
+  } catch(e) {
+    alert('Network error — could not remove device.');
+  }
+}
+
+async function _reloadDeviceConfigs() {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/device-configs`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (res.ok) deviceConfigs = await res.json();
+  } catch(e) { /* keep current list */ }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
