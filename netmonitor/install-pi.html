@@ -266,14 +266,18 @@
         <li><strong>Choose Device</strong> → select your Pi model</li>
         <li><strong>Choose OS</strong> → Raspberry Pi OS Lite (64-bit)</li>
         <li><strong>Choose Storage</strong> → select your microSD card</li>
-        <li>Click the <strong>gear icon (⚙️)</strong> before clicking Write to pre-configure:</li>
+        <li>Click <strong>Next</strong> — when prompted <em>"Would you like to apply OS customisation settings?"</em> click <strong>Edit Settings</strong></li>
       </ol>
       <div class="callout tip" style="margin-top:0.5rem;margin-bottom:0.85rem;">
         <span class="callout-icon">⚙️</span>
-        <div class="callout-text">In the gear/advanced options: enable SSH, set hostname to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate-monitor</code>, set username to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate</code>, choose a strong password, and configure Wi-Fi if not using Ethernet.</div>
+        <div class="callout-text">
+          In the <strong>General</strong> tab: set hostname to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate-monitor</code>, username to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate</code>, choose a strong password, and configure Wi-Fi if not using Ethernet.<br>
+          In the <strong>Services</strong> tab: enable SSH and select <em>Use password authentication</em>.<br>
+          Click <strong>Save</strong>, then <strong>Yes</strong> to apply.
+        </div>
       </div>
       <ol start="7">
-        <li>Click <strong>Write</strong> and wait for it to finish</li>
+        <li>Confirm erasing the card when prompted → Imager will write and verify</li>
         <li>Insert the microSD into your Pi and power it on</li>
       </ol>
     </div>
