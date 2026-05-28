@@ -265,6 +265,7 @@ class DeviceConfig(Base):
     ssh_port:     Mapped[int]           = mapped_column(Integer,     nullable=False, default=22)
     ping_enabled: Mapped[bool]          = mapped_column(Boolean,     nullable=False, default=True)
     ssh_enabled:  Mapped[bool]          = mapped_column(Boolean,     nullable=False, default=False)
+    group_name:   Mapped[Optional[str]] = mapped_column(String(100), nullable=True)   # display group / folder
     created_at:   Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at:   Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

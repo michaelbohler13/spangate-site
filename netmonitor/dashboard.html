@@ -292,6 +292,20 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
 .stamp-syncing{animation:pulse-dot 1s ease-in-out infinite;color:var(--accent) !important;}
 
+/* ── SORTABLE HEADERS ────────────────────────────────────────────────────── */
+.dev-table th.sort-th{cursor:pointer;user-select:none;white-space:nowrap;}
+.dev-table th.sort-th:hover{color:var(--text);}
+.sort-icon{font-size:0.58rem;margin-left:3px;color:var(--text-dim);vertical-align:middle;}
+.sort-icon.active{color:var(--accent);}
+
+/* ── GROUP ROWS ──────────────────────────────────────────────────────────── */
+.grp-row td{background:rgba(255,255,255,0.025);color:var(--text-muted);
+  font-size:0.68rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;
+  font-family:var(--mono);padding:6px 14px;border-top:0.5px solid var(--border);
+  cursor:pointer;user-select:none;}
+.grp-row:hover td{color:var(--text);background:rgba(255,255,255,0.04);}
+.grp-toggle{margin-right:6px;font-size:0.6rem;color:var(--text-dim);}
+
 /* ── DEVICE MANAGEMENT ────────────────────────────────────────────────────── */
 .pane-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;}
 .dev-action-btn{background:transparent;border:0.5px solid var(--border-bright);border-radius:5px;
@@ -652,11 +666,11 @@ devices:
     <table class="dev-table" id="devTable">
       <thead>
         <tr>
-          <th>Status</th>
-          <th>Hostname</th>
-          <th>IP / Domain</th>
-          <th>Vendor</th>
-          <th>Type</th>
+          <th class="sort-th" onclick="setSortCol('status')">Status<span class="sort-icon active" id="si-status">▲</span></th>
+          <th class="sort-th" onclick="setSortCol('hostname')">Hostname<span class="sort-icon" id="si-hostname">⇅</span></th>
+          <th class="sort-th" onclick="setSortCol('ip')">IP / Domain<span class="sort-icon" id="si-ip">⇅</span></th>
+          <th class="sort-th" onclick="setSortCol('vendor')">Vendor<span class="sort-icon" id="si-vendor">⇅</span></th>
+          <th class="sort-th" onclick="setSortCol('type')">Type<span class="sort-icon" id="si-type">⇅</span></th>
           <th>Last Seen</th>
           <th></th>
         </tr>
@@ -765,6 +779,10 @@ devices:
           <input id="dmSshPassword" class="dm-input" type="password" placeholder="optional" autocomplete="new-password" />
         </div>
       </div>
+      <div class="dm-field" style="grid-column:1/-1;margin-bottom:0.85rem;">
+        <label class="dm-label" for="dmGroup">Group / Folder <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
+        <input id="dmGroup" class="dm-input" type="text" placeholder="Building A, Core, Floor 2…" autocomplete="off" />
+      </div>
       <div class="dm-toggles">
         <div class="dm-toggle-row">
           <div>
@@ -854,6 +872,9 @@ let alertSubTab    = 'active';
 let pollTimer      = null;
 let liveRefreshTimer = null;
 let lastRefreshedAt  = null;
+let sortCol        = 'status';
+let sortDir        = 1;          // 1 = asc, -1 = desc
+let collapsedGroups = new Set();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -1193,6 +1214,19 @@ function switchTab(tab) {
 // ─────────────────────────────────────────────────────────────────────────────
 // DEVICES
 // ─────────────────────────────────────────────────────────────────────────────
+
+function setSortCol(col) {
+  if (sortCol === col) sortDir = -sortDir;
+  else { sortCol = col; sortDir = 1; }
+  renderDevices();
+}
+
+function toggleGroup(gn) {
+  if (collapsedGroups.has(gn)) collapsedGroups.delete(gn);
+  else collapsedGroups.add(gn);
+  renderDevices();
+}
+
 function renderDevices() {
   const tbody = document.getElementById('devTbody');
   if (!tbody) return;
@@ -1203,19 +1237,67 @@ function renderDevices() {
   const liveMap = {};
   liveDevices.forEach(d => { liveMap[d.hostname] = d; });
 
-  // Union of all known hostnames, alpha sorted
-  const allHostnames = [...new Set([
-    ...Object.keys(liveMap),
-    ...Object.keys(cfgMap),
-  ])].sort((a, b) => a.localeCompare(b));
+  // Update sort icons in thead
+  ['status','hostname','ip','vendor','type'].forEach(col => {
+    const el = document.getElementById('si-' + col);
+    if (!el) return;
+    if (col === sortCol) { el.textContent = sortDir === 1 ? '▲' : '▼'; el.className = 'sort-icon active'; }
+    else                 { el.textContent = '⇅';                        el.className = 'sort-icon'; }
+  });
+
+  // Union of all known hostnames
+  const allHostnames = [...new Set([...Object.keys(liveMap), ...Object.keys(cfgMap)])];
 
   if (!allHostnames.length) {
     tbody.innerHTML = `<tr><td colspan="7" class="empty-st">No devices yet — click <strong style="color:var(--text-muted);">+ Add Device</strong> above to get started.</td></tr>`;
     return;
   }
 
-  let html = '';
-  allHostnames.forEach(hostname => {
+  // Sort key per column
+  function sortKey(hostname) {
+    const d   = liveMap[hostname] || {};
+    const cfg = cfgMap[hostname];
+    switch (sortCol) {
+      case 'status': {
+        const s = d.status || (cfg ? 'configured' : 'unknown');
+        return {up:0, down:1, configured:2, unknown:3}[s] ?? 4;
+      }
+      case 'hostname': return hostname.toLowerCase();
+      case 'ip':       return (d.ip || cfg?.ip || '').toLowerCase();
+      case 'vendor': {
+        const v = (d.vendor && d.vendor !== 'unknown') ? d.vendor : (cfg?.vendor || '');
+        return v.toLowerCase();
+      }
+      case 'type': {
+        const t = (d.device_type && d.device_type !== 'unknown') ? d.device_type : (cfg?.device_type || '');
+        return t.toLowerCase();
+      }
+      default: return hostname.toLowerCase();
+    }
+  }
+
+  function sortedList(arr) {
+    return [...arr].sort((a, b) => {
+      const ka = sortKey(a), kb = sortKey(b);
+      if (typeof ka === 'number') return (ka - kb) * sortDir;
+      if (ka < kb) return -sortDir; if (ka > kb) return sortDir;
+      return a.localeCompare(b);
+    });
+  }
+
+  // Group by group_name ('' = ungrouped, shown first without a header)
+  const groups = new Map();
+  allHostnames.forEach(h => {
+    const gn = cfgMap[h]?.group_name || '';
+    if (!groups.has(gn)) groups.set(gn, []);
+    groups.get(gn).push(h);
+  });
+  const groupNames = [...groups.keys()].sort((a, b) => {
+    if (a === '') return -1; if (b === '') return 1; return a.localeCompare(b);
+  });
+
+  // Row builder (shared by all groups)
+  function deviceRow(hostname) {
     const d   = liveMap[hostname] || {};
     const cfg = cfgMap[hostname];
     const isExp = expandedDevice === hostname;
@@ -1226,23 +1308,18 @@ function renderDevices() {
     const sIcon  = status === 'up' ? '↑' : status === 'down' ? '↓' : status === 'configured' ? '◎' : '?';
     const sLabel = status === 'configured' ? 'CONFIGURED' : status.toUpperCase();
 
-    const ip          = d.ip          || cfg?.ip          || '—';
-    // Prefer config vendor/type when agent reports "unknown" (agent doesn't know vendor)
+    const ip          = d.ip || cfg?.ip || '—';
     const vendor      = (d.vendor && d.vendor !== 'unknown') ? d.vendor : (cfg?.vendor || d.vendor || '');
     const device_type = (d.device_type && d.device_type !== 'unknown') ? d.device_type : (cfg?.device_type || d.device_type || '—');
     const vcls        = vendorClass(vendor);
-    const lastSeen    = d.last_seen
-      ? new Date(d.last_seen).toLocaleString()
-      : (cfg ? 'Not seen yet' : '—');
+    const lastSeen    = d.last_seen ? new Date(d.last_seen).toLocaleString() : (cfg ? 'Not seen yet' : '—');
 
-    // Action buttons: devices managed via dashboard get Edit/Remove;
-    // legacy config.yaml-only devices show a small label
     const actionCell = cfg
       ? `<button class="dev-action-btn dev-edit-btn" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
         ><button class="dev-action-btn dev-del-btn" onclick="deleteDevice(${cfg.id},'${esc(hostname)}',event)" title="Remove device">✕</button>`
       : `<span style="font-size:0.62rem;color:var(--text-dim);font-family:var(--mono);">config.yaml</span>`;
 
-    html += `
+    let rows = `
     <tr class="dev-row${isExp?' expanded':''}" onclick="toggleDevice('${esc(hostname)}')">
       <td><span class="status-badge ${scls}">${sIcon} ${sLabel}</span></td>
       <td><span class="hn">${esc(hostname)}</span><span class="chevron">›</span></td>
@@ -1258,20 +1335,30 @@ function renderDevices() {
       const alertBadges = devAlerts.length
         ? devAlerts.map(a => `<span class="mini-badge">${alertBadgeLabel(a.type)} · ${a.ts}</span>`).join('')
         : '<span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim);">No recent alerts</span>';
-      html += `
+      rows += `
       <tr class="acc-row">
-        <td colspan="7">
-          <div class="acc-inner">
-            <div class="acc-grid">
-              <div><div class="acc-label">Last config hash</div><div class="acc-val">${d.last_config_hash ? esc(d.last_config_hash) : '— no backup yet'}</div></div>
-              <div><div class="acc-label">Vendor</div><div class="acc-val">${esc(vendorLabel(vendor))}</div></div>
-            </div>
-            <div class="acc-alerts-hd">Recent alerts</div>
-            <div>${alertBadges}</div>
+        <td colspan="7"><div class="acc-inner">
+          <div class="acc-grid">
+            <div><div class="acc-label">Last config hash</div><div class="acc-val">${d.last_config_hash ? esc(d.last_config_hash) : '— no backup yet'}</div></div>
+            <div><div class="acc-label">Vendor</div><div class="acc-val">${esc(vendorLabel(vendor))}</div></div>
           </div>
-        </td>
+          <div class="acc-alerts-hd">Recent alerts</div>
+          <div>${alertBadges}</div>
+        </div></td>
       </tr>`;
     }
+    return rows;
+  }
+
+  let html = '';
+  groupNames.forEach(gn => {
+    const hostnames   = sortedList(groups.get(gn));
+    const isCollapsed = collapsedGroups.has(gn);
+    if (gn !== '') {
+      const icon = isCollapsed ? '▶' : '▼';
+      html += `<tr class="grp-row" onclick="toggleGroup(${JSON.stringify(gn)})"><td colspan="7"><span class="grp-toggle">${icon}</span>${esc(gn)}<span style="font-weight:400;opacity:0.55;margin-left:6px;">(${hostnames.length})</span></td></tr>`;
+    }
+    if (!isCollapsed) hostnames.forEach(h => { html += deviceRow(h); });
   });
   tbody.innerHTML = html;
 }
@@ -1454,6 +1541,7 @@ function openAddDevice() {
   document.getElementById('dmSshUsername').value       = '';
   document.getElementById('dmSshPassword').value       = '';
   document.getElementById('dmSshPassword').placeholder = 'optional';
+  document.getElementById('dmGroup').value             = '';
   document.getElementById('dmPingEnabled').checked     = true;
   document.getElementById('dmSshEnabled').checked      = false;
   document.getElementById('dmError').textContent       = '';
@@ -1478,6 +1566,7 @@ function openEditDevice(id, event) {
   document.getElementById('dmSshUsername').value       = cfg.ssh_username || '';
   document.getElementById('dmSshPassword').value       = '';
   document.getElementById('dmSshPassword').placeholder = 'leave blank to keep current';
+  document.getElementById('dmGroup').value             = cfg.group_name || '';
   document.getElementById('dmPingEnabled').checked     = cfg.ping_enabled !== false;
   document.getElementById('dmSshEnabled').checked      = cfg.ssh_enabled  === true;
   document.getElementById('dmError').textContent       = '';
@@ -1500,17 +1589,18 @@ async function saveDevice() {
   const errEl = document.getElementById('dmError');
   errEl.textContent = '';
 
-  const hostname = document.getElementById('dmHostname').value.trim();
-  const ip       = document.getElementById('dmIp').value.trim();
-  const vendor   = document.getElementById('dmVendor').value;
-  const sshPort  = parseInt(document.getElementById('dmSshPort').value, 10) || 22;
-  const sshUser  = document.getElementById('dmSshUsername').value.trim();
-  const sshPass  = document.getElementById('dmSshPassword').value;
-  const pingEn   = document.getElementById('dmPingEnabled').checked;
-  const sshEn    = document.getElementById('dmSshEnabled').checked;
+  const hostname  = document.getElementById('dmHostname').value.trim();
+  const ip        = document.getElementById('dmIp').value.trim();
+  const vendor    = document.getElementById('dmVendor').value;
+  const sshPort   = parseInt(document.getElementById('dmSshPort').value, 10) || 22;
+  const sshUser   = document.getElementById('dmSshUsername').value.trim();
+  const sshPass   = document.getElementById('dmSshPassword').value;
+  const groupName = document.getElementById('dmGroup').value.trim() || null;
+  const pingEn    = document.getElementById('dmPingEnabled').checked;
+  const sshEn     = document.getElementById('dmSshEnabled').checked;
 
-  if (!hostname) { errEl.textContent = 'Hostname is required.';    return; }
-  if (!ip)       { errEl.textContent = 'IP address is required.';  return; }
+  if (!hostname) { errEl.textContent = 'Hostname is required.';            return; }
+  if (!ip)       { errEl.textContent = 'IP address or domain is required.'; return; }
 
   btn.disabled    = true;
   btn.textContent = 'Saving…';
@@ -1520,7 +1610,7 @@ async function saveDevice() {
     if (editingDeviceId === null) {
       // ── ADD ──
       const body = { hostname, ip, vendor, ssh_port: sshPort,
-                     ping_enabled: pingEn, ssh_enabled: sshEn };
+                     ping_enabled: pingEn, ssh_enabled: sshEn, group_name: groupName };
       if (sshUser) body.ssh_username = sshUser;
       if (sshPass) body.ssh_password = sshPass;
       res = await fetch(`${API_BASE}/api/v1/device-configs`, {
@@ -1532,7 +1622,7 @@ async function saveDevice() {
       // ── EDIT ──
       const body = { ip, vendor, ssh_port: sshPort,
                      ssh_username: sshUser || null,   // null clears the field
-                     ping_enabled: pingEn, ssh_enabled: sshEn };
+                     ping_enabled: pingEn, ssh_enabled: sshEn, group_name: groupName };
       if (sshPass) body.ssh_password = sshPass;       // omit = keep existing
       res = await fetch(`${API_BASE}/api/v1/device-configs/${editingDeviceId}`, {
         method: 'PATCH',

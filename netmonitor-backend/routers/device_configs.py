@@ -54,6 +54,7 @@ class DeviceConfigIn(BaseModel):
     ssh_port:     int        = 22
     ping_enabled: bool       = True
     ssh_enabled:  bool       = False
+    group_name:   Optional[str] = None   # display group / folder
 
     @field_validator("hostname")
     @classmethod
@@ -98,6 +99,7 @@ class DeviceConfigOut(BaseModel):
     ssh_port:     int
     ping_enabled: bool
     ssh_enabled:  bool
+    group_name:   Optional[str]
     created_at:   str
     updated_at:   str
 
@@ -112,6 +114,7 @@ class DeviceConfigPatch(BaseModel):
     ssh_port:     Optional[int]  = None
     ping_enabled: Optional[bool] = None
     ssh_enabled:  Optional[bool] = None
+    group_name:   Optional[str]  = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -127,6 +130,7 @@ def _to_out(row: DeviceConfig) -> DeviceConfigOut:
         ssh_port=row.ssh_port,
         ping_enabled=row.ping_enabled,
         ssh_enabled=row.ssh_enabled,
+        group_name=row.group_name,
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat(),
     )
@@ -170,6 +174,7 @@ async def add_device_config(
         ssh_port=payload.ssh_port,
         ping_enabled=payload.ping_enabled,
         ssh_enabled=payload.ssh_enabled,
+        group_name=payload.group_name or None,
     )
     db.add(row)
     try:
