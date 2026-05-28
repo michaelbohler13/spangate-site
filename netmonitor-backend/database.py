@@ -45,8 +45,14 @@ def _build_engine():
     connect_args: dict = {}
     if "supabase.co" in url:
         if "ssl=" not in url:
-            # Use a proper SSLContext — asyncpg 0.29 accepts True or SSLContext
-            connect_args["ssl"] = _ssl.create_default_context()
+            # Supabase's PgBouncer uses a self-signed cert that Vercel's CA
+            # store doesn't trust.  We still want encryption, just without
+            # certificate chain verification (standard practice for managed
+            # Postgres poolers).
+            ctx = _ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = _ssl.CERT_NONE
+            connect_args["ssl"] = ctx
         # PgBouncer Transaction pooler (port 6543) does not support prepared
         # statements.  Setting statement_cache_size=0 disables asyncpg's
         # client-side prepared-statement cache so every query is sent as
