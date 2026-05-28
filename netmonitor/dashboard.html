@@ -976,13 +976,9 @@ async function determineState() {
     ]);
     if (!dashRes.ok) { showOnboarding(); return; }
     const data = await dashRes.json();
-    if (data.last_heartbeat) {
-      await _applyDataResponses(devRes, alertRes, dcRes);
-      showDashboard();
-      startLiveRefresh();
-    } else {
-      showOnboarding();
-    }
+    await _applyDataResponses(devRes, alertRes, dcRes);
+    showDashboard(!!data.last_heartbeat, data.last_heartbeat);
+    startLiveRefresh();
   } catch(e) {
     showOnboarding();
   }
@@ -1045,7 +1041,15 @@ function startLiveRefresh() {
   liveRefreshTimer = setInterval(async () => {
     if (!apiKey) return;
     try {
-      await loadLiveData();
+      const headers = { 'Authorization': `Bearer ${apiKey}` };
+      const [dashRes] = await Promise.all([
+        fetch(`${API_BASE}/api/v1/dashboard`, { headers }),
+        loadLiveData(),
+      ]);
+      if (dashRes.ok) {
+        const data = await dashRes.json();
+        updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
+      }
       renderDevices();
       renderAlerts();
       updateAlertCounts();
@@ -1153,7 +1157,7 @@ function simulateConnect() {
   const simBtn = document.getElementById('mockSimBtn');
   if (flash) { flash.style.display = 'block'; }
   if (simBtn) simBtn.style.display = 'none';
-  setTimeout(showDashboard, 900);
+  setTimeout(() => showDashboard(true, new Date().toISOString()), 900);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1200,15 +1204,32 @@ async function manualRefresh() {
 // ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
-function showDashboard() {
+function showDashboard(agentOnline, lastHeartbeat) {
   stopPolling();
   document.getElementById('onboarding').style.display  = 'none';
   const dash = document.getElementById('dashboard');
   dash.style.display = 'block';
   dash.classList.add('fade-in');
+  updateAgentStatus(agentOnline, lastHeartbeat);
   renderDevices();
   renderAlerts();
   updateAlertCounts();
+}
+
+function updateAgentStatus(online, lastHeartbeat) {
+  const dot = document.querySelector('.pulse-dot');
+  const txt = document.querySelector('.agent-txt');
+  const lst = document.getElementById('lastSeenTxt');
+  if (dot) {
+    dot.style.background   = online ? 'var(--accent)' : '#6e6e73';
+    dot.style.animation    = online ? '' : 'none';
+  }
+  if (txt) txt.textContent = online ? 'Agent connected' : 'Agent offline';
+  if (lst && lastHeartbeat) {
+    lst.textContent = 'Last seen: ' + new Date(lastHeartbeat).toLocaleString();
+  } else if (lst && !online) {
+    lst.textContent = 'Agent not connected';
+  }
 }
 
 function navToTab(tab) {
