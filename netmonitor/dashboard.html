@@ -348,6 +348,9 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   border-color:rgba(0,212,184,0.4);}
 .dm-switch input:checked+.dm-slider::before{transform:translateX(16px);background:var(--accent);}
 .dm-error{color:#ff5f57;font-size:0.79rem;min-height:1.2em;margin-bottom:0.5rem;}
+.dm-group-opt{padding:8px 12px;font-family:var(--mono);font-size:0.79rem;color:var(--text-muted);
+  cursor:pointer;transition:background 0.1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dm-group-opt:hover{background:rgba(0,212,184,0.07);color:var(--text);}
 </style>
 </head>
 <body>
@@ -781,7 +784,13 @@ devices:
       </div>
       <div class="dm-field" style="grid-column:1/-1;margin-bottom:0.85rem;">
         <label class="dm-label" for="dmGroup">Group / Folder <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
-        <input id="dmGroup" class="dm-input" type="text" placeholder="Building A, Core, Floor 2…" autocomplete="off" />
+        <div style="position:relative;">
+          <input id="dmGroup" class="dm-input" type="text" placeholder="Building A, Core, Floor 2…" autocomplete="off"
+                 onfocus="showGroupDropdown()" oninput="filterGroupDropdown()" />
+          <div id="dmGroupDropdown" style="display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;z-index:300;
+               background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:8px;
+               max-height:160px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.45);"></div>
+        </div>
       </div>
       <div class="dm-toggles">
         <div class="dm-toggle-row">
@@ -1520,6 +1529,33 @@ function handleModalKey(e) {
 // DEVICE MANAGEMENT  (Add / Edit / Delete via /api/v1/device-configs)
 // ─────────────────────────────────────────────────────────────────────────────
 
+let _groupOptions = [];
+
+function populateGroupDropdown() {
+  _groupOptions = [...new Set(deviceConfigs.map(c => c.group_name).filter(Boolean))].sort();
+}
+
+function showGroupDropdown() {
+  filterGroupDropdown();
+}
+
+function filterGroupDropdown() {
+  const dd = document.getElementById('dmGroupDropdown');
+  if (!dd || !_groupOptions.length) return;
+  const q = (document.getElementById('dmGroup').value || '').toLowerCase();
+  const matches = q ? _groupOptions.filter(g => g.toLowerCase().includes(q)) : _groupOptions;
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = matches.map(g =>
+    `<div class="dm-group-opt" onmousedown="selectGroup(${JSON.stringify(g)})">${esc(g)}</div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function selectGroup(name) {
+  document.getElementById('dmGroup').value = name;
+  document.getElementById('dmGroupDropdown').style.display = 'none';
+}
+
 function dmVendorChange() {
   const isInternet = document.getElementById('dmVendor').value === 'internet';
   const hide = isInternet ? 'none' : '';
@@ -1547,6 +1583,7 @@ function openAddDevice() {
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Add Device';
   dmVendorChange();
+  populateGroupDropdown();
   document.getElementById('deviceModal').classList.add('open');
   document.addEventListener('keydown', _dmKey);
   setTimeout(() => document.getElementById('dmHostname').focus(), 60);
@@ -1572,6 +1609,7 @@ function openEditDevice(id, event) {
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Save Changes';
   dmVendorChange();
+  populateGroupDropdown();
   document.getElementById('deviceModal').classList.add('open');
   document.addEventListener('keydown', _dmKey);
   setTimeout(() => document.getElementById('dmIp').focus(), 60);
@@ -1579,6 +1617,7 @@ function openEditDevice(id, event) {
 
 function closeDeviceModal() {
   document.getElementById('deviceModal').classList.remove('open');
+  document.getElementById('dmGroupDropdown').style.display = 'none';
   document.removeEventListener('keydown', _dmKey);
 }
 
@@ -1681,6 +1720,14 @@ async function _reloadDeviceConfigs() {
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('dmGroupDropdown');
+  const input = document.getElementById('dmGroup');
+  if (dd && input && !input.contains(e.target) && !dd.contains(e.target)) {
+    dd.style.display = 'none';
+  }
+});
+
 document.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
