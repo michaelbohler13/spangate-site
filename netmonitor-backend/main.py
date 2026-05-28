@@ -147,3 +147,16 @@ for _router in (
 async def health() -> dict:
     """No-auth health probe for uptime monitors."""
     return {"status": "ok", "version": "1.0.0", "service": "netmonitor-backend"}
+
+
+@app.get("/health/db", tags=["Meta"], include_in_schema=False)
+async def health_db() -> dict:
+    """No-auth DB connectivity probe — returns error details on failure."""
+    from sqlalchemy import text
+    from database import AsyncSessionLocal
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        return {"status": "ok", "db": "connected"}
+    except Exception as exc:
+        return {"status": "error", "db": "failed", "detail": str(exc)}

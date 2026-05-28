@@ -32,15 +32,26 @@ def _build_engine():
     its own connection rather than holding a pool between requests.
     Supabase's PgBouncer pooler handles connection reuse at the infra level.
 
-    Supabase requires SSL on all connections.  asyncpg accepts ssl="require"
-    via connect_args; this is added automatically when the URL contains
-    supabase.co.  You can also append ?ssl=require to DATABASE_URL manually.
+    Supabase notes:
+    - SSL is required; we pass ssl=True (asyncpg 0.29+ accepts True or an
+      ssl.SSLContext; "require" string works in some versions but not all).
+    - The Transaction pooler (port 6543) does not support server-side
+      prepared statements, so statement_cache_size must be 0.
     """
+    import ssl as _ssl
     from sqlalchemy.pool import NullPool
+
     url = os.environ["DATABASE_URL"]
     connect_args: dict = {}
-    if "supabase.co" in url and "ssl=" not in url:
-        connect_args["ssl"] = "require"
+    if "supabase.co" in url:
+        if "ssl=" not in url:
+            # Use a proper SSLContext — asyncpg 0.29 accepts True or SSLContext
+            connect_args["ssl"] = _ssl.create_default_context()
+        # PgBouncer Transaction pooler (port 6543) does not support prepared
+        # statements.  Setting statement_cache_size=0 disables asyncpg's
+        # client-side prepared-statement cache so every query is sent as
+        # a simple (unprepared) query, which the pooler can handle.
+        connect_args["statement_cache_size"] = 0
     return create_async_engine(url, echo=False, poolclass=NullPool, connect_args=connect_args)
 
 
