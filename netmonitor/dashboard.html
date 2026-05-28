@@ -188,11 +188,14 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   border-radius:980px;font-size:0.67rem;font-weight:600;font-family:var(--mono);}
 .s-up{background:rgba(0,212,184,0.14);color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);}
 .s-down{background:rgba(255,95,87,0.14);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.3);}
-.s-unknown{background:rgba(255,255,255,0.06);color:var(--text-dim);border:0.5px solid rgba(255,255,255,0.1);}
-.v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;} .v-internet{color:#a78bfa;}
+.s-unknown{background:rgba(255,255,255,0.06);color:var(--text-muted);border:0.5px solid rgba(255,255,255,0.15);}
+.s-configured{background:rgba(167,139,250,0.1);color:#a78bfa;border:0.5px solid rgba(167,139,250,0.3);}
+.v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;}
+.v-internet{color:#a78bfa;} .v-other{color:var(--text-muted);}
 .hn{font-family:var(--mono);font-size:0.78rem;color:var(--text);}
-.ip-cell{font-family:var(--mono);font-size:0.74rem;color:var(--text-muted);}
-.ls-cell{font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);}
+.ip-cell{font-family:var(--mono);font-size:0.76rem;color:var(--text);}
+.ls-cell{font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);}
+.dev-type{font-size:0.8rem;color:var(--text-muted);}
 .chevron{font-size:0.6rem;color:var(--text-dim);transition:transform 0.2s;margin-left:4px;display:inline-block;}
 .dev-row.expanded .chevron{transform:rotate(90deg);}
 
@@ -861,7 +864,7 @@ function vendorLabel(v) {
   return {cisco:'Cisco', aruba_cx:'Aruba CX', juniper:'Juniper', internet:'Internet'}[v] || v;
 }
 function vendorClass(v) {
-  return {cisco:'v-cisco', aruba_cx:'v-aruba', juniper:'v-juniper', internet:'v-internet'}[v] || '';
+  return {cisco:'v-cisco', aruba_cx:'v-aruba', juniper:'v-juniper', internet:'v-internet'}[v] || 'v-other';
 }
 function alertBadgeClass(t) {
   return {ping_down:'al-ping-down', ping_up:'al-ping-up', config_change:'al-config'}[t] || '';
@@ -1138,7 +1141,7 @@ function renderDevices() {
     const status = d.status || (cfg ? 'configured' : 'unknown');
     const scls   = status === 'up' ? 's-up' : status === 'down' ? 's-down'
                  : status === 'configured' ? 's-configured' : 's-unknown';
-    const sIcon  = status === 'up' ? '↑' : status === 'down' ? '↓' : '–';
+    const sIcon  = status === 'up' ? '↑' : status === 'down' ? '↓' : status === 'configured' ? '◎' : '?';
     const sLabel = status === 'configured' ? 'CONFIGURED' : status.toUpperCase();
 
     const ip          = d.ip         || cfg?.ip          || '—';
@@ -1162,7 +1165,7 @@ function renderDevices() {
       <td><span class="hn">${esc(hostname)}</span><span class="chevron">›</span></td>
       <td><span class="ip-cell">${esc(ip)}</span></td>
       <td><span class="${vcls}">${esc(vendorLabel(vendor))}</span></td>
-      <td style="color:var(--text-muted);font-size:0.8rem;">${esc(device_type)}</td>
+      <td><span class="dev-type">${esc(device_type)}</span></td>
       <td><span class="ls-cell">${esc(lastSeen)}</span></td>
       <td onclick="event.stopPropagation()" style="text-align:right;white-space:nowrap;padding-right:0.5rem;">${actionCell}</td>
     </tr>`;
