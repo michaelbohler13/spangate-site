@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Network Monitor — Raspberry Pi Install Guide</title>
+<title>Network Monitor — macOS Install Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -74,15 +74,6 @@
   .req-list a{color:var(--accent);text-decoration:none;}
   .req-list a:hover{text-decoration:underline;}
 
-  /* HARDWARE TABLE */
-  .hw-table{width:100%;border-collapse:collapse;margin-bottom:2.5rem;font-size:0.82rem;}
-  .hw-table th{text-align:left;padding:8px 12px;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
-  .hw-table td{padding:10px 12px;color:var(--text-muted);border-bottom:0.5px solid var(--border);}
-  .hw-table tr:last-child td{border-bottom:none;}
-  .hw-table tr.featured td{color:var(--text);}
-  .hw-table .hw-badge{display:inline-flex;background:rgba(0,212,184,0.1);border:0.5px solid rgba(0,212,184,0.25);color:var(--accent);font-size:0.6rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;font-family:var(--mono);vertical-align:middle;margin-left:6px;}
-  .hw-table .pi-model{color:var(--text);font-weight:500;}
-
   /* STEPS */
   .guide-step{margin-bottom:3rem;}
   .step-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.25rem;}
@@ -107,10 +98,6 @@
   .copy-btn.copied{color:var(--accent);border-color:rgba(0,212,184,0.4);}
   .code-block pre{padding:1rem 1.1rem;overflow-x:auto;}
   .code-block code{font-size:0.78rem;line-height:1.7;color:#cdd9e5;white-space:pre;}
-  .code-block .cm{color:var(--text-dim);}
-  .code-block .ck{color:#00d4b8;}
-  .code-block .cv{color:#79c0ff;}
-  .code-block .cs{color:#a5d6ff;}
 
   /* EXPECTED OUTPUT */
   .output-block{background:rgba(0,0,0,0.6);border:0.5px solid var(--border);border-left:2px solid rgba(0,212,184,0.3);border-radius:0 8px 8px 0;padding:0.85rem 1rem;margin-bottom:1rem;font-family:var(--mono);font-size:0.72rem;line-height:1.7;color:var(--text-dim);}
@@ -125,37 +112,20 @@
   .callout.tip .callout-text{color:#6dcfc3;}
   .callout.warn .callout-text{color:#d4a035;}
 
-  /* SECTION HEADING (non-step) */
+  /* SECTION HEADING */
   .section-head{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:0.5px solid var(--border);}
-
-  /* SYSTEMD BLOCK */
-  .ini-block{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1rem;font-family:var(--mono);}
-  .ini-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border-bottom:0.5px solid var(--border);}
-  .ini-bar span{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);}
-  .ini-block pre{padding:1rem 1.1rem;overflow-x:auto;}
-  .ini-block code{font-size:0.78rem;line-height:1.7;color:#cdd9e5;white-space:pre;}
-  .ini-sec{color:#79c0ff;}
-  .ini-key{color:#a5d6ff;}
-  .ini-val{color:#cdd9e5;}
-  .ini-cmt{color:var(--text-dim);}
 
   /* TROUBLESHOOTING TABLE */
   .ts-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
   .ts-table th{text-align:left;padding:8px 12px;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
   .ts-table td{padding:10px 12px;border-bottom:0.5px solid var(--border);vertical-align:top;line-height:1.5;}
   .ts-table tr:last-child td{border-bottom:none;}
-  .ts-table td:first-child{color:var(--text-muted);font-family:var(--mono);font-size:0.78rem;white-space:nowrap;}
+  .ts-table td:first-child{color:var(--text-muted);font-family:var(--mono);font-size:0.78rem;}
   .ts-table td:last-child{color:var(--text-muted);}
   .ts-table code{font-family:var(--mono);font-size:0.75rem;background:var(--surface2);padding:1px 5px;border-radius:4px;color:var(--accent);}
 
   /* DIVIDER */
   .guide-divider{border:none;border-top:0.5px solid var(--border);margin:2.5rem 0;}
-
-  /* YAML */
-  .yaml-key{color:#79c0ff;}
-  .yaml-val{color:#a5d6ff;}
-  .yaml-cmt{color:var(--text-dim);}
-  .yaml-str{color:#a8d8a8;}
 </style>
 </head>
 <body>
@@ -173,7 +143,7 @@
     <ul class="nav-links">
       <li><a href="/netmonitor/">Overview</a></li>
       <li><a href="/netmonitor/dashboard">Dashboard</a></li>
-      <li><a href="/netmonitor/install-pi" class="active">Raspberry Pi</a></li>
+      <li><a href="/netmonitor/install-pi">Raspberry Pi</a></li>
       <li><a href="/netmonitor/install-windows">Windows</a></li>
       <li><a href="/netmonitor/settings">Settings</a></li>
     </ul>
@@ -196,106 +166,49 @@
       <span style="color:var(--border-bright);">/</span>
       <span style="color:var(--text-muted);">Install Guide</span>
       <span style="color:var(--border-bright);">/</span>
-      <span style="color:var(--accent);">Raspberry Pi</span>
+      <span style="color:var(--accent);">macOS</span>
     </div>
-    <h1 class="guide-title">Raspberry Pi<br><span style="color:var(--accent);">Install Guide</span></h1>
-    <p class="guide-subtitle">Get the Network Monitor agent running on a Raspberry Pi in under 15 minutes. A Pi 4 (4 GB) handles up to 200 devices.</p>
+    <h1 class="guide-title">macOS<br><span style="color:var(--accent);">Install Guide</span></h1>
+    <p class="guide-subtitle">Run the Network Monitor agent on a Mac using Docker Desktop. Works on both Intel and Apple Silicon. A setup wizard handles everything in under 5 minutes.</p>
   </div>
 
   <!-- PLATFORM SWITCHER -->
   <div class="platform-switch">
-    <a href="/netmonitor/install-pi" class="active"><span class="plat-icon">🍓</span> Raspberry Pi</a>
+    <a href="/netmonitor/install-pi"><span class="plat-icon">🍓</span> Raspberry Pi</a>
     <a href="/netmonitor/install-windows"><span class="plat-icon">⊞</span> Windows</a>
-    <a href="/netmonitor/install-mac"><span class="plat-icon">⌘</span> macOS</a>
+    <a href="/netmonitor/install-mac" class="active"><span class="plat-icon">⌘</span> macOS</a>
   </div>
 
   <!-- REQUIREMENTS -->
   <div class="req-card">
     <div class="req-title">Requirements</div>
     <ul class="req-list">
-      <li>Raspberry Pi — Zero 2W, Pi 4, or Pi 5 (Pi 4 4 GB recommended)</li>
-      <li>Raspberry Pi OS Lite, 64-bit (Bullseye or Bookworm)</li>
-      <li>Python 3.9 or higher — pre-installed on Bullseye and later</li>
+      <li>macOS 12 Monterey or later (Intel or Apple Silicon)</li>
+      <li>Docker Desktop — free, <a href="https://www.docker.com/products/docker-desktop" target="_blank" rel="noopener">download here</a></li>
       <li>Network access to your managed devices — same VLAN or routed</li>
-      <li>SSH enabled on all target switches and routers</li>
-      <li>Your SpanGate API key — from <a href="/netmonitor/dashboard">Network Monitor → Settings</a></li>
+      <li>Your SpanGate API key — from <a href="/netmonitor/settings">Network Monitor → Settings</a></li>
     </ul>
   </div>
-
-  <!-- HARDWARE TABLE -->
-  <h2 class="section-head">Recommended Hardware</h2>
-  <table class="hw-table" style="margin-bottom:2.5rem;">
-    <thead>
-      <tr>
-        <th>Pi Model</th>
-        <th>Max Devices</th>
-        <th>Approx. Cost</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="pi-model">Pi Zero 2W</span></td>
-        <td>50</td>
-        <td>~$50</td>
-      </tr>
-      <tr class="featured">
-        <td><span class="pi-model">Pi 4 (4 GB)</span> <span class="hw-badge">Recommended</span></td>
-        <td>200</td>
-        <td>~$150</td>
-      </tr>
-      <tr>
-        <td><span class="pi-model">Pi 5 (8 GB)</span></td>
-        <td>1,000</td>
-        <td>~$249</td>
-      </tr>
-    </tbody>
-  </table>
 
   <!-- STEP 1 -->
   <div class="guide-step" id="step-1">
     <div class="step-head">
       <div class="step-badge">01</div>
       <div class="step-info">
-        <div class="step-title">Flash Raspberry Pi OS</div>
-        <div class="step-desc">Use Raspberry Pi Imager to write OS Lite to your microSD card with SSH pre-enabled.</div>
+        <div class="step-title">Install Docker Desktop</div>
+        <div class="step-desc">Docker Desktop runs the agent in a container — no Python or Homebrew needed.</div>
       </div>
     </div>
     <div class="step-body">
       <ol>
-        <li>Download <strong>Raspberry Pi Imager</strong> from <a href="https://raspberrypi.com/software" target="_blank" rel="noopener">raspberrypi.com/software</a></li>
-        <li>Insert a microSD card — 8 GB minimum, 16 GB recommended</li>
-        <li><strong>Choose Device</strong> → select your Pi model</li>
-        <li><strong>Choose OS</strong> → Raspberry Pi OS Lite (64-bit)</li>
-        <li><strong>Choose Storage</strong> → select your microSD card</li>
-        <li>Click <strong>Next</strong> — when prompted <em>"Would you like to apply OS customisation settings?"</em> click <strong>Edit Settings</strong></li>
+        <li>Go to <a href="https://www.docker.com/products/docker-desktop" target="_blank" rel="noopener">docker.com/products/docker-desktop</a> — choose <strong>Mac with Apple Chip</strong> or <strong>Mac with Intel Chip</strong> as appropriate</li>
+        <li>Open the downloaded <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">.dmg</code> and drag Docker to your Applications folder</li>
+        <li>Launch <strong>Docker</strong> from Applications and wait for the whale icon in the menu bar to go solid (≈ 30 seconds)</li>
       </ol>
-      <div class="callout tip" style="margin-top:0.5rem;margin-bottom:0.85rem;">
-        <span class="callout-icon">⚙️</span>
-        <div class="callout-text">
-          In the <strong>General</strong> tab: set hostname to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate-monitor</code>, username to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate</code>, choose a strong password, and configure Wi-Fi if not using Ethernet.<br>
-          In the <strong>Services</strong> tab: enable SSH and select <em>Use password authentication</em>.<br>
-          Click <strong>Save</strong>, then <strong>Yes</strong> to apply.
-        </div>
+      <div class="callout tip" style="margin-top:0.75rem;">
+        <span class="callout-icon">ℹ</span>
+        <div class="callout-text">macOS may ask you to allow Docker to install a helper tool — click <strong>Install Helper</strong> and enter your Mac password when prompted.</div>
       </div>
-      <ol start="7">
-        <li>Confirm erasing the card when prompted → Imager will write and verify</li>
-        <li>Insert the microSD into your Pi and power it on</li>
-      </ol>
-    </div>
-  </div>
-
-  <!-- TIP: Raspberry Pi Connect -->
-  <div class="callout tip" style="margin:0 0 1.5rem;">
-    <span class="callout-icon">🌐</span>
-    <div class="callout-text">
-      <strong>Using Raspberry Pi Connect?</strong>
-      If you don't want to use SSH or your Pi isn't on the same network,
-      <a href="https://connect.raspberrypi.com/" target="_blank" rel="noopener" style="color:var(--accent);">Raspberry Pi Connect</a>
-      gives you remote terminal access through a browser — no IP address needed.
-      Enable it in the Imager advanced options, or install it later with
-      <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">sudo apt install rpi-connect</code>.
-      Once set up, use the Connect terminal anywhere instead of SSH for Step 2 onwards.
-      If you can already connect to your Pi, <a href="#step-3" style="color:var(--accent);">skip straight to Step 03</a>.
     </div>
   </div>
 
@@ -304,52 +217,12 @@
     <div class="step-head">
       <div class="step-badge">02</div>
       <div class="step-info">
-        <div class="step-title">Connect to Your Pi</div>
-        <div class="step-desc">Give the Pi 60 seconds to boot, then SSH in. Find your Pi's IP address using one of the methods below.</div>
+        <div class="step-title">Run the Setup Wizard</div>
+        <div class="step-desc">Open Terminal and paste two lines — the wizard handles everything else.</div>
       </div>
     </div>
     <div class="step-body">
-
-      <p><strong>Option A — Try hostname first</strong> (works on most home networks):</p>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>ssh spangate@spangate-monitor.local</code></pre>
-      </div>
-
-      <p><strong>Option B — Find the IP via your router</strong> (most reliable):<br>
-      Log into your router admin page (usually <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">192.168.1.1</code> or <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">192.168.0.1</code>) and look under <strong>DHCP Clients</strong> or <strong>Connected Devices</strong> for <strong>spangate-monitor</strong>. Then SSH using the IP shown:</p>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>ssh spangate@192.168.1.XXX</code></pre>
-      </div>
-
-      <p><strong>Option C — Scan for the Pi on Windows</strong>:<br>
-      Open <strong>Command Prompt</strong> and run:</p>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>arp -a</code></pre>
-      </div>
-      <p>Look for a device with hostname <strong>spangate-monitor</strong> or a Raspberry Pi MAC address starting with <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">b8-27-eb</code>, <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">dc-a6-32</code>, or <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">e4-5f-01</code>. Alternatively, download <a href="https://www.advanced-ip-scanner.com/" target="_blank" rel="noopener" style="color:var(--accent);">Advanced IP Scanner</a> (free) — it lists every device on your network with its IP.</p>
-
-      <div class="callout tip">
-        <span class="callout-icon">💡</span>
-        <div class="callout-text">First time connecting? Your terminal will ask <em>"Are you sure you want to continue connecting?"</em> — type <strong>yes</strong> and press Enter. This is normal and only happens once.</div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- STEP 3 -->
-  <div class="guide-step" id="step-3">
-    <div class="step-head">
-      <div class="step-badge">03</div>
-      <div class="step-info">
-        <div class="step-title">Install Docker &amp; Run the Setup Wizard</div>
-        <div class="step-desc">One command installs Docker, pulls the agent image, and starts it automatically. Your API key is pre-filled — just copy and paste.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <p>Copy your API key from <a href="/netmonitor/settings">Settings</a>, then SSH into your Pi and paste these two lines:</p>
+      <p>Open <strong>Terminal</strong> (press <strong>⌘ Space</strong>, type <em>Terminal</em>, press Enter), then paste:</p>
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code>export SPNG_API_KEY="your_spng_key_here"
@@ -357,7 +230,7 @@ curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/
       </div>
       <div class="callout tip">
         <span class="callout-icon">✓</span>
-        <div class="callout-text">The wizard installs Docker automatically, asks for your site name, pulls the agent image, and starts it as a container that restarts on reboot. The whole process takes about 3 minutes.</div>
+        <div class="callout-text">Replace <code style="font-family:var(--mono);font-size:0.85em;">your_spng_key_here</code> with your actual API key from <a href="/netmonitor/settings">Settings</a>. The wizard asks for your site name and ping interval, then pulls the agent image and starts it automatically.</div>
       </div>
       <p>Expected output when complete:</p>
       <div class="output-block">
@@ -367,6 +240,7 @@ curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/
         <span class="oi">[INFO]  </span><span class="ol">Starting SpanGate agent...</span><br>
         <span class="oi">[OK]    </span><span class="ol">Agent is running — you're all set!</span>
       </div>
+      <p>The agent container is named <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">spangate-agent</code> and restarts automatically whenever Docker Desktop starts.</p>
     </div>
   </div>
 
@@ -377,10 +251,10 @@ curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/
     <h2 class="section-head">Useful Commands</h2>
     <div class="code-block">
       <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-      <pre><code>docker logs -f spangate-agent          # view live agent logs
-cd ~/spangate-agent && docker compose down    # stop the agent
-cd ~/spangate-agent && docker compose up -d  # start the agent
-docker pull spangate/netmonitor-agent:latest  # update to latest version</code></pre>
+      <pre><code>docker logs -f spangate-agent                        # view live agent logs
+cd ~/spangate-agent && docker compose down            # stop the agent
+cd ~/spangate-agent && docker compose up -d           # start the agent
+docker pull spangate/netmonitor-agent:latest          # update to latest version</code></pre>
     </div>
   </div>
 
@@ -393,28 +267,28 @@ docker pull spangate/netmonitor-agent:latest  # update to latest version</code><
       </thead>
       <tbody>
         <tr>
-          <td>Docker not found after install</td>
-          <td>Log out and log back in — the Pi needs to reload your user group</td>
-        </tr>
-        <tr>
-          <td>Container starts then exits</td>
-          <td>Run <code>docker logs spangate-agent</code> to read the error</td>
+          <td>Docker Desktop not running</td>
+          <td>Launch Docker from your Applications folder and wait for the menu bar whale icon to go solid before re-running the script</td>
         </tr>
         <tr>
           <td>API key rejected (401)</td>
-          <td>Copy the key from the dashboard exactly — no extra spaces</td>
+          <td>Copy the key from the dashboard exactly — no extra spaces. Key must start with <code>spng_</code></td>
         </tr>
         <tr>
           <td>Device shows DOWN but is reachable</td>
-          <td>Confirm the Pi has a route: run <code>ping 10.1.1.1</code> from the Pi</td>
+          <td>Docker Desktop on Mac routes traffic through its Linux VM — confirm devices are reachable from this Mac: <code>ping 10.1.1.1</code></td>
         </tr>
         <tr>
-          <td>SSH config pull fails for Aruba CX</td>
-          <td>Run <code>web-management ssl</code> on the switch first</td>
+          <td>Container starts then stops</td>
+          <td>Run <code>docker logs spangate-agent</code> to read the error message</td>
         </tr>
         <tr>
-          <td><code>.local</code> hostname not resolving</td>
-          <td>Install <code>avahi-daemon</code>: <code>sudo apt install avahi-daemon</code></td>
+          <td><code>curl: command not found</code></td>
+          <td>curl is built into macOS — if missing, install Xcode Command Line Tools: <code>xcode-select --install</code></td>
+        </tr>
+        <tr>
+          <td>Agent stopped after reboot</td>
+          <td>Enable Docker Desktop to start on login: Docker menu → Settings → General → "Start Docker Desktop when you sign in"</td>
         </tr>
       </tbody>
     </table>
@@ -443,14 +317,6 @@ function copyCode(btn) {
   }).catch(() => {
     btn.textContent = 'Failed';
     setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-  });
-}
-function copyIni(btn) {
-  const code = btn.closest('.ini-block').querySelector('code').innerText;
-  navigator.clipboard.writeText(code).then(() => {
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
   });
 }
 </script>
