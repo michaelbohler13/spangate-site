@@ -970,27 +970,40 @@ async function determineState() {
   showDashboard(false, null);
   startLiveRefresh();
 
+  const headers = { 'Authorization': `Bearer ${apiKey}` };
+
+  // Fetch core endpoints — a failure here shows a banner but keeps the dashboard visible.
+  let dashRes, devRes, alertRes;
   try {
-    const headers = { 'Authorization': `Bearer ${apiKey}` };
-    const [dashRes, devRes, alertRes, dcRes] = await Promise.all([
-      fetch(`${API_BASE}/api/v1/dashboard`,       { headers }),
-      fetch(`${API_BASE}/api/v1/devices`,         { headers }),
-      fetch(`${API_BASE}/api/v1/alerts`,          { headers }),
-      fetch(`${API_BASE}/api/v1/device-configs`,  { headers }),
+    [dashRes, devRes, alertRes] = await Promise.all([
+      fetch(`${API_BASE}/api/v1/dashboard`, { headers }),
+      fetch(`${API_BASE}/api/v1/devices`,   { headers }),
+      fetch(`${API_BASE}/api/v1/alerts`,    { headers }),
     ]);
-    if (dashRes.ok) {
-      const data = await dashRes.json();
-      await _applyDataResponses(devRes, alertRes, dcRes);
-      updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
-      renderDevices();
-      renderAlerts();
-      updateAlertCounts();
-    } else {
-      showBackendBanner(`Backend returned ${dashRes.status} — data may be stale`);
-    }
   } catch(e) {
     showBackendBanner('Could not reach backend — check your connection');
+    return;
   }
+
+  if (!dashRes.ok) {
+    showBackendBanner(`Backend returned ${dashRes.status} — data may be stale`);
+    return;
+  }
+
+  const data = await dashRes.json();
+  updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
+
+  // Fetch device-configs separately so a failure doesn't block devices/alerts.
+  let dcRes = null;
+  try {
+    dcRes = await fetch(`${API_BASE}/api/v1/device-configs`, { headers });
+  } catch(e) { /* device configs unavailable — Settings tab will show empty */ }
+
+  await _applyDataResponses(devRes, alertRes, dcRes);
+
+  renderDevices();
+  renderAlerts();
+  updateAlertCounts();
 }
 
 function showBackendBanner(msg) {
@@ -1033,7 +1046,7 @@ async function _applyDataResponses(devRes, alertRes, dcRes) {
                                .map(a => ({ id: a.id, type: a.alert_type, hostname: a.hostname,
                                             ts: new Date(a.created_at).toLocaleString(), msg: a.message }));
   }
-  if (dcRes.ok) deviceConfigs = await dcRes.json();
+  if (dcRes && dcRes.ok) deviceConfigs = await dcRes.json();
   lastRefreshedAt = new Date();
   _updateRefreshStamp();
 }
