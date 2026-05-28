@@ -37,15 +37,15 @@ def _ping_once(ip: str) -> bool:
         True if the host replied within the timeout, False otherwise.
     """
     if _IS_WINDOWS:
-        cmd = ["ping", "-n", "1", "-w", "2000", ip]
+        cmd = ["ping", "-n", "1", "-w", "1000", ip]
     else:
-        cmd = ["ping", "-c", "1", "-W", "2", ip]
+        cmd = ["ping", "-c", "1", "-W", "1", ip]
     try:
         result = subprocess.run(
             cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            timeout=5,
+            timeout=3,
         )
         return result.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
@@ -109,10 +109,14 @@ class PingLoop:
         previous = self._status.get(hostname)
 
         if previous is None:
-            # First ping — record state without firing an alert
+            # First ping — record state AND report to API so the device
+            # appears in the dashboard immediately (devices table needs at
+            # least one ping_alert to get a row).
             self._status[hostname] = is_up
             status_str = "up" if is_up else "down"
+            now = datetime.now(timezone.utc)
             logger.info("[PING] %s (%s) initial state: %s", hostname, ip, status_str)
+            self.api.ping_alert(hostname, ip, status_str, now)
             return
 
         if is_up != previous:

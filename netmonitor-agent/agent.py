@@ -220,7 +220,7 @@ async def main() -> None:
     site_name: str = agent_cfg["site_name"]
     api_url: str = agent_cfg["api_url"]
     api_key: str = agent_cfg["api_key"]
-    ping_interval: int = int(agent_cfg.get("ping_interval", 60))
+    ping_interval: int = int(agent_cfg.get("ping_interval", 30))
     pull_interval: int = int(agent_cfg.get("config_pull_interval", 604800))
 
     logger.info(

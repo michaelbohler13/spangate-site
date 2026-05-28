@@ -281,6 +281,17 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .fade-in{animation:fadeIn 0.35s ease forwards;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
+/* ── SKELETON LOADER ─────────────────────────────────────────────────────── */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-bar{height:12px;border-radius:4px;
+  background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);
+  background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;}
+.skeleton-row td{padding:10px 12px;}
+
+/* Sync indicator on the stamp */
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
+.stamp-syncing{animation:pulse-dot 1s ease-in-out infinite;color:var(--accent) !important;}
+
 /* ── DEVICE MANAGEMENT ────────────────────────────────────────────────────── */
 .pane-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;}
 .dev-action-btn{background:transparent;border:0.5px solid var(--border-bright);border-radius:5px;
@@ -650,7 +661,12 @@ devices:
           <th></th>
         </tr>
       </thead>
-      <tbody id="devTbody"></tbody>
+      <tbody id="devTbody">
+        <!-- skeleton rows shown while initial data loads -->
+        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:72px"></div></td><td><div class="skeleton-bar" style="width:130px"></div></td><td><div class="skeleton-bar" style="width:90px"></div></td><td><div class="skeleton-bar" style="width:55px"></div></td><td><div class="skeleton-bar" style="width:75px"></div></td><td><div class="skeleton-bar" style="width:140px"></div></td><td></td></tr>
+        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:60px"></div></td><td><div class="skeleton-bar" style="width:110px"></div></td><td><div class="skeleton-bar" style="width:95px"></div></td><td><div class="skeleton-bar" style="width:65px"></div></td><td><div class="skeleton-bar" style="width:80px"></div></td><td><div class="skeleton-bar" style="width:120px"></div></td><td></td></tr>
+        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:66px"></div></td><td><div class="skeleton-bar" style="width:145px"></div></td><td><div class="skeleton-bar" style="width:85px"></div></td><td><div class="skeleton-bar" style="width:50px"></div></td><td><div class="skeleton-bar" style="width:70px"></div></td><td><div class="skeleton-bar" style="width:135px"></div></td><td></td></tr>
+      </tbody>
     </table>
   </div>
 
@@ -973,16 +989,21 @@ async function _applyDataResponses(devRes, alertRes, dcRes) {
 }
 
 async function loadLiveData() {
-  const headers = { 'Authorization': `Bearer ${apiKey}` };
-  const [devRes, alertRes, dcRes] = await Promise.all([
-    fetch(`${API_BASE}/api/v1/devices`,        { headers }),
-    fetch(`${API_BASE}/api/v1/alerts`,         { headers }),
-    fetch(`${API_BASE}/api/v1/device-configs`, { headers }),
-  ]);
-  await _applyDataResponses(devRes, alertRes, dcRes);
+  _setStampSyncing(true);
+  try {
+    const headers = { 'Authorization': `Bearer ${apiKey}` };
+    const [devRes, alertRes, dcRes] = await Promise.all([
+      fetch(`${API_BASE}/api/v1/devices`,        { headers }),
+      fetch(`${API_BASE}/api/v1/alerts`,         { headers }),
+      fetch(`${API_BASE}/api/v1/device-configs`, { headers }),
+    ]);
+    await _applyDataResponses(devRes, alertRes, dcRes);
+  } finally {
+    _setStampSyncing(false);
+  }
 }
 
-// Auto-refresh device/alert data every 30 s while dashboard is open.
+// Auto-refresh device/alert data every 15 s while dashboard is open.
 function startLiveRefresh() {
   if (liveRefreshTimer) clearInterval(liveRefreshTimer);
   liveRefreshTimer = setInterval(async () => {
@@ -993,11 +1014,23 @@ function startLiveRefresh() {
       renderAlerts();
       updateAlertCounts();
     } catch(e) {}
-  }, 30000);
+  }, 15000);
 }
 
 function stopLiveRefresh() {
   if (liveRefreshTimer) { clearInterval(liveRefreshTimer); liveRefreshTimer = null; }
+}
+
+function _setStampSyncing(on) {
+  const el = document.getElementById('devRefreshStamp');
+  if (!el) return;
+  if (on) {
+    el.textContent = '⟳ Syncing…';
+    el.classList.add('stamp-syncing');
+  } else {
+    el.classList.remove('stamp-syncing');
+    _updateRefreshStamp();
+  }
 }
 
 function _updateRefreshStamp() {
@@ -1118,14 +1151,14 @@ function stopPolling() {
 
 async function manualRefresh() {
   const btn = document.querySelector('[onclick="manualRefresh()"]');
-  if (btn) { btn.disabled = true; btn.textContent = '↻ Refreshing…'; }
+  if (btn) btn.disabled = true;
   try {
     await loadLiveData();
     renderDevices();
     renderAlerts();
     updateAlertCounts();
   } catch(e) {}
-  if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+  if (btn) btn.disabled = false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
