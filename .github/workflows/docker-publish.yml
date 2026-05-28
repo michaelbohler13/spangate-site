@@ -14,6 +14,7 @@ on:
     paths:
       - "netmonitor-agent/**"
       - ".github/workflows/docker-publish.yml"
+  workflow_dispatch:   # allows manual trigger from the Actions tab
 
 jobs:
   build-and-push:
@@ -22,6 +23,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Verify secrets are present
+        run: |
+          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "::error::DOCKERHUB_USERNAME secret is empty or missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "::error::DOCKERHUB_TOKEN secret is empty or missing"
+            exit 1
+          fi
+          echo "Secrets look good — username length: ${#DOCKERHUB_USERNAME}"
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
       # QEMU lets buildx compile for foreign architectures (Pi ARM, etc.)
       - name: Set up QEMU
