@@ -25,7 +25,7 @@ class PingAlert(BaseModel):
     """
 
     hostname:  str                    = Field(..., max_length=255)
-    ip:        str                    = Field(..., max_length=45)
+    ip:        str                    = Field(..., max_length=253)  # accepts IPv4, IPv6, or domain name
     status:    Literal["up", "down"]
     timestamp: datetime               # UTC ISO-8601 from the agent clock
 

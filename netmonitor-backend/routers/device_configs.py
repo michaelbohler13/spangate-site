@@ -66,9 +66,11 @@ class DeviceConfigIn(BaseModel):
     @field_validator("ip")
     @classmethod
     def val_ip(cls, v: str) -> str:
-        v = v.strip()
-        if not v or len(v) > 45:
-            raise ValueError("IP address is required")
+        v = v.strip().lower()
+        if not v:
+            raise ValueError("IP address or domain name is required")
+        if len(v) > 253:
+            raise ValueError("IP / domain must be 253 characters or fewer")
         return v
 
     @field_validator("vendor")

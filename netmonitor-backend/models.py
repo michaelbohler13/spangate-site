@@ -45,7 +45,7 @@ class Device(Base):
     id:                 Mapped[int]            = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     site_id:            Mapped[str]            = mapped_column(String(255), nullable=False, index=True)
     hostname:           Mapped[str]            = mapped_column(String(255), nullable=False)
-    ip:                 Mapped[str]            = mapped_column(String(45),  nullable=False)
+    ip:                 Mapped[str]            = mapped_column(String(253), nullable=False)  # IPv4, IPv6, or domain
     vendor:             Mapped[str]            = mapped_column(String(100), nullable=False, default="unknown")
     device_type:        Mapped[str]            = mapped_column(String(100), nullable=False, default="unknown")
     # Live status — written by the ping alert endpoint, persists across restarts
@@ -257,7 +257,7 @@ class DeviceConfig(Base):
     id:           Mapped[int]           = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     site_id:      Mapped[str]           = mapped_column(String(255), nullable=False, index=True)
     hostname:     Mapped[str]           = mapped_column(String(255), nullable=False)
-    ip:           Mapped[str]           = mapped_column(String(45),  nullable=False)
+    ip:           Mapped[str]           = mapped_column(String(253), nullable=False)  # IPv4, IPv6, or domain
     vendor:       Mapped[str]           = mapped_column(String(100), nullable=False, default="cisco")
     device_type:  Mapped[str]           = mapped_column(String(100), nullable=False, default="cisco_ios")
     ssh_username: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
