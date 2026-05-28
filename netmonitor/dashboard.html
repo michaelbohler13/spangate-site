@@ -398,7 +398,7 @@ pip install -r requirements.txt</pre>
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
               <pre id="piConfigBlock">agent:
   site_name: "My Network"
-  api_url: "https://api.spangate.com"
+  api_url: "https://spangate-site-r81b.vercel.app"
   api_key: "sg_live_mock_key_abc123xyz"
 devices:
   - hostname: "core-sw-01"
@@ -483,7 +483,7 @@ pip install -r requirements.txt</pre>
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
               <pre id="winConfigBlock">agent:
   site_name: "My Network"
-  api_url: "https://api.spangate.com"
+  api_url: "https://spangate-site-r81b.vercel.app"
   api_key: "sg_live_mock_key_abc123xyz"
 devices:
   - hostname: "core-sw-01"
@@ -903,6 +903,10 @@ function injectApiKey(key) {
   });
   const disp = document.getElementById('apiKeyDisplay');
   if (disp) disp.textContent = key;
+  // Also update any standalone api_key display spans
+  document.querySelectorAll('.inject-api-key').forEach(el => {
+    el.textContent = key;
+  });
 }
 
 function simulateConnect() {
