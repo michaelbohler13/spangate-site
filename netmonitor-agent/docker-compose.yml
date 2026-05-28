@@ -1,0 +1,17 @@
+services:
+  spangate-agent:
+    build: .
+    image: spangate-agent:latest
+    container_name: spangate-agent
+    restart: unless-stopped
+    # network_mode: host is required so the container can send ICMP pings
+    # to devices on your local network.
+    network_mode: host
+    volumes:
+      # config.yaml is created by setup.sh and mounted read-only
+      - ./config.yaml:/config/config.yaml:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
