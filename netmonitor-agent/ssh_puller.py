@@ -162,10 +162,17 @@ class SSHPuller:
 
     async def _pull_all(self) -> None:
         """
-        Pull configs from all devices sequentially, staggered by STAGGER_SECONDS
-        to avoid saturating the network with simultaneous SSH sessions.
+        Pull configs from all SSH-enabled devices sequentially, staggered by
+        STAGGER_SECONDS to avoid saturating the network with simultaneous SSH
+        sessions.  Devices where ssh_enabled is False are silently skipped so
+        ping-only and internet-monitoring entries never trigger SSH attempts.
         """
-        for index, device in enumerate(self.devices):
+        ssh_devices = [d for d in self.devices if d.get("ssh_enabled")]
+        if not ssh_devices:
+            logger.info("[SSH] No SSH-enabled devices — skipping pull cycle")
+            return
+
+        for index, device in enumerate(ssh_devices):
             if index > 0:
                 await asyncio.sleep(STAGGER_SECONDS)
 
@@ -174,7 +181,7 @@ class SSHPuller:
                 "[SSH] Pulling config from %s (%d/%d)",
                 hostname,
                 index + 1,
-                len(self.devices),
+                len(ssh_devices),
             )
 
             # Run blocking Netmiko call in thread pool
@@ -224,8 +231,10 @@ class SSHPuller:
         Main async SSH pull loop. Pulls configs on every cycle.
         Runs indefinitely until cancelled.
         """
+        ssh_count = sum(1 for d in self.devices if d.get("ssh_enabled"))
         logger.info(
-            "[SSH] Pull loop started — %d device(s), interval %ds (%.1f hours)",
+            "[SSH] Pull loop started — %d SSH-enabled device(s) of %d total, interval %ds (%.1f hours)",
+            ssh_count,
             len(self.devices),
             self.interval,
             self.interval / 3600,

@@ -959,12 +959,6 @@ function showNoKeyBanner() {
 async function _applyDataResponses(devRes, alertRes, dcRes) {
   if (devRes.ok) {
     liveDevices = await devRes.json();
-    // Populate configs device dropdown
-    const sel = document.getElementById('cfgDeviceSelect');
-    if (sel) {
-      sel.innerHTML = '<option value="">Select device...</option>' +
-        liveDevices.map(d => `<option value="${esc(d.hostname)}">${esc(d.hostname)}</option>`).join('');
-    }
   }
   if (alertRes.ok) {
     const allAlerts = await alertRes.json();
@@ -976,6 +970,20 @@ async function _applyDataResponses(devRes, alertRes, dcRes) {
                                             ts: new Date(a.created_at).toLocaleString(), msg: a.message }));
   }
   if (dcRes && dcRes.ok) deviceConfigs = await dcRes.json();
+
+  // Populate configs device dropdown — only SSH-enabled devices can have backups.
+  // Must run after deviceConfigs is set above.
+  const sel = document.getElementById('cfgDeviceSelect');
+  if (sel) {
+    const sshDevices = deviceConfigs.filter(c => c.ssh_enabled);
+    if (sshDevices.length) {
+      sel.innerHTML = '<option value="">Select device…</option>' +
+        sshDevices.map(c => `<option value="${esc(c.hostname)}">${esc(c.hostname)}</option>`).join('');
+    } else {
+      sel.innerHTML = '<option value="">No SSH-enabled devices</option>';
+    }
+  }
+
   lastRefreshedAt = new Date();
   _updateRefreshStamp();
 }
@@ -1445,7 +1453,9 @@ async function onCfgDeviceChange(hostname) {
     if (!res.ok) throw new Error('not found');
     const backups = await res.json();
     if (!backups.length) {
-      el.innerHTML = `<div class="empty-st">No config backups yet for ${esc(hostname)}</div>`;
+      el.innerHTML = `<div class="empty-st">No config backups yet for <strong>${esc(hostname)}</strong>.<br>
+        <span style="font-size:0.78rem;color:var(--text-dim);">The agent pulls configs on startup and every 7 days.<br>
+        To trigger an immediate backup, click <strong>⬆ Backup Now</strong> on the Devices tab.</span></div>`;
       return;
     }
     let html = `<table class="bk-table"><thead><tr>
@@ -1461,7 +1471,9 @@ async function onCfgDeviceChange(hostname) {
     html += '</tbody></table>';
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = `<div class="empty-st">No config backups yet for ${esc(hostname)}</div>`;
+    el.innerHTML = `<div class="empty-st">No config backups yet for <strong>${esc(hostname)}</strong>.<br>
+      <span style="font-size:0.78rem;color:var(--text-dim);">The agent pulls configs on startup and every 7 days.<br>
+      To trigger an immediate backup, click <strong>⬆ Backup Now</strong> on the Devices tab.</span></div>`;
   }
 }
 
