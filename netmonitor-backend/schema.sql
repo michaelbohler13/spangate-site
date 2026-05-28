@@ -132,3 +132,11 @@ create index if not exists ix_alerts_device_created
 -- Fast cross-device feed queries
 create index if not exists ix_alerts_created_at
     on alerts (created_at);
+
+
+-- ── migrations ────────────────────────────────────────────────────────────────
+-- Run these if upgrading an existing deployment (create_all won't ALTER tables).
+
+-- 2026-05-28: manual backup request flag
+alter table device_configs
+    add column if not exists backup_requested_at timestamptz default null;

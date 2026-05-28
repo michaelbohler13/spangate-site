@@ -351,6 +351,12 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .dm-group-opt{padding:8px 12px;font-family:var(--mono);font-size:0.79rem;color:var(--text-muted);
   cursor:pointer;transition:background 0.1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dm-group-opt:hover{background:rgba(0,212,184,0.07);color:var(--text);}
+.backup-now-btn{background:transparent;border:0.5px solid rgba(0,212,184,0.35);color:var(--accent);
+  border-radius:6px;padding:4px 12px;font-size:0.72rem;cursor:pointer;font-family:var(--sans);
+  transition:all 0.15s;white-space:nowrap;}
+.backup-now-btn:hover:not(:disabled){background:rgba(0,212,184,0.07);border-color:var(--accent);}
+.backup-now-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.backup-toast{font-family:var(--mono);font-size:0.68rem;margin-left:8px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -1344,6 +1350,9 @@ function renderDevices() {
       const alertBadges = devAlerts.length
         ? devAlerts.map(a => `<span class="mini-badge">${alertBadgeLabel(a.type)} · ${a.ts}</span>`).join('')
         : '<span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim);">No recent alerts</span>';
+      const backupBtn = cfg && cfg.ssh_enabled
+        ? `<button class="backup-now-btn" id="bkbtn-${esc(hostname)}" onclick="requestBackup(${cfg.id},'${esc(hostname)}',event)">⬆ Backup Now</button><span class="backup-toast" id="bktoast-${esc(hostname)}"></span>`
+        : '';
       rows += `
       <tr class="acc-row">
         <td colspan="7"><div class="acc-inner">
@@ -1352,7 +1361,8 @@ function renderDevices() {
             <div><div class="acc-label">Vendor</div><div class="acc-val">${esc(vendorLabel(vendor))}</div></div>
           </div>
           <div class="acc-alerts-hd">Recent alerts</div>
-          <div>${alertBadges}</div>
+          <div style="margin-bottom:${backupBtn ? '0.75rem' : '0'}">${alertBadges}</div>
+          ${backupBtn ? `<div>${backupBtn}</div>` : ''}
         </div></td>
       </tr>`;
     }
@@ -1685,6 +1695,41 @@ async function saveDevice() {
   } finally {
     btn.disabled    = false;
     btn.textContent = editingDeviceId ? 'Save Changes' : 'Add Device';
+  }
+}
+
+async function requestBackup(id, hostname, event) {
+  if (event) event.stopPropagation();
+  const btn   = document.getElementById('bkbtn-' + hostname);
+  const toast = document.getElementById('bktoast-' + hostname);
+  if (!btn) return;
+  btn.disabled    = true;
+  btn.textContent = '⟳ Requesting…';
+  if (toast) toast.textContent = '';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/device-configs/${id}/request-backup`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (toast) { toast.textContent = err.detail || 'Error — try again.'; toast.style.color = '#ff5f57'; }
+      btn.disabled    = false;
+      btn.textContent = '⬆ Backup Now';
+      return;
+    }
+    btn.textContent = '✓ Queued';
+    if (toast) { toast.textContent = 'Agent will pull within 5 min'; toast.style.color = 'var(--accent)'; }
+    setTimeout(() => {
+      btn.disabled    = false;
+      btn.textContent = '⬆ Backup Now';
+      if (toast) toast.textContent = '';
+    }, 8000);
+  } catch(e) {
+    if (toast) { toast.textContent = 'Network error'; toast.style.color = '#ff5f57'; }
+    btn.disabled    = false;
+    btn.textContent = '⬆ Backup Now';
   }
 }
 

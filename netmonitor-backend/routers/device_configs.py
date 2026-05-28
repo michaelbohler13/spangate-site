@@ -15,7 +15,7 @@ dashboard take effect without editing config.yaml or restarting the agent.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -252,7 +252,36 @@ async def delete_device_config(
     logger.info("Device removed: site=%s id=%d hostname=%s", ctx["site_id"], device_id, hostname)
 
 
+# ── POST /device-configs/{id}/request-backup ─────────────────────────────────
+
+@router.post("/device-configs/{device_id}/request-backup", status_code=200)
+async def request_backup(
+    device_id: int,
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Flag a device for an immediate manual config backup on the next agent poll."""
+    result = await db.execute(
+        select(DeviceConfig).where(
+            DeviceConfig.id == device_id,
+            DeviceConfig.site_id == ctx["site_id"],
+        )
+    )
+    row = result.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    if not row.ssh_enabled:
+        raise HTTPException(status_code=400, detail="SSH Config Pull is not enabled for this device")
+
+    row.backup_requested_at = datetime.now(timezone.utc)
+    await db.commit()
+    logger.info("Manual backup requested: site=%s hostname=%s", ctx["site_id"], row.hostname)
+    return {"ok": True, "hostname": row.hostname}
+
+
 # ── GET /agent/device-list ────────────────────────────────────────────────────
+
+_BACKUP_REQUEST_TTL = timedelta(minutes=10)
 
 @router.get("/agent/device-list")
 async def agent_device_list(
@@ -266,6 +295,8 @@ async def agent_device_list(
     device list, so dashboard changes take effect without a restart.
 
     Returns {"devices": [...], "count": N}
+    force_backup is True for up to 10 minutes after a manual backup is requested,
+    then cleared so the agent only triggers once per request.
     """
     result = await db.execute(
         select(DeviceConfig)
@@ -274,20 +305,33 @@ async def agent_device_list(
     )
     rows = result.scalars().all()
 
-    return {
-        "count": len(rows),
-        "devices": [
-            {
-                "hostname":     r.hostname,
-                "ip":           r.ip,
-                "vendor":       r.vendor,
-                "device_type":  r.device_type,
-                "ssh_username": r.ssh_username or "",
-                "ssh_password": r.ssh_password or "",
-                "ssh_port":     r.ssh_port,
-                "ping_enabled": r.ping_enabled,
-                "ssh_enabled":  r.ssh_enabled,
-            }
-            for r in rows
-        ],
-    }
+    now = datetime.now(timezone.utc)
+    devices = []
+    to_clear = []
+
+    for r in rows:
+        force = bool(
+            r.backup_requested_at
+            and (now - r.backup_requested_at) < _BACKUP_REQUEST_TTL
+        )
+        if force:
+            to_clear.append(r)
+        devices.append({
+            "hostname":     r.hostname,
+            "ip":           r.ip,
+            "vendor":       r.vendor,
+            "device_type":  r.device_type,
+            "ssh_username": r.ssh_username or "",
+            "ssh_password": r.ssh_password or "",
+            "ssh_port":     r.ssh_port,
+            "ping_enabled": r.ping_enabled,
+            "ssh_enabled":  r.ssh_enabled,
+            "force_backup": force,
+        })
+
+    if to_clear:
+        for r in to_clear:
+            r.backup_requested_at = None
+        await db.commit()
+
+    return {"count": len(rows), "devices": devices}

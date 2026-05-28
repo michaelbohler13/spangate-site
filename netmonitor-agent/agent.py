@@ -133,17 +133,19 @@ def validate_config(cfg: dict[str, Any]) -> None:
 async def device_config_loop(
     api: APIClient,
     devices: list[dict[str, Any]],
+    ssh_puller: SSHPuller,
 ) -> None:
     """
     Poll the dashboard every DEVICE_POLL_INTERVAL seconds for the latest
     device list and update the shared *devices* list in-place.
 
-    This means devices added, edited, or removed in the dashboard take effect
-    within 5 minutes without touching config.yaml or restarting the agent.
+    Also checks each device for a force_backup flag set by the dashboard's
+    "Backup Now" button and queues an immediate SSH pull via ssh_puller.
 
     Args:
-        api:     Authenticated API client.
-        devices: The shared device list mutated in-place on each update.
+        api:        Authenticated API client.
+        devices:    The shared device list mutated in-place on each update.
+        ssh_puller: SSHPuller instance used to queue forced backups.
     """
     logger.info("[DC] Device config loop started — polling every %ds", DEVICE_POLL_INTERVAL)
     while True:
@@ -154,6 +156,11 @@ async def device_config_loop(
         elif not new_devices:
             logger.info("[DC] Dashboard has no devices configured yet — keeping current list")
         else:
+            # Queue forced backups before updating the shared list
+            for d in new_devices:
+                if d.get("force_backup"):
+                    ssh_puller.queue_backup(d["hostname"])
+
             if new_devices != devices:
                 _apply_device_list(devices, new_devices)
                 logger.info("[DC] Device list updated from dashboard — %d device(s)", len(devices))
@@ -268,8 +275,9 @@ async def main() -> None:
         await asyncio.gather(
             ping_loop.run(),
             ssh_puller.run(),
+            ssh_puller.forced_backup_loop(),
             heartbeat_loop(api, site_name, len(devices), ping_loop),
-            device_config_loop(api, devices),
+            device_config_loop(api, devices, ssh_puller),
         )
     except asyncio.CancelledError:
         logger.info("Agent shut down cleanly.")

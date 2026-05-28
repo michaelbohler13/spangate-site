@@ -94,6 +94,9 @@ class SSHPuller:
     Config hashes are kept in memory. On each pull cycle the new hash is compared
     to the previous; a change triggers a config-change alert. Every pull also ships
     a backup to the API regardless of whether the config changed.
+
+    Manual/forced backups are handled via queue_backup() + forced_backup_loop(),
+    which runs as a separate asyncio task and wakes immediately on demand.
     """
 
     def __init__(
@@ -115,6 +118,9 @@ class SSHPuller:
         self.interval = pull_interval
         # In-memory hash store: hostname → last known SHA256 hash
         self._hashes: dict[str, str] = {}
+        # Forced/manual backup queue
+        self._pending_force: set[str] = set()
+        self._wake: asyncio.Event = asyncio.Event()
 
     def _process_device(self, device: dict[str, Any]) -> None:
         """
@@ -174,6 +180,44 @@ class SSHPuller:
             # Run blocking Netmiko call in thread pool
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, self._process_device, device)
+
+    def queue_backup(self, hostname: str) -> None:
+        """
+        Request an immediate manual config backup for a specific device.
+        Wakes the forced_backup_loop so the pull happens without waiting
+        for the next scheduled cycle.
+
+        Args:
+            hostname: Hostname of the device to back up now.
+        """
+        self._pending_force.add(hostname)
+        self._wake.set()
+        logger.info("[SSH] Manual backup queued for %s", hostname)
+
+    async def forced_backup_loop(self) -> None:
+        """
+        Separate async loop that processes manual backup requests as they arrive.
+        Runs concurrently with the scheduled run() loop so forced backups are
+        handled immediately without interrupting or delaying the weekly cycle.
+        """
+        logger.info("[SSH] Forced-backup loop started")
+        while True:
+            await self._wake.wait()
+            self._wake.clear()
+            pending = list(self._pending_force)
+            self._pending_force.clear()
+
+            for hostname in pending:
+                device = next((d for d in self.devices if d["hostname"] == hostname), None)
+                if device is None:
+                    logger.warning("[SSH] Manual backup requested for unknown device: %s", hostname)
+                    continue
+                if not device.get("ssh_enabled"):
+                    logger.warning("[SSH] Manual backup requested for %s but SSH is not enabled", hostname)
+                    continue
+                logger.info("[SSH] Running manual backup for %s", hostname)
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(None, self._process_device, device)
 
     async def run(self) -> None:
         """
