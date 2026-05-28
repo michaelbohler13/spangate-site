@@ -965,7 +965,11 @@ async function initApp() {
 }
 
 async function determineState() {
-  // Fire all 4 requests simultaneously — one cold-start round instead of two.
+  // Show the dashboard immediately — the user has a valid API key.
+  // Backend data loads in the background; failures show a banner, not onboarding.
+  showDashboard(false, null);
+  startLiveRefresh();
+
   try {
     const headers = { 'Authorization': `Bearer ${apiKey}` };
     const [dashRes, devRes, alertRes, dcRes] = await Promise.all([
@@ -974,13 +978,27 @@ async function determineState() {
       fetch(`${API_BASE}/api/v1/alerts`,          { headers }),
       fetch(`${API_BASE}/api/v1/device-configs`,  { headers }),
     ]);
-    if (!dashRes.ok) { showOnboarding(); return; }
-    const data = await dashRes.json();
-    await _applyDataResponses(devRes, alertRes, dcRes);
-    showDashboard(!!data.last_heartbeat, data.last_heartbeat);
-    startLiveRefresh();
+    if (dashRes.ok) {
+      const data = await dashRes.json();
+      await _applyDataResponses(devRes, alertRes, dcRes);
+      updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
+      renderDevices();
+      renderAlerts();
+      updateAlertCounts();
+    } else {
+      showBackendBanner(`Backend returned ${dashRes.status} — data may be stale`);
+    }
   } catch(e) {
-    showOnboarding();
+    showBackendBanner('Could not reach backend — check your connection');
+  }
+}
+
+function showBackendBanner(msg) {
+  const b = document.getElementById('mockBanner');
+  if (b) {
+    b.innerHTML = `<span>⚠ ${msg}</span>
+      <button onclick="this.parentElement.style.display='none'">×</button>`;
+    b.style.display = 'flex';
   }
 }
 
