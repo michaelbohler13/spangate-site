@@ -219,7 +219,7 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
           <button class="snippet-copy" onclick="copySnippet(this)">Copy</button>
           <pre class="snippet" id="configSnippet">agent:
   site_name: "My Site"
-  api_url:   "<span class="hi">https://api.spangate.com</span>"
+  api_url:   "<span class="hi">https://spangate-site-r81b.vercel.app</span>"
   api_key:   "<span class="hi" id="snippetKey">YOUR_API_KEY_HERE</span>"
   ping_interval:        60
   config_pull_interval: 604800</pre>
@@ -294,7 +294,8 @@ let _userId   = null;
 let _email    = null;
 let _siteId   = null;
 let _hasKey   = false;
-let _newKey   = null;  // plaintext key after generation — cleared when modal closes
+let _newKey     = null;  // plaintext key after generation — cleared when modal closes
+let _currentKey = null;  // full key loaded from DB — used by copy helpers
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT
@@ -361,19 +362,20 @@ function renderNoKey() {
 }
 
 function renderKeyExists(apiKey) {
-  _hasKey = true;
+  _hasKey     = true;
+  _currentKey = apiKey;   // store full key for copy helpers
   // Show masked key: first 12 chars + dots
   const visible = apiKey.length > 12 ? apiKey.substring(0, 12) + '••••••••••••' : apiKey;
   document.getElementById('keyDisplay').textContent = visible;
   document.getElementById('keyDisplay').classList.remove('placeholder');
-  document.getElementById('copyKeyBtn').style.display = 'none';   // can't copy masked
+  document.getElementById('copyKeyBtn').style.display = '';    // always show Copy
   document.getElementById('noKeyMsg').style.display   = 'none';
   document.getElementById('generateBtn').style.display = 'none';
   document.getElementById('regenBtn').style.display    = '';
   document.getElementById('keyStatusBadge').textContent = '● Active';
   document.getElementById('keyStatusBadge').style.color = 'var(--accent)';
 
-  // Snippet: show masked key — user must copy from modal after regen
+  // Snippet: show masked display but Copy uses real key
   document.getElementById('snippetSection').style.display = '';
   document.getElementById('snippetKey').textContent = visible;
   document.getElementById('infoSiteId').textContent = _siteId || '—';
@@ -446,8 +448,9 @@ async function saveKey() {
 // COPY HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 function copyKey() {
-  if (!_newKey) return;
-  navigator.clipboard.writeText(_newKey).catch(() => {});
+  const key = _currentKey || _newKey;
+  if (!key) return;
+  navigator.clipboard.writeText(key).catch(() => {});
   const btn = document.getElementById('copyKeyBtn');
   btn.textContent = 'Copied ✓';
   setTimeout(() => btn.textContent = 'Copy', 2000);
@@ -461,9 +464,16 @@ function copyRevealKey(btn) {
 }
 
 function copySnippet(btn) {
-  // Build plain text version of snippet (strip HTML tags)
-  const pre = document.getElementById('configSnippet');
-  navigator.clipboard.writeText(pre.innerText).catch(() => {});
+  // Build a ready-to-paste config.yaml snippet with the real key and correct URL
+  const key = _currentKey || _newKey || 'YOUR_API_KEY_HERE';
+  const text =
+    'agent:\n' +
+    '  site_name: "My Site"\n' +
+    '  api_url:   "https://spangate-site-r81b.vercel.app"\n' +
+    '  api_key:   "' + key + '"\n' +
+    '  ping_interval:        60\n' +
+    '  config_pull_interval: 604800';
+  navigator.clipboard.writeText(text).catch(() => {});
   btn.textContent = 'Copied ✓';
   setTimeout(() => btn.textContent = 'Copy', 2000);
 }
