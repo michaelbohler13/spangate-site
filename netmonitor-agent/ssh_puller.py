@@ -264,8 +264,7 @@ class SSHPuller:
         config_text, error_type = _pull_config_ssh(test_device)
 
         if config_text is not None:
-            lines = len(config_text.splitlines())
-            msg = f"Connected successfully — pulled {lines:,} lines of config"
+            msg = "Connected successfully"
             logger.info("[SSH-TEST] #%d ✓ %s", test["id"], msg)
             return True, msg
 
