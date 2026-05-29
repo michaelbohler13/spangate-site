@@ -53,6 +53,28 @@
   .guide-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:600;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.75rem;}
   .guide-subtitle{font-size:0.95rem;color:var(--text-muted);line-height:1.6;max-width:520px;}
 
+  /* ── PLATFORM SELECTOR ── */
+  .selector-card{background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:14px;padding:1.75rem;margin-bottom:2rem;}
+  .selector-label{font-size:0.72rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);font-family:var(--mono);margin-bottom:0.6rem;}
+  .selector-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+  .selector-col{display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px;}
+  .selector-arrow{font-size:1.4rem;color:var(--accent);flex-shrink:0;margin-top:20px;}
+  .platform-select{appearance:none;-webkit-appearance:none;background:var(--surface3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236e6e73' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center;border:0.5px solid var(--border-bright);border-radius:9px;padding:10px 36px 10px 14px;font-size:0.88rem;color:var(--text);font-family:var(--sans);cursor:pointer;outline:none;transition:border-color 0.15s,background-color 0.15s;width:100%;}
+  .platform-select:hover{border-color:rgba(0,212,184,0.3);}
+  .platform-select:focus{border-color:var(--accent);background-color:rgba(0,212,184,0.03);}
+  .platform-select option{background:#1a1a1a;color:var(--text);}
+  .selector-hint{font-size:0.75rem;color:var(--text-dim);margin-top:1rem;font-style:italic;}
+
+  /* ── MIGRATION BANNER ── */
+  .migration-banner{display:none;align-items:center;gap:12px;background:rgba(0,212,184,0.07);border:0.5px solid rgba(0,212,184,0.25);border-radius:10px;padding:0.85rem 1.1rem;margin-bottom:2rem;}
+  .migration-banner.visible{display:flex;}
+  .migration-banner-icon{font-size:1.1rem;flex-shrink:0;}
+  .migration-banner-text{font-size:0.85rem;color:#6dcfc3;line-height:1.5;}
+  .migration-banner-text strong{color:var(--accent);}
+
+  /* ── WIZARD STEPS ── */
+  .wizard-steps{display:none;}
+  .wizard-steps.visible{display:block;}
   .guide-step{margin-bottom:3rem;}
   .step-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.25rem;}
   .step-badge{flex-shrink:0;width:32px;height:32px;border-radius:8px;background:rgba(0,212,184,0.1);border:0.5px solid rgba(0,212,184,0.25);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;font-weight:600;color:var(--accent);}
@@ -84,21 +106,11 @@
   .callout.tip .callout-text strong{color:var(--accent);}
   .callout.warn .callout-text strong{color:#ffc107;}
 
+  .inline-link-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:0.82rem;font-weight:500;color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);background:rgba(0,212,184,0.06);text-decoration:none;transition:all 0.15s;margin-top:0.35rem;}
+  .inline-link-btn:hover{background:rgba(0,212,184,0.12);border-color:var(--accent);text-decoration:none!important;}
+
   .section-head{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:0.5px solid var(--border);}
   .guide-divider{border:none;border-top:0.5px solid var(--border);margin:2.5rem 0;}
-
-  /* Platform tab strip for "stop old agent" section */
-  .plat-tabs{display:flex;gap:4px;margin-bottom:1rem;}
-  .plat-tab{padding:6px 16px;border-radius:7px;font-size:0.75rem;font-weight:500;border:0.5px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;transition:all 0.15s;font-family:var(--sans);}
-  .plat-tab:hover{color:var(--text);}
-  .plat-tab.active{background:rgba(0,212,184,0.1);border-color:rgba(0,212,184,0.3);color:var(--accent);}
-  .plat-panel{display:none;}
-  .plat-panel.active{display:block;}
-
-  /* Migration route cards */
-  .route-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0.75rem;margin-bottom:2rem;}
-  .route-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:10px;}
-  .route-card .route-arrow{color:var(--accent);font-size:1rem;}
 
   /* FAQ */
   .faq-item{border-bottom:0.5px solid var(--border);padding:0.9rem 0;}
@@ -110,6 +122,7 @@
   .faq-a.open{display:block;}
   .faq-a a{color:var(--accent);text-decoration:none;}
   .faq-a a:hover{text-decoration:underline;}
+  .mono-inline{font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;}
 </style>
 </head>
 <body>
@@ -153,11 +166,11 @@
       <span style="color:var(--accent);">Upgrade &amp; Migration Guide</span>
     </div>
     <h1 class="guide-title">Upgrade &amp; Migration<br><span style="color:var(--accent);">Guide</span></h1>
-    <p class="guide-subtitle">Moving to a bigger Pi, switching to Windows, or replacing a failed device? Your data lives in the cloud — migration takes under 10 minutes.</p>
+    <p class="guide-subtitle">Moving to a bigger Pi, switching to Windows, or replacing a failed device? Select your platforms below and get step-by-step instructions.</p>
   </div>
 
   <!-- KEY CALLOUT -->
-  <div class="callout tip" style="margin-bottom:2.5rem;">
+  <div class="callout tip" style="margin-bottom:2rem;">
     <span class="callout-icon">☁️</span>
     <div class="callout-text">
       <strong>Your API key is the key.</strong>
@@ -167,169 +180,143 @@
     </div>
   </div>
 
-  <!-- SUPPORTED ROUTES -->
-  <h2 class="section-head">Supported Migration Routes</h2>
-  <div class="route-grid">
-    <div class="route-card"><span>🍓 Pi 3 / Zero</span><span class="route-arrow">→</span><span>🍓 Pi 4 / Pi 5</span></div>
-    <div class="route-card"><span>🍓 Raspberry Pi</span><span class="route-arrow">→</span><span>⊞ Windows</span></div>
-    <div class="route-card"><span>🍓 Raspberry Pi</span><span class="route-arrow">→</span><span>⌘ macOS</span></div>
-    <div class="route-card"><span>⊞ Windows</span><span class="route-arrow">→</span><span>🍓 Raspberry Pi</span></div>
-    <div class="route-card"><span>⊞ Windows</span><span class="route-arrow">→</span><span>⌘ macOS</span></div>
-    <div class="route-card"><span>⌘ macOS</span><span class="route-arrow">→</span><span>🍓 Raspberry Pi</span></div>
-  </div>
-  <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;margin-bottom:2.5rem;">
-    The steps below are identical for every combination above.
-    The only difference is the command to stop the old agent on your original device (Step 4).
-  </p>
-
-  <!-- STEP 1 -->
-  <div class="guide-step">
-    <div class="step-head">
-      <div class="step-badge">01</div>
-      <div class="step-info">
-        <div class="step-title">Export your device list (optional safety backup)</div>
-        <div class="step-desc">Saves a local CSV in case you want to verify or re-import.</div>
+  <!-- PLATFORM SELECTOR -->
+  <div class="selector-card">
+    <div class="selector-label">Choose your migration path</div>
+    <div class="selector-row">
+      <div class="selector-col">
+        <div class="selector-label">Migrating from</div>
+        <select class="platform-select" id="selectFrom" onchange="updateWizard()">
+          <option value="">— Select current platform —</option>
+          <option value="pi">🍓 Raspberry Pi</option>
+          <option value="windows">⊞ Windows</option>
+          <option value="mac">⌘ macOS</option>
+        </select>
+      </div>
+      <div class="selector-arrow">→</div>
+      <div class="selector-col">
+        <div class="selector-label">Migrating to</div>
+        <select class="platform-select" id="selectTo" onchange="updateWizard()">
+          <option value="">— Select new platform —</option>
+          <option value="pi">🍓 Raspberry Pi</option>
+          <option value="windows">⊞ Windows</option>
+          <option value="mac">⌘ macOS</option>
+        </select>
       </div>
     </div>
-    <div class="step-body">
-      <p>Go to <a href="/netmonitor/dashboard">Network Monitor → Devices</a> and click <strong>⬇ Export CSV</strong>.
-      The file contains all your hostnames, IPs, vendors, groups, and SSH settings.
-      SSH passwords are never exported for security — you'll re-enter those in Step 5 if needed.</p>
-      <div class="callout tip">
-        <span class="callout-icon">💡</span>
-        <div class="callout-text">This step is optional. Your device list is already in the cloud and will appear automatically on the new device. Export is just a local safety copy.</div>
-      </div>
-    </div>
+    <div class="selector-hint" id="selectorHint">Select both platforms above to see your personalized migration steps.</div>
   </div>
 
-  <!-- STEP 2 -->
-  <div class="guide-step">
-    <div class="step-head">
-      <div class="step-badge">02</div>
-      <div class="step-info">
-        <div class="step-title">Install the agent on the new device</div>
-        <div class="step-desc">Follow the install guide for your new platform — use the same API key.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <p>Choose your new platform and follow the install guide:</p>
-      <ul>
-        <li><a href="/netmonitor/install-pi">🍓 Raspberry Pi Install Guide</a></li>
-        <li><a href="/netmonitor/install-windows">⊞ Windows Install Guide</a></li>
-        <li><a href="/netmonitor/install-mac">⌘ macOS Install Guide</a></li>
-      </ul>
-      <p style="margin-top:0.75rem;">When the wizard asks for your <strong>API Key</strong>, enter the <strong>exact same key</strong> you used on your old device.
-      You can copy it from <a href="/netmonitor/settings">Settings → API Key</a>.</p>
-      <div class="callout warn">
-        <span class="callout-icon">⚠️</span>
-        <div class="callout-text">Do <strong>not</strong> stop or remove the old agent yet. Keep it running until you confirm the new device is online.</div>
-      </div>
-    </div>
+  <!-- MIGRATION BANNER -->
+  <div class="migration-banner" id="migrationBanner">
+    <span class="migration-banner-icon">🔄</span>
+    <div class="migration-banner-text" id="migrationBannerText"></div>
   </div>
 
-  <!-- STEP 3 -->
-  <div class="guide-step">
-    <div class="step-head">
-      <div class="step-badge">03</div>
-      <div class="step-info">
-        <div class="step-title">Confirm the new agent is online</div>
-        <div class="step-desc">Watch the dashboard for the heartbeat to switch over.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <p>Open the <a href="/netmonitor/dashboard">dashboard</a> and check the <strong>Agent</strong> health card at the top of the page.
-      Within 5 minutes you should see:</p>
-      <ul>
-        <li>The <strong>Last seen</strong> timestamp updating</li>
-        <li>Device statuses refreshing</li>
-        <li>CPU / RAM / Temp metrics from the new device</li>
-      </ul>
-      <p>Both old and new agents may run briefly at the same time — that's fine and expected.
-      You might see a few extra ping alerts during the overlap, but nothing is lost or duplicated permanently.</p>
-    </div>
-  </div>
+  <!-- WIZARD STEPS -->
+  <div class="wizard-steps" id="wizardSteps">
 
-  <!-- STEP 4 -->
-  <div class="guide-step">
-    <div class="step-head">
-      <div class="step-badge">04</div>
-      <div class="step-info">
-        <div class="step-title">Stop the old agent</div>
-        <div class="step-desc">Once the new device is confirmed running, decommission the old one.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <p>Choose the platform you're migrating <strong>from</strong>:</p>
-
-      <div class="plat-tabs">
-        <button class="plat-tab active" onclick="showPlat('pi', this)">🍓 Raspberry Pi</button>
-        <button class="plat-tab" onclick="showPlat('win', this)">⊞ Windows</button>
-        <button class="plat-tab" onclick="showPlat('mac', this)">⌘ macOS</button>
-      </div>
-
-      <!-- Pi -->
-      <div class="plat-panel active" id="plat-pi">
-        <p>SSH into the old Pi and run:</p>
-        <div class="code-block">
-          <div class="code-bar"><span class="code-lang">bash — Raspberry Pi</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-          <pre><code>cd ~/spangate-agent && docker compose down
-docker compose rm -f</code></pre>
-        </div>
-        <p>If you installed manually (without Docker):</p>
-        <div class="code-block">
-          <div class="code-bar"><span class="code-lang">bash — Raspberry Pi (manual install)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-          <pre><code>sudo systemctl stop spangate-netmonitor
-sudo systemctl disable spangate-netmonitor</code></pre>
+    <!-- STEP 1 -->
+    <div class="guide-step">
+      <div class="step-head">
+        <div class="step-badge">01</div>
+        <div class="step-info">
+          <div class="step-title">Export your device list <span style="font-size:0.75rem;font-weight:400;color:var(--text-dim);">(optional safety backup)</span></div>
+          <div class="step-desc">Saves a local CSV in case you want to verify or re-import.</div>
         </div>
       </div>
-
-      <!-- Windows -->
-      <div class="plat-panel" id="plat-win">
-        <p>Open <strong>PowerShell</strong> and run:</p>
-        <div class="code-block">
-          <div class="code-bar"><span class="code-lang">powershell — Windows</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-          <pre><code>cd "$env:USERPROFILE\spangate-agent"
-docker compose down
-docker compose rm -f</code></pre>
-        </div>
-        <p>Then open <strong>Docker Desktop</strong> and remove the <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">spangate-agent</code> container if it still appears in the list.</p>
-      </div>
-
-      <!-- macOS -->
-      <div class="plat-panel" id="plat-mac">
-        <p>Open <strong>Terminal</strong> and run:</p>
-        <div class="code-block">
-          <div class="code-bar"><span class="code-lang">bash — macOS</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-          <pre><code>cd ~/spangate-agent && docker compose down && docker compose rm -f</code></pre>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- STEP 5 -->
-  <div class="guide-step">
-    <div class="step-head">
-      <div class="step-badge">05</div>
-      <div class="step-info">
-        <div class="step-title">Re-enter SSH passwords (if needed)</div>
-        <div class="step-desc">Passwords are never stored in the cloud — one-time update for SSH-enabled devices.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <p>If any of your devices have <strong>SSH backup enabled</strong>, go to
-      <a href="/netmonitor/dashboard">Dashboard → Settings tab → Devices</a>,
-      click <strong>✎ Edit</strong> on each SSH-enabled device, and re-enter the password.</p>
-      <p>Everything else — device list, groups, ping monitoring, alert history, and config backups — is already
-      there from your previous setup.</p>
-      <div class="callout tip">
-        <span class="callout-icon">✓</span>
-        <div class="callout-text">
-          <strong>You're done.</strong> All your data carried over automatically. The new device is now your active monitor.
+      <div class="step-body">
+        <p>Go to <a href="/netmonitor/dashboard">Dashboard → Devices</a> and click <strong>⬇ Export CSV</strong>.
+        The file contains all your hostnames, IPs, vendors, groups, and SSH settings.
+        SSH passwords are never exported for security.</p>
+        <div class="callout tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-text">This step is optional. Your device list already lives in the cloud and will appear automatically on the new device. Export is just a local safety copy.</div>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- STEP 2 -->
+    <div class="guide-step">
+      <div class="step-head">
+        <div class="step-badge">02</div>
+        <div class="step-info">
+          <div class="step-title">Install the agent on the new device</div>
+          <div class="step-desc" id="step2Desc">Follow the install guide for your new platform — use the same API key.</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Follow the install guide for your new platform. When the wizard asks for your <strong>API Key</strong>,
+        enter the <strong>exact same key</strong> you used on your old device.
+        You can copy it from <a href="/netmonitor/settings">Settings → API Key</a>.</p>
+        <a id="step2Link" href="#" class="inline-link-btn" target="_blank">Open Install Guide →</a>
+        <div class="callout warn" style="margin-top:1rem;">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-text">Do <strong>not</strong> stop the old agent yet. Keep it running until you confirm the new device is online in Step 3.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="guide-step">
+      <div class="step-head">
+        <div class="step-badge">03</div>
+        <div class="step-info">
+          <div class="step-title">Confirm the new agent is online</div>
+          <div class="step-desc">Watch the dashboard for the heartbeat to switch over.</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>Open the <a href="/netmonitor/dashboard">dashboard</a> and check the <strong>Agent</strong> health card at the top of the page.
+        Within 5 minutes you should see:</p>
+        <ul>
+          <li>The <strong>Last seen</strong> timestamp updating</li>
+          <li>Device statuses refreshing</li>
+          <li>CPU / RAM / Temp metrics from the new device</li>
+        </ul>
+        <p>Both old and new agents may run briefly at the same time — that's fine. You might see a few extra ping alerts during the overlap, but nothing is lost.</p>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="guide-step">
+      <div class="step-head">
+        <div class="step-badge">04</div>
+        <div class="step-info">
+          <div class="step-title">Stop the old agent</div>
+          <div class="step-desc" id="step4Desc">Once the new device is confirmed running, decommission the old one.</div>
+        </div>
+      </div>
+      <div class="step-body" id="step4Body">
+        <!-- Populated by JS based on FROM platform -->
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="guide-step">
+      <div class="step-head">
+        <div class="step-badge">05</div>
+        <div class="step-info">
+          <div class="step-title">Re-enter SSH passwords <span style="font-size:0.75rem;font-weight:400;color:var(--text-dim);">(if needed)</span></div>
+          <div class="step-desc">Passwords are never stored in the cloud — a one-time update for SSH-enabled devices.</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>If any of your devices have <strong>SSH backup enabled</strong>, go to
+        <a href="/netmonitor/dashboard">Dashboard → Devices</a>,
+        click <strong>✎ Edit</strong> on each SSH-enabled device, and re-enter the password.</p>
+        <p>Everything else — device list, groups, ping monitoring, alert history, and config backups — is already
+        there from your previous setup.</p>
+        <div class="callout tip">
+          <span class="callout-icon">✓</span>
+          <div class="callout-text">
+            <strong>You're done.</strong> All your data carried over automatically. The new device is now your active monitor.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /wizard-steps -->
 
   <hr class="guide-divider">
 
@@ -354,7 +341,7 @@ docker compose rm -f</code></pre>
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">What if my new device can't reach some devices on the network?</div>
-      <div class="faq-a">The monitoring agent needs network access (same VLAN or routed path) to the devices it monitors. If the new device is on a different network segment, some devices may show as DOWN. Check routing between the new host and your managed devices. Running <code style="font-family:var(--mono);font-size:0.85em;background:var(--surface2);padding:1px 5px;border-radius:4px;">ping 10.x.x.x</code> from the new device is a quick test.</div>
+      <div class="faq-a">The monitoring agent needs network access (same VLAN or routed path) to the devices it monitors. If the new device is on a different network segment, some devices may show as DOWN. Check routing between the new host and your managed devices. Running <code class="mono-inline">ping 10.x.x.x</code> from the new device is a quick test.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">I lost my API key — how do I find it?</div>
@@ -378,6 +365,96 @@ docker compose rm -f</code></pre>
 </footer>
 
 <script>
+/* ── Platform metadata ── */
+const PLAT = {
+  pi:      { label: '🍓 Raspberry Pi', installUrl: '/netmonitor/install-pi',      installLabel: '🍓 Raspberry Pi Install Guide' },
+  windows: { label: '⊞ Windows',       installUrl: '/netmonitor/install-windows', installLabel: '⊞ Windows Install Guide' },
+  mac:     { label: '⌘ macOS',         installUrl: '/netmonitor/install-mac',     installLabel: '⌘ macOS Install Guide' },
+};
+
+/* ── Stop-agent commands per FROM platform ── */
+const STOP_CMDS = {
+  pi: `
+    <p>SSH into the old Pi and run:</p>
+    <div class="code-block">
+      <div class="code-bar"><span class="code-lang">bash — Raspberry Pi (Docker install)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>cd ~/spangate-agent && docker compose down
+docker compose rm -f</code></pre>
+    </div>
+    <p>If you installed manually (without Docker):</p>
+    <div class="code-block">
+      <div class="code-bar"><span class="code-lang">bash — Raspberry Pi (manual / systemd)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>sudo systemctl stop spangate-netmonitor
+sudo systemctl disable spangate-netmonitor</code></pre>
+    </div>`,
+
+  windows: `
+    <p>Open <strong>PowerShell</strong> and run:</p>
+    <div class="code-block">
+      <div class="code-bar"><span class="code-lang">powershell — Windows</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>cd "$env:USERPROFILE\\spangate-agent"
+docker compose down
+docker compose rm -f</code></pre>
+    </div>
+    <p>Then open <strong>Docker Desktop</strong> and remove the <code class="mono-inline">spangate-agent</code> container if it still appears in the list.</p>`,
+
+  mac: `
+    <p>Open <strong>Terminal</strong> and run:</p>
+    <div class="code-block">
+      <div class="code-bar"><span class="code-lang">bash — macOS</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>cd ~/spangate-agent && docker compose down && docker compose rm -f</code></pre>
+    </div>`,
+};
+
+function updateWizard() {
+  const from = document.getElementById('selectFrom').value;
+  const to   = document.getElementById('selectTo').value;
+  const banner  = document.getElementById('migrationBanner');
+  const bannerTxt = document.getElementById('migrationBannerText');
+  const steps   = document.getElementById('wizardSteps');
+  const hint    = document.getElementById('selectorHint');
+
+  if (!from || !to) {
+    banner.classList.remove('visible');
+    steps.classList.remove('visible');
+    hint.textContent = 'Select both platforms above to see your personalized migration steps.';
+    return;
+  }
+
+  // Same platform = upgrade (e.g. Pi 3 → Pi 5)
+  const isSame = from === to;
+  const fromLabel = PLAT[from].label;
+  const toLabel   = PLAT[to].label;
+
+  // Update hint
+  hint.textContent = '';
+
+  // Update banner
+  if (isSame) {
+    bannerTxt.innerHTML = `<strong>${fromLabel} upgrade</strong> — replacing or upgrading hardware on the same platform. Your data stays in the cloud, nothing is lost.`;
+  } else {
+    bannerTxt.innerHTML = `<strong>${fromLabel} → ${toLabel}</strong> migration ready. Follow the 5 steps below.`;
+  }
+  banner.classList.add('visible');
+
+  // Update Step 2 — install guide for TO platform
+  const toPlat = PLAT[to];
+  document.getElementById('step2Desc').textContent =
+    `Follow the ${toPlat.installLabel} — use the same API key.`;
+  const step2Link = document.getElementById('step2Link');
+  step2Link.href        = toPlat.installUrl;
+  step2Link.textContent = toPlat.installLabel + ' →';
+
+  // Update Step 4 — stop commands for FROM platform
+  document.getElementById('step4Desc').textContent =
+    `Once the new device is confirmed running, stop the old agent on your ${fromLabel} machine.`;
+  document.getElementById('step4Body').innerHTML = STOP_CMDS[from];
+
+  // Show steps
+  steps.classList.add('visible');
+}
+
+/* ── Copy button ── */
 function copyCode(btn) {
   const code = btn.closest('.code-block').querySelector('code').innerText;
   navigator.clipboard.writeText(code).then(() => {
@@ -386,22 +463,16 @@ function copyCode(btn) {
   }).catch(() => { btn.textContent = 'Failed'; setTimeout(() => btn.textContent = 'Copy', 2000); });
 }
 
-function showPlat(id, btn) {
-  document.querySelectorAll('.plat-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.plat-panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('plat-' + id).classList.add('active');
-}
-
+/* ── FAQ accordion ── */
 function toggleFaq(el) {
-  const ans = el.nextElementSibling;
+  const ans  = el.nextElementSibling;
   const open = ans.classList.contains('open');
-  // Close all
   document.querySelectorAll('.faq-q').forEach(q => q.classList.remove('open'));
   document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
   if (!open) { el.classList.add('open'); ans.classList.add('open'); }
 }
 </script>
+
 <script>
 (function(){
   try {
