@@ -1769,14 +1769,8 @@ function renderDevices() {
 
   ungroupedDowns.forEach(h => { html += deviceRow(h); });
 
-  // Named groups — sort so red groups (worst status) float to top
+  // Named groups — alphabetical order (groupNames is already sorted a→z)
   const namedGroups = groupNames.filter(gn => gn !== '');
-  namedGroups.sort((a, b) => {
-    const worstA = (groups.get(a) || []).reduce((min, h) => Math.min(min, _statusPri(h)), 999);
-    const worstB = (groups.get(b) || []).reduce((min, h) => Math.min(min, _statusPri(h)), 999);
-    if (worstA !== worstB) return worstA - worstB;
-    return a.localeCompare(b);
-  });
 
   namedGroups.forEach(gn => {
     const hostnames   = sortedList(groups.get(gn));
