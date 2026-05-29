@@ -228,32 +228,6 @@
     <a href="/netmonitor/install-mac"><span class="plat-icon">⌘</span> macOS</a>
   </div>
 
-  <!-- SETUP WIZARD -->
-  <div class="wiz-card">
-    <div class="wiz-title">⚡ Quick Setup Wizard — Pre-Fill Your Command</div>
-    <div class="wiz-fields">
-      <div class="wiz-row">
-        <label class="wiz-label" for="wzKey">API Key</label>
-        <input class="wiz-input" id="wzKey" type="text" placeholder="spng_…" autocomplete="off" spellcheck="false" oninput="wzUpdate()">
-        <div class="wiz-hint">Copy from <a href="/netmonitor/settings">Settings → API Key</a></div>
-      </div>
-      <div class="wiz-row">
-        <label class="wiz-label" for="wzSite">Site Name</label>
-        <input class="wiz-input" id="wzSite" type="text" placeholder="My Site" oninput="wzUpdate()">
-        <div class="wiz-hint">Shown in your dashboard (e.g. Main Campus)</div>
-      </div>
-    </div>
-    <div class="wiz-cmd">
-      <div class="wiz-cmd-bar">
-        <span class="code-lang">bash — ready to paste into your Pi terminal</span>
-        <button class="copy-btn" onclick="wzCopy(this)">Copy</button>
-      </div>
-      <code id="wzCmd">export SPNG_API_KEY="<span class="wp">paste key above</span>"
-export SPNG_SITE_NAME="<span class="wp">enter site name above</span>"
-curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash</code>
-    </div>
-  </div>
-
   <!-- REQUIREMENTS -->
   <div class="req-card">
     <div class="req-title">Requirements</div>
@@ -394,13 +368,30 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
       </div>
     </div>
     <div class="step-body">
-      <p>Use the <strong>Quick Setup Wizard</strong> at the top of this page — fill in your API key and site name, then click <strong>Copy</strong> and paste the command into your Pi terminal. That's it.</p>
-      <p>Or paste this manually and replace the placeholder values:</p>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>export SPNG_API_KEY="your_api_key_here"
-export SPNG_SITE_NAME="My Site"
-curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash</code></pre>
+      <p>Fill in your API key and site name below, then click <strong>Copy</strong> and paste into your Pi terminal. That's it.</p>
+      <div class="wiz-card" style="margin-top:0.25rem;">
+        <div class="wiz-title">⚡ Quick Setup Wizard</div>
+        <div class="wiz-fields">
+          <div class="wiz-row">
+            <label class="wiz-label" for="wzKey">API Key</label>
+            <input class="wiz-input" id="wzKey" type="text" placeholder="spng_…" autocomplete="off" spellcheck="false" oninput="wzUpdate()">
+            <div class="wiz-hint">Copy from <a href="/netmonitor/settings">Settings → API Key</a></div>
+          </div>
+          <div class="wiz-row">
+            <label class="wiz-label" for="wzSite">Site Name</label>
+            <input class="wiz-input" id="wzSite" type="text" placeholder="My Site" oninput="wzUpdate()">
+            <div class="wiz-hint">Shown in your dashboard (e.g. Main Campus)</div>
+          </div>
+        </div>
+        <div class="wiz-cmd">
+          <div class="wiz-cmd-bar">
+            <span class="code-lang">bash — ready to paste into your Pi terminal</span>
+            <button class="copy-btn" onclick="wzCopy(this)">Copy</button>
+          </div>
+          <code id="wzCmd">export SPNG_API_KEY="<span class="wp">paste key above</span>"
+export SPNG_SITE_NAME="<span class="wp">enter site name above</span>"
+curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash</code>
+        </div>
       </div>
       <div class="callout tip">
         <span class="callout-icon">✓</span>
