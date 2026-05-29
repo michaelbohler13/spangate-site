@@ -16,7 +16,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth import AuthContext
@@ -91,29 +91,45 @@ async def list_devices(
     )
     devices = result.scalars().all()
 
+    # Single query for latest config per device — replaces the old N+1 loop
+    # that fired one SELECT per device (351 devices = 351 queries).
+    config_map: dict[int, tuple] = {}
+    if devices:
+        ranked = (
+            select(
+                Config.device_id,
+                Config.config_hash,
+                Config.pulled_at,
+                func.row_number().over(
+                    partition_by=Config.device_id,
+                    order_by=Config.pulled_at.desc(),
+                ).label("rn"),
+            )
+            .where(Config.device_id.in_([d.id for d in devices]))
+            .subquery()
+        )
+        cfg_result = await db.execute(
+            select(ranked.c.device_id, ranked.c.config_hash, ranked.c.pulled_at)
+            .where(ranked.c.rn == 1)
+        )
+        config_map = {
+            row.device_id: (row.config_hash, row.pulled_at)
+            for row in cfg_result.all()
+        }
+
     response: list[DeviceStatus] = []
     for device in devices:
-        # Latest config hash + timestamp from DB
-        hash_result = await db.execute(
-            select(Config.config_hash, Config.pulled_at)
-            .where(Config.device_id == device.id)
-            .order_by(Config.pulled_at.desc())
-            .limit(1)
-        )
-        config_row      = hash_result.first()
-        last_config_hash = config_row.config_hash if config_row else None
-        last_backup_at   = config_row.pulled_at   if config_row else None
-
+        cfg = config_map.get(device.id)
         response.append(
             DeviceStatus(
                 hostname=device.hostname,
                 ip=device.ip,
                 vendor=device.vendor,
                 device_type=device.device_type,
-                status=device.status,        # persisted in DB
-                last_seen=device.last_seen,  # persisted in DB
-                last_config_hash=last_config_hash,
-                last_backup_at=last_backup_at,
+                status=device.status,
+                last_seen=device.last_seen,
+                last_config_hash=cfg[0] if cfg else None,
+                last_backup_at=cfg[1]   if cfg else None,
                 last_ssh_error=device.last_ssh_error,
                 last_ssh_at=device.last_ssh_at,
                 maintenance=device.maintenance,

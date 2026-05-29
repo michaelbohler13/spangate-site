@@ -995,6 +995,9 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
 // ─────────────────────────────────────────────────────────────────────────────
 const MOCK_MODE  = false;
 const API_BASE   = 'https://spangate-site-r81b.vercel.app';
+// Keep-warm: fire a no-auth ping immediately so the serverless function
+// wakes up while the user's auth is loading — eliminates most cold-start delay.
+fetch(API_BASE + '/health').catch(() => {});
 const SUPABASE_URL  = 'https://tiviipaamwvfjvoscnyk.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
 const db = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
@@ -1757,23 +1760,20 @@ function renderDevices() {
     return rows;
   }
 
+  // Ungrouped devices → fold into "Default" so every device lives inside a group
+  const _DEFAULT_GRP = 'Default';
+  const _ungrouped = groups.get('') || [];
+  if (_ungrouped.length) {
+    groups.set(_DEFAULT_GRP, [...(groups.get(_DEFAULT_GRP) || []), ..._ungrouped]);
+    groups.delete('');
+  }
+
+  // All groups alphabetically (Default sorts between C and E, which is fine)
+  const allGrpNames = [...groups.keys()].sort((a, b) => a.localeCompare(b));
+
   let html = '';
-
-  // ── Render order ──────────────────────────────────────────────────────────
-  // 1. Ungrouped DOWN devices — always at very top
-  // 2. Named groups sorted by worst status (red groups first)
-  // 3. Ungrouped UP / maintenance / other devices
-  const ungroupedAll    = sortedList(groups.get('') || []);
-  const ungroupedDowns  = ungroupedAll.filter(h => _statusPri(h) === 0);
-  const ungroupedOthers = ungroupedAll.filter(h => _statusPri(h) !== 0);
-
-  ungroupedDowns.forEach(h => { html += deviceRow(h); });
-
-  // Named groups — alphabetical order (groupNames is already sorted a→z)
-  const namedGroups = groupNames.filter(gn => gn !== '');
-
-  namedGroups.forEach(gn => {
-    const hostnames   = sortedList(groups.get(gn));
+  allGrpNames.forEach(gn => {
+    const hostnames   = sortedList(groups.get(gn) || []);
     const isCollapsed = collapsedGroups.has(gn);
     const grpDowns  = hostnames.filter(h => !liveMap[h]?.maintenance && liveMap[h]?.status === 'down').length;
     const grpMaints = hostnames.filter(h => !!liveMap[h]?.maintenance).length;
@@ -1782,11 +1782,10 @@ function renderDevices() {
     const pills     = (grpDowns  ? `<span class="grp-pill grp-pill-down">↓ ${grpDowns}</span>` : '')
                     + (grpMaints ? `<span class="grp-pill grp-pill-maint">🔧 ${grpMaints}</span>` : '');
     const icon = isCollapsed ? '▶' : '▼';
-    html += `<tr class="grp-row ${worstCls}" onclick="toggleGroup(${JSON.stringify(gn)})"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}</td></tr>`;
+    // Use data-gn attribute to avoid double-quote conflict with JSON.stringify in onclick
+    html += `<tr class="grp-row ${worstCls}" data-gn="${esc(gn)}" onclick="toggleGroup(this.dataset.gn)"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}</td></tr>`;
     if (!isCollapsed) hostnames.forEach(h => { html += deviceRow(h); });
   });
-
-  ungroupedOthers.forEach(h => { html += deviceRow(h); });
 
   tbody.innerHTML = html;
 }
