@@ -1052,7 +1052,7 @@ let liveRefreshTimer = null;
 let lastRefreshedAt  = null;
 let sortCol        = 'status';
 let sortDir        = 1;          // 1 = asc, -1 = desc
-let collapsedGroups = new Set();
+let collapsedGroups = new Set(JSON.parse(localStorage.getItem('sg-collapsed-groups') || '[]'));
 let planInfo       = { plan: 'free', device_limit: 10, device_count: 0, devices_remaining: 10 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1575,6 +1575,7 @@ function setSortCol(col) {
 function toggleGroup(gn) {
   if (collapsedGroups.has(gn)) collapsedGroups.delete(gn);
   else collapsedGroups.add(gn);
+  localStorage.setItem('sg-collapsed-groups', JSON.stringify([...collapsedGroups]));
   renderDevices();
 }
 
