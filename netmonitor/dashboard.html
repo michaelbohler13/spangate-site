@@ -381,11 +381,21 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 
 /* ── GROUP ROWS ──────────────────────────────────────────────────────────── */
 .grp-row td{background:rgba(255,255,255,0.025);color:var(--text-muted);
-  font-size:0.68rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;
-  font-family:var(--mono);padding:6px 14px;border-top:0.5px solid var(--border);
+  font-size:0.72rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  font-family:var(--mono);padding:7px 14px;border-top:0.5px solid var(--border);
   cursor:pointer;user-select:none;}
-.grp-row:hover td{color:var(--text);background:rgba(255,255,255,0.04);}
-.grp-toggle{margin-right:6px;font-size:0.6rem;color:var(--text-dim);}
+.grp-row:hover td{color:var(--text);background:rgba(255,255,255,0.05);}
+/* Coloured left accent stripe — shows group health at a glance */
+.grp-row.grp-down  td{border-left:3px solid rgba(255,95,87,0.7); padding-left:11px;}
+.grp-row.grp-maint td{border-left:3px solid rgba(255,193,7,0.6); padding-left:11px;}
+.grp-row.grp-up    td{border-left:3px solid rgba(0,212,184,0.4); padding-left:11px;}
+.grp-toggle{margin-right:8px;font-size:0.8rem;color:var(--text-muted);}
+/* Coloured status dot before group name */
+.grp-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle;flex-shrink:0;}
+.grp-dot-down {background:#ff5f57;box-shadow:0 0 5px rgba(255,95,87,0.55);}
+.grp-dot-maint{background:#ffc107;}
+.grp-dot-up   {background:#00d4b8;}
+.grp-dot-unkn {background:rgba(255,255,255,0.18);}
 .grp-count{font-weight:400;opacity:0.55;margin-left:6px;}
 .grp-pill{display:inline-block;font-size:0.6rem;font-weight:600;padding:1px 7px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;vertical-align:middle;}
 .grp-pill-down{background:rgba(255,95,87,0.15);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.35);}
@@ -1748,19 +1758,42 @@ function renderDevices() {
   }
 
   let html = '';
-  groupNames.forEach(gn => {
+
+  // ── Render order ──────────────────────────────────────────────────────────
+  // 1. Ungrouped DOWN devices — always at very top
+  // 2. Named groups sorted by worst status (red groups first)
+  // 3. Ungrouped UP / maintenance / other devices
+  const ungroupedAll    = sortedList(groups.get('') || []);
+  const ungroupedDowns  = ungroupedAll.filter(h => _statusPri(h) === 0);
+  const ungroupedOthers = ungroupedAll.filter(h => _statusPri(h) !== 0);
+
+  ungroupedDowns.forEach(h => { html += deviceRow(h); });
+
+  // Named groups — sort so red groups (worst status) float to top
+  const namedGroups = groupNames.filter(gn => gn !== '');
+  namedGroups.sort((a, b) => {
+    const worstA = (groups.get(a) || []).reduce((min, h) => Math.min(min, _statusPri(h)), 999);
+    const worstB = (groups.get(b) || []).reduce((min, h) => Math.min(min, _statusPri(h)), 999);
+    if (worstA !== worstB) return worstA - worstB;
+    return a.localeCompare(b);
+  });
+
+  namedGroups.forEach(gn => {
     const hostnames   = sortedList(groups.get(gn));
     const isCollapsed = collapsedGroups.has(gn);
-    if (gn !== '') {
-      const grpDowns  = hostnames.filter(h => !liveMap[h]?.maintenance && liveMap[h]?.status === 'down').length;
-      const grpMaints = hostnames.filter(h => !!liveMap[h]?.maintenance).length;
-      const grpPills  = (grpDowns  ? `<span class="grp-pill grp-pill-down">↓ ${grpDowns}</span>` : '')
-                      + (grpMaints ? `<span class="grp-pill grp-pill-maint">🔧 ${grpMaints}</span>` : '');
-      const icon = isCollapsed ? '▶' : '▼';
-      html += `<tr class="grp-row" onclick="toggleGroup(${JSON.stringify(gn)})"><td colspan="8"><span class="grp-toggle">${icon}</span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${grpPills}</td></tr>`;
-    }
+    const grpDowns  = hostnames.filter(h => !liveMap[h]?.maintenance && liveMap[h]?.status === 'down').length;
+    const grpMaints = hostnames.filter(h => !!liveMap[h]?.maintenance).length;
+    const worstCls  = grpDowns ? 'grp-down' : grpMaints ? 'grp-maint' : 'grp-up';
+    const dotCls    = grpDowns ? 'grp-dot-down' : grpMaints ? 'grp-dot-maint' : 'grp-dot-up';
+    const pills     = (grpDowns  ? `<span class="grp-pill grp-pill-down">↓ ${grpDowns}</span>` : '')
+                    + (grpMaints ? `<span class="grp-pill grp-pill-maint">🔧 ${grpMaints}</span>` : '');
+    const icon = isCollapsed ? '▶' : '▼';
+    html += `<tr class="grp-row ${worstCls}" onclick="toggleGroup(${JSON.stringify(gn)})"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}</td></tr>`;
     if (!isCollapsed) hostnames.forEach(h => { html += deviceRow(h); });
   });
+
+  ungroupedOthers.forEach(h => { html += deviceRow(h); });
+
   tbody.innerHTML = html;
 }
 
