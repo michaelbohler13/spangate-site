@@ -91,8 +91,23 @@ async def verify_api_key(
         )
         profile = result.data
     except Exception as exc:
-        logger.warning("Supabase auth lookup failed: %s", exc)
-        profile = None
+        # Fallback: plan column may not exist yet (migration pending).
+        # Retry without it so auth never breaks on a missing optional column.
+        logger.warning("Supabase auth lookup failed (%s) — retrying without plan", exc)
+        try:
+            result = (
+                client.table("nm_profiles")
+                .select("id, site_id")
+                .eq("api_key", raw_key)
+                .single()
+                .execute()
+            )
+            profile = result.data
+            if profile:
+                profile["plan"] = "free"   # safe default until migration runs
+        except Exception as exc2:
+            logger.warning("Supabase auth retry also failed: %s", exc2)
+            profile = None
 
     if not profile:
         raise HTTPException(
