@@ -18,6 +18,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -89,10 +90,15 @@ class AgentHeartbeat(Base):
     site_id:       Mapped[str]            = mapped_column(String(255), unique=True, nullable=False)
     site_name:     Mapped[str]            = mapped_column(String(255), nullable=False, default="")
     last_seen:     Mapped[datetime]       = mapped_column(DateTime(timezone=True), nullable=False)
-    agent_version: Mapped[Optional[str]]  = mapped_column(String(50), nullable=True)
-    device_count:  Mapped[int]            = mapped_column(Integer, nullable=False, default=0)
-    devices_up:    Mapped[int]            = mapped_column(Integer, nullable=False, default=0)
-    devices_down:  Mapped[int]            = mapped_column(Integer, nullable=False, default=0)
+    agent_version: Mapped[Optional[str]]  = mapped_column(String(50),  nullable=True)
+    device_count:  Mapped[int]            = mapped_column(Integer,      nullable=False, default=0)
+    devices_up:    Mapped[int]            = mapped_column(Integer,      nullable=False, default=0)
+    devices_down:  Mapped[int]            = mapped_column(Integer,      nullable=False, default=0)
+    # Host health metrics — sent by the agent on every heartbeat
+    cpu_percent:   Mapped[Optional[float]] = mapped_column(Float,       nullable=True)
+    mem_percent:   Mapped[Optional[float]] = mapped_column(Float,       nullable=True)
+    temp_celsius:  Mapped[Optional[float]] = mapped_column(Float,       nullable=True)
+    agent_model:   Mapped[Optional[str]]   = mapped_column(String(120), nullable=True)
 
     def __repr__(self) -> str:
         return f"<AgentHeartbeat site={self.site_id!r} last_seen={self.last_seen}>"

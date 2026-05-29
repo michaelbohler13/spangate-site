@@ -65,10 +65,15 @@ class Heartbeat(BaseModel):
     Fields mirror api_client.heartbeat() exactly.
     """
 
-    site_name:    str = Field(..., max_length=255)
-    device_count: int = Field(..., ge=0)
-    devices_up:   int = Field(..., ge=0)
-    devices_down: int = Field(..., ge=0)
+    site_name:    str           = Field(..., max_length=255)
+    device_count: int           = Field(..., ge=0)
+    devices_up:   int           = Field(..., ge=0)
+    devices_down: int           = Field(..., ge=0)
+    # Host health metrics (all optional — older agents won't send them)
+    cpu_percent:  Optional[float] = None
+    mem_percent:  Optional[float] = None
+    temp_celsius: Optional[float] = None
+    agent_model:  Optional[str]   = Field(None, max_length=120)
 
 
 # ── Outbound response schemas (returned to the dashboard) ─────────────────────
@@ -136,3 +141,8 @@ class DashboardSummary(BaseModel):
     recent_alerts: list[AlertResponse]
     last_heartbeat: Optional[datetime]
     agent_version:  Optional[str]
+    # Host health metrics from the most recent heartbeat
+    cpu_percent:    Optional[float] = None
+    mem_percent:    Optional[float] = None
+    temp_celsius:   Optional[float] = None
+    agent_model:    Optional[str]   = None

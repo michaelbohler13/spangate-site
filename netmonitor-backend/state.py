@@ -87,6 +87,10 @@ async def upsert_heartbeat(
     devices_up: int,
     devices_down: int,
     agent_version: str,
+    cpu_percent:  float | None = None,
+    mem_percent:  float | None = None,
+    temp_celsius: float | None = None,
+    agent_model:  str   | None = None,
 ) -> None:
     """
     Insert or update the heartbeat row for a site.
@@ -102,6 +106,10 @@ async def upsert_heartbeat(
         devices_up: Devices currently reachable.
         devices_down: Devices currently unreachable.
         agent_version: Agent version string from X-Agent-Version header.
+        cpu_percent: Host CPU utilisation % (None if not available).
+        mem_percent: Host RAM utilisation % (None if not available).
+        temp_celsius: Host CPU temperature °C (None if not available).
+        agent_model: Platform/model string from the agent.
     """
     now = datetime.now(timezone.utc)
     values = dict(
@@ -112,6 +120,10 @@ async def upsert_heartbeat(
         device_count=device_count,
         devices_up=devices_up,
         devices_down=devices_down,
+        cpu_percent=cpu_percent,
+        mem_percent=mem_percent,
+        temp_celsius=temp_celsius,
+        agent_model=agent_model,
     )
     stmt = (
         pg_insert(AgentHeartbeat)

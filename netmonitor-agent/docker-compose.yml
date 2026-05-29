@@ -7,10 +7,16 @@ services:
     # pings to all devices on the local network.
     # Remove this line if running on macOS or Windows Docker Desktop.
     network_mode: host
+    # pid: host lets psutil read real host CPU usage (not container-scoped).
+    # Remove if running on macOS or Windows Docker Desktop.
+    pid: "host"
     volumes:
       # config.yaml is created by setup.sh / setup.ps1 and mounted read-only.
       # Change the left-hand path if you placed config.yaml elsewhere.
       - ./config.yaml:/config/config.yaml:ro
+      # Expose host thermal sensors so the agent can report CPU temperature.
+      # Safe to remove on non-Linux hosts — the agent degrades gracefully.
+      - /sys/class/thermal:/sys/class/thermal:ro
     logging:
       driver: json-file
       options:

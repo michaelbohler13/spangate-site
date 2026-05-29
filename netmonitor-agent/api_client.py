@@ -281,25 +281,37 @@ class APIClient:
         device_count: int,
         devices_up: int,
         devices_down: int,
+        cpu_percent:  float | None = None,
+        mem_percent:  float | None = None,
+        temp_celsius: float | None = None,
+        agent_model:  str   | None = None,
     ) -> bool:
         """
         Send a periodic heartbeat so the dashboard knows the agent is alive.
 
         Args:
-            site_name: Human-readable site label from config.
+            site_name:    Human-readable site label from config.
             device_count: Total number of monitored devices.
-            devices_up: Number of devices currently reachable.
+            devices_up:   Number of devices currently reachable.
             devices_down: Number of devices currently unreachable.
+            cpu_percent:  Host CPU utilisation % (None if unavailable).
+            mem_percent:  Host RAM utilisation % (None if unavailable).
+            temp_celsius: Host CPU temperature °C (None if unavailable).
+            agent_model:  Platform/model string (e.g. "Raspberry Pi 4 Model B").
 
         Returns:
             True if successfully delivered.
         """
         payload = {
-            "site_name": site_name,
+            "site_name":    site_name,
             "device_count": device_count,
-            "devices_up": devices_up,
+            "devices_up":   devices_up,
             "devices_down": devices_down,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp":    datetime.now(timezone.utc).isoformat(),
+            "cpu_percent":  cpu_percent,
+            "mem_percent":  mem_percent,
+            "temp_celsius": temp_celsius,
+            "agent_model":  agent_model,
         }
         logger.debug("Sending heartbeat for site '%s'", site_name)
         return self._post("/api/v1/agent/heartbeat", payload)

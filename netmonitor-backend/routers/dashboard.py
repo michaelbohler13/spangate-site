@@ -86,4 +86,8 @@ async def dashboard(
         recent_alerts=recent_alerts,
         last_heartbeat=hb.last_seen if hb else None,
         agent_version=hb.agent_version if hb else None,
+        cpu_percent=hb.cpu_percent   if hb else None,
+        mem_percent=hb.mem_percent   if hb else None,
+        temp_celsius=hb.temp_celsius if hb else None,
+        agent_model=hb.agent_model   if hb else None,
     )

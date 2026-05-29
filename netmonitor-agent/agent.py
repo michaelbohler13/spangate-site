@@ -15,6 +15,7 @@ from typing import Any
 
 import yaml
 
+from agent_metrics import collect_metrics
 from api_client import APIClient
 from pinger import PingLoop
 from ssh_puller import SSHPuller
@@ -247,6 +248,9 @@ async def heartbeat_loop(
     """
     Send a heartbeat to the SpanGate API every HEARTBEAT_INTERVAL seconds.
 
+    Collects host metrics (CPU, RAM, temperature, model) in a thread pool
+    so the blocking 1-second CPU sample doesn't stall the event loop.
+
     Args:
         api: Authenticated API client.
         site_name: Human-readable site name from config.
@@ -254,11 +258,33 @@ async def heartbeat_loop(
         ping_loop: PingLoop instance used to read current up/down counts.
     """
     logger.info("[HB] Heartbeat loop started — interval %ds", HEARTBEAT_INTERVAL)
+    loop = asyncio.get_event_loop()
     while True:
         devices_up, devices_down = ping_loop.get_status_counts()
-        api.heartbeat(site_name, device_count, devices_up, devices_down)
+
+        # Collect host metrics in a thread pool (cpu_percent blocks ~1 s)
+        try:
+            metrics = await loop.run_in_executor(None, collect_metrics)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[HB] Could not collect host metrics: %s", exc)
+            metrics = {"cpu_percent": None, "mem_percent": None, "temp_celsius": None, "agent_model": None}
+
+        api.heartbeat(
+            site_name,
+            device_count,
+            devices_up,
+            devices_down,
+            cpu_percent=metrics.get("cpu_percent"),
+            mem_percent=metrics.get("mem_percent"),
+            temp_celsius=metrics.get("temp_celsius"),
+            agent_model=metrics.get("agent_model"),
+        )
         logger.debug(
-            "[HB] Heartbeat sent — %d up / %d down", devices_up, devices_down
+            "[HB] Heartbeat sent — %d up / %d down  cpu=%.1f%%  mem=%.1f%%  temp=%s°C",
+            devices_up, devices_down,
+            metrics.get("cpu_percent") or 0.0,
+            metrics.get("mem_percent") or 0.0,
+            metrics.get("temp_celsius") or "--",
         )
         await asyncio.sleep(HEARTBEAT_INTERVAL)
 

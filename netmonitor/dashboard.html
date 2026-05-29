@@ -164,6 +164,25 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   display:flex;align-items:center;gap:8px;}
 .hdr-sep{color:var(--border-bright);}
 
+/* Agent Health Card */
+.agent-health-card{display:none;padding:0.7rem 2rem;background:var(--surface);
+  border-bottom:0.5px solid var(--border);}
+.agent-health-card.visible{display:block;}
+.ahc-inner{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;}
+.ahc-model{font-family:var(--mono);font-size:0.67rem;color:var(--text-muted);
+  white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;max-width:220px;}
+.ahc-metrics{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;}
+.ahc-metric{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.ahc-lbl{font-family:var(--mono);font-size:0.62rem;font-weight:600;letter-spacing:0.06em;
+  text-transform:uppercase;color:var(--text-dim);width:34px;}
+.ahc-bar-wrap{width:80px;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;}
+.ahc-bar{height:100%;border-radius:3px;transition:width 0.4s ease, background 0.4s ease;}
+.ahc-val{font-family:var(--mono);font-size:0.67rem;width:42px;text-align:right;}
+/* Color states */
+.ahc-ok   {color:#00d4b8;}  .ahc-bar.ok   {background:#00d4b8;}
+.ahc-warn {color:#f5a623;}  .ahc-bar.warn {background:#f5a623;}
+.ahc-crit {color:#ff5f57;}  .ahc-bar.crit {background:#ff5f57;}
+
 /* Main tabs */
 .main-tab-bar{display:flex;background:var(--bg);border-bottom:0.5px solid var(--border);
   padding:0 2rem;position:sticky;top:84px;z-index:50;}
@@ -672,6 +691,33 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
     </div>
   </div>
 
+  <!-- Agent Health Card (shown when agent reports host metrics) -->
+  <div class="agent-health-card" id="agentHealthCard">
+    <div class="ahc-inner">
+      <span class="ahc-model" id="ahcModel" title=""></span>
+      <div class="ahc-metrics" id="ahcMetrics">
+        <!-- CPU -->
+        <div class="ahc-metric" id="ahc-cpu">
+          <span class="ahc-lbl">CPU</span>
+          <div class="ahc-bar-wrap"><div class="ahc-bar ok" id="ahcCpuBar" style="width:0%"></div></div>
+          <span class="ahc-val ahc-ok" id="ahcCpuVal">—</span>
+        </div>
+        <!-- RAM -->
+        <div class="ahc-metric" id="ahc-mem">
+          <span class="ahc-lbl">RAM</span>
+          <div class="ahc-bar-wrap"><div class="ahc-bar ok" id="ahcMemBar" style="width:0%"></div></div>
+          <span class="ahc-val ahc-ok" id="ahcMemVal">—</span>
+        </div>
+        <!-- TEMP (hidden when no sensor available) -->
+        <div class="ahc-metric" id="ahc-temp" style="display:none;">
+          <span class="ahc-lbl">TEMP</span>
+          <div class="ahc-bar-wrap"><div class="ahc-bar ok" id="ahcTempBar" style="width:0%"></div></div>
+          <span class="ahc-val ahc-ok" id="ahcTempVal">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tab bar -->
   <div class="main-tab-bar">
     <button class="main-tab active" id="mt-devices" onclick="switchTab('devices')">Devices</button>
@@ -1075,6 +1121,7 @@ async function determineState() {
 
   const data = await dashRes.json();
   updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
+  updateAgentHealth(data);
 
   // Fetch device-configs separately so a failure doesn't block devices/alerts.
   let dcRes = null;
@@ -1171,6 +1218,7 @@ function startLiveRefresh() {
       if (dashRes.ok) {
         const data = await dashRes.json();
         updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
+        updateAgentHealth(data);
       }
       renderDevices();
       renderAlerts();
@@ -1358,6 +1406,63 @@ function updateAgentStatus(online, lastHeartbeat) {
     lst.textContent = 'Last seen: ' + new Date(lastHeartbeat).toLocaleString();
   } else if (lst && !online) {
     lst.textContent = 'Agent not connected';
+  }
+}
+
+// ── Agent Health Card ─────────────────────────────────────────────────────────
+function _ahcClass(pct, warnAt, critAt) {
+  if (pct === null || pct === undefined) return 'ok';
+  if (pct >= critAt)  return 'crit';
+  if (pct >= warnAt)  return 'warn';
+  return 'ok';
+}
+
+function _ahcUpdate(barId, valId, value, unit, warnAt, critAt, maxVal) {
+  const bar = document.getElementById(barId);
+  const val = document.getElementById(valId);
+  if (!bar || !val) return;
+  if (value === null || value === undefined) {
+    bar.style.width = '0%';
+    val.textContent = '—';
+    bar.className = 'ahc-bar ok';
+    val.className = 'ahc-val ahc-ok';
+    return;
+  }
+  const pct   = Math.min(100, Math.round((value / maxVal) * 100));
+  const state = _ahcClass(value, warnAt, critAt);
+  bar.style.width  = pct + '%';
+  bar.className    = 'ahc-bar ' + state;
+  val.className    = 'ahc-val ahc-' + state;
+  val.textContent  = (unit === '%') ? value.toFixed(1) + '%' : value.toFixed(0) + unit;
+}
+
+function updateAgentHealth(data) {
+  const card   = document.getElementById('agentHealthCard');
+  const model  = document.getElementById('ahcModel');
+  if (!card) return;
+
+  const hasAny = data.agent_model || data.cpu_percent != null || data.mem_percent != null;
+  if (!hasAny) { card.classList.remove('visible'); return; }
+
+  card.classList.add('visible');
+
+  if (model) {
+    const m = data.agent_model || '';
+    model.textContent = m;
+    model.title       = m;
+  }
+
+  // CPU  — warn >75%, crit >90%, max scale 100%
+  _ahcUpdate('ahcCpuBar', 'ahcCpuVal', data.cpu_percent,  '%', 75, 90, 100);
+  // RAM  — warn >75%, crit >90%, max scale 100%
+  _ahcUpdate('ahcMemBar', 'ahcMemVal', data.mem_percent,  '%', 75, 90, 100);
+  // TEMP — warn >65°C, crit >80°C, max scale 100°C
+  const tempEl = document.getElementById('ahc-temp');
+  if (data.temp_celsius != null) {
+    if (tempEl) tempEl.style.display = '';
+    _ahcUpdate('ahcTempBar', 'ahcTempVal', data.temp_celsius, '°C', 65, 80, 100);
+  } else {
+    if (tempEl) tempEl.style.display = 'none';
   }
 }
 

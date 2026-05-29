@@ -67,6 +67,10 @@ async def heartbeat(
         devices_up=body.devices_up,
         devices_down=body.devices_down,
         agent_version=agent_version,
+        cpu_percent=body.cpu_percent,
+        mem_percent=body.mem_percent,
+        temp_celsius=body.temp_celsius,
+        agent_model=body.agent_model,
     )
 
     logger.debug(
