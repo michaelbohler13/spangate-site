@@ -125,8 +125,8 @@ class Config(Base):
 
     __table_args__ = (
         Index("ix_configs_device_pulled", "device_id", "pulled_at"),
-        # Index by hash for dedup lookups
-        Index("ix_configs_device_hash", "device_id", "config_hash"),
+        # Unique index enforces one row per (device, hash) — prevents duplicate backups
+        Index("ix_configs_device_hash", "device_id", "config_hash", unique=True),
     )
 
     def __repr__(self) -> str:

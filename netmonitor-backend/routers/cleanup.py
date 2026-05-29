@@ -16,7 +16,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
@@ -25,7 +25,8 @@ from models import Alert, Config, ConfigDiff
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Admin"])
 
-_RETENTION_DAYS = 30
+_RETENTION_DAYS      = 30
+_MAX_CONFIGS_PER_DEVICE = 4  # Keep at most this many recent backups per device
 
 
 def _verify_cron_secret(authorization: str | None = Header(default=None)) -> None:
@@ -58,12 +59,13 @@ async def run_cleanup(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
-    Purge rows older than 30 days from time-series tables.
+    Purge stale rows from time-series tables.
 
-    Targeted tables:
-    - alerts         — ping and config-change events
-    - configs        — running-config snapshots
-    - config_diffs   — unified diff records
+    Two passes:
+    1. Age-based: delete rows older than 30 days from alerts, configs,
+       and config_diffs.
+    2. Count-based: delete configs beyond the 4 most recent per device,
+       so a site that takes daily manual backups doesn't accumulate unbounded rows.
 
     The devices and agent_heartbeat tables are NOT purged (they are reference /
     state data, not time-series logs).
@@ -73,27 +75,43 @@ async def run_cleanup(
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=_RETENTION_DAYS)
 
+    # ── Pass 1: age-based purge ───────────────────────────────────────────────
     result_alerts = await db.execute(
         delete(Alert).where(Alert.created_at < cutoff)
     )
-    result_configs = await db.execute(
+    result_configs_age = await db.execute(
         delete(Config).where(Config.pulled_at < cutoff)
     )
     result_diffs = await db.execute(
         delete(ConfigDiff).where(ConfigDiff.detected_at < cutoff)
     )
 
+    # ── Pass 2: per-device count trim (keep newest N per device) ─────────────
+    result_configs_trim = await db.execute(text("""
+        DELETE FROM configs
+        WHERE id NOT IN (
+            SELECT id FROM (
+                SELECT id,
+                       ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY pulled_at DESC) AS rn
+                FROM configs
+            ) ranked
+            WHERE rn <= :max_per_device
+        )
+    """), {"max_per_device": _MAX_CONFIGS_PER_DEVICE})
+
     await db.commit()
 
     deleted = {
-        "alerts":       result_alerts.rowcount,
-        "configs":      result_configs.rowcount,
-        "config_diffs": result_diffs.rowcount,
+        "alerts":             result_alerts.rowcount,
+        "configs_age":        result_configs_age.rowcount,
+        "configs_trimmed":    result_configs_trim.rowcount,
+        "config_diffs":       result_diffs.rowcount,
     }
 
     logger.info(
-        "[CLEANUP] Purged rows older than %s UTC: %s",
+        "[CLEANUP] Purged rows older than %s UTC + trimmed to %d configs/device: %s",
         cutoff.strftime("%Y-%m-%d"),
+        _MAX_CONFIGS_PER_DEVICE,
         deleted,
     )
 

@@ -18,12 +18,15 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth import AuthContext
 from database import get_db
 from models import Config, ConfigDiff, Device
 from schemas import ConfigBackup, ConfigDetail, ConfigMeta
+
+MAX_CONFIGS_PER_DEVICE = 4
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Configs"])
@@ -117,27 +120,21 @@ async def config_backup(
     try:
         device = await _get_or_create_device(db, site_id, body.hostname)
 
-        # Idempotency check — same hash already stored for this device?
-        existing = await db.execute(
-            select(Config.id)
-            .where(Config.device_id == device.id, Config.config_hash == body.config_hash)
-            .limit(1)
-        )
-        if existing.scalar_one_or_none() is not None:
-            logger.debug(
-                "[CONFIG-BACKUP] Skipped duplicate hash %s for %s/%s",
-                body.config_hash[:12], site_id, body.hostname,
+        # Atomic upsert — ON CONFLICT DO NOTHING on the unique (device_id, config_hash)
+        # index prevents duplicate rows even under concurrent requests.
+        stmt = (
+            pg_insert(Config)
+            .values(
+                device_id=device.id,
+                config_text=body.config_text,
+                config_hash=body.config_hash,
             )
-            return {"ok": True, "skipped": True}
-
-        config = Config(
-            device_id=device.id,
-            config_text=body.config_text,
-            config_hash=body.config_hash,
+            .on_conflict_do_nothing(index_elements=["device_id", "config_hash"])
+            .returning(Config.id)
         )
-        db.add(config)
+        result = await db.execute(stmt)
         await db.commit()
-        await db.refresh(config)
+        inserted_id = result.scalar()
 
     except HTTPException:
         raise
@@ -146,11 +143,18 @@ async def config_backup(
         logger.error("[CONFIG-BACKUP] DB error for %s/%s: %s", site_id, body.hostname, exc)
         raise HTTPException(status_code=500, detail="Database error")
 
+    if inserted_id is None:
+        logger.debug(
+            "[CONFIG-BACKUP] Skipped duplicate hash %s for %s/%s",
+            body.config_hash[:12], site_id, body.hostname,
+        )
+        return {"ok": True, "skipped": True}
+
     logger.info(
         "[CONFIG-BACKUP] %s/%s — hash %s",
         site_id, body.hostname, body.config_hash[:12],
     )
-    return {"ok": True, "config_id": config.id}
+    return {"ok": True, "config_id": inserted_id}
 
 
 # ── GET /configs/{hostname} ───────────────────────────────────────────────────
@@ -162,7 +166,7 @@ async def list_configs(
     db: AsyncSession = Depends(get_db),
 ) -> list[ConfigMeta]:
     """
-    Return the last 10 config backup metadata records for a device.
+    Return the last 4 config backup metadata records for a device.
 
     Config text is NOT included in the list response to keep payloads small.
     Use GET /configs/{hostname}/{config_id} to fetch the full text.
@@ -173,7 +177,7 @@ async def list_configs(
         db: Async database session.
 
     Returns:
-        List of up to 10 ConfigMeta objects, newest first.
+        List of up to 4 ConfigMeta objects, newest first.
 
     Raises:
         HTTPException 404: If the device is not found.
@@ -185,7 +189,7 @@ async def list_configs(
         select(Config.id, Config.config_hash, Config.pulled_at)
         .where(Config.device_id == device.id)
         .order_by(Config.pulled_at.desc())
-        .limit(10)
+        .limit(MAX_CONFIGS_PER_DEVICE)
     )
     rows = result.all()
 

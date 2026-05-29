@@ -210,7 +210,7 @@ class SSHPuller:
         old_hash = self._hashes.get(hostname)
 
         if old_hash is None:
-            # First successful pull — store hash, ship backup, no change alert
+            # First successful pull this session — store hash and ship backup
             logger.info("[SSH] First config pull for %s — hash %s", hostname, new_hash[:12])
             self._hashes[hostname] = new_hash
             self.api.config_backup(hostname, config_text, new_hash)
@@ -225,10 +225,12 @@ class SSHPuller:
             )
             self._hashes[hostname] = new_hash
             self.api.config_changed(hostname, config_text, old_hash, new_hash)
-
-        # Always ship backup regardless of change
-        self.api.config_backup(hostname, config_text, new_hash)
-        logger.info("[SSH] Config backup sent for %s", hostname)
+            self.api.config_backup(hostname, config_text, new_hash)
+            logger.info("[SSH] Config backup sent for %s", hostname)
+        else:
+            # Config unchanged — backend would deduplicate on hash anyway,
+            # but skip the upload entirely to avoid any race-condition window.
+            logger.info("[SSH] Config unchanged for %s — backup skipped", hostname)
 
     def run_connection_test(self, test: dict[str, Any]) -> tuple[bool, str]:
         """
