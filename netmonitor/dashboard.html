@@ -1625,12 +1625,12 @@ function renderDevices() {
     }
   }
 
-  // Primary sort key: downs always float to top regardless of column choice
+  // Primary sort key: 0=down, 1=maintenance, 2=up, 3=configured, 4=unknown
   function _statusPri(hostname) {
     const d = liveMap[hostname] || {};
-    if (d.maintenance) return 2;
+    if (d.maintenance) return 1;
     const s = d.status || (cfgMap[hostname] ? 'configured' : 'unknown');
-    return ({down:0, up:1, configured:3, unknown:4}[s] ?? 4);
+    return ({down:0, up:2, configured:3, unknown:4}[s] ?? 4);
   }
 
   function sortedList(arr) {
