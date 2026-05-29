@@ -106,11 +106,33 @@
   .callout.tip .callout-text strong{color:var(--accent);}
   .callout.warn .callout-text strong{color:#ffc107;}
 
-  .inline-link-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:0.82rem;font-weight:500;color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);background:rgba(0,212,184,0.06);text-decoration:none;transition:all 0.15s;margin-top:0.35rem;}
-  .inline-link-btn:hover{background:rgba(0,212,184,0.12);border-color:var(--accent);text-decoration:none!important;}
+  /* ── SETUP WIZARD CARD ── */
+  .wiz-card{background:rgba(0,212,184,0.04);border:0.5px solid rgba(0,212,184,0.25);border-radius:14px;padding:1.5rem;margin-bottom:1rem;}
+  .wiz-title{font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:1.1rem;font-family:var(--mono);}
+  .wiz-fields{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.1rem;}
+  @media(max-width:520px){.wiz-fields{grid-template-columns:1fr;}}
+  .wiz-row{display:flex;flex-direction:column;gap:4px;}
+  .wiz-label{font-size:0.72rem;font-weight:600;color:var(--text-muted);letter-spacing:0.02em;}
+  .wiz-input{background:var(--surface3);border:0.5px solid var(--border-bright);border-radius:8px;padding:8px 12px;font-size:0.85rem;color:var(--text);font-family:var(--mono);outline:none;transition:border-color 0.15s;width:100%;}
+  .wiz-input:focus{border-color:var(--accent);}
+  .wiz-input::placeholder{color:var(--text-dim);}
+  .wiz-hint{font-size:0.7rem;color:var(--text-dim);}
+  .wiz-hint a{color:var(--accent);}
+  .wiz-cmd{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;font-family:var(--mono);}
+  .wiz-cmd-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border-bottom:0.5px solid var(--border);}
+  .wiz-cmd code{display:block;padding:1rem 1.1rem;font-size:0.78rem;line-height:1.7;color:#cdd9e5;white-space:pre;overflow-x:auto;}
+  .wiz-cmd code .wp{color:var(--text-dim);font-style:italic;}
+  .wiz-cmd code .wk{color:var(--accent);}
+
+  /* ── STEP 2 PREREQS (Pi SSH instructions) ── */
+  .prereq-block{background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem;}
+  .prereq-block p{font-size:0.85rem;color:var(--text-muted);line-height:1.6;margin-bottom:0.6rem;}
+  .prereq-block p:last-child{margin-bottom:0;}
+  .prereq-block strong{color:var(--text);}
 
   .section-head{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:0.5px solid var(--border);}
   .guide-divider{border:none;border-top:0.5px solid var(--border);margin:2.5rem 0;}
+  .mono-inline{font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;}
 
   /* FAQ */
   .faq-item{border-bottom:0.5px solid var(--border);padding:0.9rem 0;}
@@ -122,7 +144,6 @@
   .faq-a.open{display:block;}
   .faq-a a{color:var(--accent);text-decoration:none;}
   .faq-a a:hover{text-decoration:underline;}
-  .mono-inline{font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;}
 </style>
 </head>
 <body>
@@ -166,7 +187,7 @@
       <span style="color:var(--accent);">Upgrade &amp; Migration Guide</span>
     </div>
     <h1 class="guide-title">Upgrade &amp; Migration<br><span style="color:var(--accent);">Guide</span></h1>
-    <p class="guide-subtitle">Moving to a bigger Pi, switching to Windows, or replacing a failed device? Select your platforms below and get step-by-step instructions.</p>
+    <p class="guide-subtitle">Moving to a bigger Pi, switching to Windows, or replacing a failed device? Select your platforms below and get step-by-step instructions — all on this page.</p>
   </div>
 
   <!-- KEY CALLOUT -->
@@ -236,24 +257,53 @@
       </div>
     </div>
 
-    <!-- STEP 2 -->
+    <!-- STEP 2 — dynamically populated -->
     <div class="guide-step">
       <div class="step-head">
         <div class="step-badge">02</div>
         <div class="step-info">
           <div class="step-title">Install the agent on the new device</div>
-          <div class="step-desc" id="step2Desc">Follow the install guide for your new platform — use the same API key.</div>
+          <div class="step-desc" id="step2Desc">Follow the setup wizard below using your existing API key.</div>
         </div>
       </div>
       <div class="step-body">
-        <p>Follow the install guide for your new platform. When the wizard asks for your <strong>API Key</strong>,
-        enter the <strong>exact same key</strong> you used on your old device.
-        You can copy it from <a href="/netmonitor/settings">Settings → API Key</a>.</p>
-        <a id="step2Link" href="#" class="inline-link-btn" target="_blank">Open Install Guide →</a>
-        <div class="callout warn" style="margin-top:1rem;">
+
+        <!-- Platform-specific prerequisites (SSH instructions for Pi, etc.) -->
+        <div id="step2Prereqs"></div>
+
+        <!-- Shared Setup Wizard -->
+        <div class="wiz-card">
+          <div class="wiz-title">⚡ Setup Wizard — New Device</div>
+          <div class="wiz-fields">
+            <div class="wiz-row">
+              <label class="wiz-label" for="upgWzKey">API Key</label>
+              <input class="wiz-input" id="upgWzKey" type="text" placeholder="spng_…" autocomplete="off" spellcheck="false" oninput="upgWzUpdate()">
+              <div class="wiz-hint">Use your <strong style="color:var(--accent);">existing</strong> key — copy from <a href="/netmonitor/settings">Settings → API Key</a></div>
+            </div>
+            <div class="wiz-row">
+              <label class="wiz-label" for="upgWzSite">Site Name</label>
+              <input class="wiz-input" id="upgWzSite" type="text" placeholder="My Site" oninput="upgWzUpdate()">
+              <div class="wiz-hint">Label shown in your dashboard (e.g. Main Campus)</div>
+            </div>
+          </div>
+          <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:0.85rem;cursor:pointer;padding:9px 12px;border-radius:8px;border:0.5px solid rgba(255,95,87,0.25);background:rgba(255,95,87,0.04);">
+            <input type="checkbox" id="upgWzAuthCheck" onchange="upgWzAuthToggle()" style="width:15px;height:15px;margin-top:2px;flex-shrink:0;accent-color:#00d4b8;cursor:pointer;">
+            <span style="font-size:0.78rem;color:#ff9492;line-height:1.55;">I confirm I am authorized to monitor the networks and devices I will connect to SpanGate</span>
+          </label>
+          <div class="wiz-cmd">
+            <div class="wiz-cmd-bar">
+              <span class="code-lang" id="upgWzCmdLabel">bash</span>
+              <button class="copy-btn" id="upgWzCopyBtn" onclick="upgWzCopy(this)" disabled style="opacity:0.35;cursor:not-allowed;">Copy</button>
+            </div>
+            <code id="upgWzCmd"><span class="wp">select platforms above to generate command</span></code>
+          </div>
+        </div>
+
+        <div class="callout warn">
           <span class="callout-icon">⚠️</span>
           <div class="callout-text">Do <strong>not</strong> stop the old agent yet. Keep it running until you confirm the new device is online in Step 3.</div>
         </div>
+
       </div>
     </div>
 
@@ -278,7 +328,7 @@
       </div>
     </div>
 
-    <!-- STEP 4 -->
+    <!-- STEP 4 — dynamically populated -->
     <div class="guide-step">
       <div class="step-head">
         <div class="step-badge">04</div>
@@ -287,9 +337,7 @@
           <div class="step-desc" id="step4Desc">Once the new device is confirmed running, decommission the old one.</div>
         </div>
       </div>
-      <div class="step-body" id="step4Body">
-        <!-- Populated by JS based on FROM platform -->
-      </div>
+      <div class="step-body" id="step4Body"></div>
     </div>
 
     <!-- STEP 5 -->
@@ -337,11 +385,11 @@
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">Can I change my site name when migrating?</div>
-      <div class="faq-a">Yes — just enter a different site name in the setup wizard on the new device. The site name is just a display label. Your data is linked to your API key, not the site name.</div>
+      <div class="faq-a">Yes — just enter a different site name in the Setup Wizard above. The site name is just a display label. Your data is linked to your API key, not the site name.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">What if my new device can't reach some devices on the network?</div>
-      <div class="faq-a">The monitoring agent needs network access (same VLAN or routed path) to the devices it monitors. If the new device is on a different network segment, some devices may show as DOWN. Check routing between the new host and your managed devices. Running <code class="mono-inline">ping 10.x.x.x</code> from the new device is a quick test.</div>
+      <div class="faq-a">The monitoring agent needs network access (same VLAN or routed path) to the devices it monitors. If the new device is on a different network segment, some devices may show as DOWN. Running <code class="mono-inline">ping 10.x.x.x</code> from the new device is a quick test.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">I lost my API key — how do I find it?</div>
@@ -367,9 +415,34 @@
 <script>
 /* ── Platform metadata ── */
 const PLAT = {
-  pi:      { label: '🍓 Raspberry Pi', installUrl: '/netmonitor/install-pi',      installLabel: '🍓 Raspberry Pi Install Guide' },
-  windows: { label: '⊞ Windows',       installUrl: '/netmonitor/install-windows', installLabel: '⊞ Windows Install Guide' },
-  mac:     { label: '⌘ macOS',         installUrl: '/netmonitor/install-mac',     installLabel: '⌘ macOS Install Guide' },
+  pi:      { label: '🍓 Raspberry Pi', cmdLabel: 'bash — paste into Pi terminal' },
+  windows: { label: '⊞ Windows',       cmdLabel: 'powershell (admin) — paste into terminal' },
+  mac:     { label: '⌘ macOS',         cmdLabel: 'bash — paste into Terminal' },
+};
+
+/* ── Step 2 prerequisites per TO platform ── */
+const PREREQS = {
+  pi: `
+    <div class="prereq-block">
+      <p><strong>Before running the wizard command:</strong> you need SSH access to your new Pi.</p>
+      <p>1. Flash <strong>Raspberry Pi OS Lite (64-bit)</strong> using <a href="https://raspberrypi.com/software" target="_blank" rel="noopener">Raspberry Pi Imager</a>. In the advanced settings set hostname to <code class="mono-inline">spangate-monitor</code>, username <code class="mono-inline">spangate</code>, enable SSH, then boot the Pi.</p>
+      <p>2. SSH in from your computer:</p>
+    </div>
+    <div class="code-block" style="margin-bottom:1rem;">
+      <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>ssh spangate@spangate-monitor.local</code></pre>
+    </div>
+    <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1rem;">Can't connect by hostname? Find the Pi's IP in your router's DHCP client list (look for <strong style="color:var(--text-muted);">spangate-monitor</strong>) and SSH using that IP instead. Then fill in your details and run the command below.</p>`,
+
+  windows: `
+    <div class="prereq-block">
+      <p>Open <strong>PowerShell as Administrator</strong> on the new Windows machine: press <strong>Win&nbsp;+&nbsp;X</strong> then choose <strong>Terminal (Admin)</strong> or <strong>Windows PowerShell (Admin)</strong>. Fill in your details below and paste the generated command.</p>
+    </div>`,
+
+  mac: `
+    <div class="prereq-block">
+      <p>Open <strong>Terminal</strong> on the new Mac: press <strong>⌘ Space</strong>, type <em>Terminal</em>, and press Enter. Fill in your details below and paste the generated command.</p>
+    </div>`,
 };
 
 /* ── Stop-agent commands per FROM platform ── */
@@ -389,7 +462,7 @@ sudo systemctl disable spangate-netmonitor</code></pre>
     </div>`,
 
   windows: `
-    <p>Open <strong>PowerShell</strong> and run:</p>
+    <p>Open <strong>PowerShell</strong> on the old Windows machine and run:</p>
     <div class="code-block">
       <div class="code-bar"><span class="code-lang">powershell — Windows</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
       <pre><code>cd "$env:USERPROFILE\\spangate-agent"
@@ -399,53 +472,108 @@ docker compose rm -f</code></pre>
     <p>Then open <strong>Docker Desktop</strong> and remove the <code class="mono-inline">spangate-agent</code> container if it still appears in the list.</p>`,
 
   mac: `
-    <p>Open <strong>Terminal</strong> and run:</p>
+    <p>Open <strong>Terminal</strong> on the old Mac and run:</p>
     <div class="code-block">
       <div class="code-bar"><span class="code-lang">bash — macOS</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
       <pre><code>cd ~/spangate-agent && docker compose down && docker compose rm -f</code></pre>
     </div>`,
 };
 
+/* ── Current TO platform (needed for command generation) ── */
+let _currentToPlatform = '';
+
+function _wzEsc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Regenerate command text based on TO platform and current inputs ── */
+function upgWzUpdate() {
+  const key  = document.getElementById('upgWzKey').value.trim();
+  const site = document.getElementById('upgWzSite').value.trim();
+  const cmd  = document.getElementById('upgWzCmd');
+  if (!cmd || !_currentToPlatform) return;
+
+  const kHtml = key  ? `<span class="wk">${_wzEsc(key)}</span>`  : `<span class="wp">paste key above</span>`;
+  const sHtml = site ? `<span class="wk">${_wzEsc(site)}</span>` : `<span class="wp">enter site name above</span>`;
+
+  if (_currentToPlatform === 'windows') {
+    cmd.innerHTML =
+      `$env:SPNG_API_KEY = "${kHtml}"\n` +
+      `$env:SPNG_SITE_NAME = "${sHtml}"\n` +
+      `irm https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.ps1 | iex`;
+  } else {
+    // pi or mac — same bash command
+    cmd.innerHTML =
+      `export SPNG_API_KEY="${kHtml}"\n` +
+      `export SPNG_SITE_NAME="${sHtml}"\n` +
+      `curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash`;
+  }
+}
+
+function upgWzAuthToggle() {
+  const checked = document.getElementById('upgWzAuthCheck').checked;
+  const btn = document.getElementById('upgWzCopyBtn');
+  if (btn) {
+    btn.disabled = !checked;
+    btn.style.opacity = checked ? '' : '0.35';
+    btn.style.cursor  = checked ? '' : 'not-allowed';
+  }
+}
+
+function upgWzCopy(btn) {
+  if (!document.getElementById('upgWzAuthCheck').checked) return;
+  const key  = document.getElementById('upgWzKey').value.trim()  || 'YOUR_API_KEY';
+  const site = document.getElementById('upgWzSite').value.trim() || 'My Site';
+  let text;
+  if (_currentToPlatform === 'windows') {
+    text = `$env:SPNG_API_KEY = "${key}"\n$env:SPNG_SITE_NAME = "${site}"\nirm https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.ps1 | iex`;
+  } else {
+    text = `export SPNG_API_KEY="${key}"\nexport SPNG_SITE_NAME="${site}"\ncurl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash`;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => { btn.textContent = 'Failed'; setTimeout(() => btn.textContent = 'Copy', 2000); });
+}
+
+/* ── Main wizard update (called on dropdown change) ── */
 function updateWizard() {
   const from = document.getElementById('selectFrom').value;
   const to   = document.getElementById('selectTo').value;
-  const banner  = document.getElementById('migrationBanner');
+  const banner    = document.getElementById('migrationBanner');
   const bannerTxt = document.getElementById('migrationBannerText');
-  const steps   = document.getElementById('wizardSteps');
-  const hint    = document.getElementById('selectorHint');
+  const steps     = document.getElementById('wizardSteps');
+  const hint      = document.getElementById('selectorHint');
 
   if (!from || !to) {
     banner.classList.remove('visible');
     steps.classList.remove('visible');
     hint.textContent = 'Select both platforms above to see your personalized migration steps.';
+    _currentToPlatform = '';
     return;
   }
 
-  // Same platform = upgrade (e.g. Pi 3 → Pi 5)
-  const isSame = from === to;
+  const isSame    = from === to;
   const fromLabel = PLAT[from].label;
   const toLabel   = PLAT[to].label;
 
-  // Update hint
   hint.textContent = '';
 
-  // Update banner
-  if (isSame) {
-    bannerTxt.innerHTML = `<strong>${fromLabel} upgrade</strong> — replacing or upgrading hardware on the same platform. Your data stays in the cloud, nothing is lost.`;
-  } else {
-    bannerTxt.innerHTML = `<strong>${fromLabel} → ${toLabel}</strong> migration ready. Follow the 5 steps below.`;
-  }
+  // Banner
+  bannerTxt.innerHTML = isSame
+    ? `<strong>${fromLabel} upgrade</strong> — replacing or upgrading hardware on the same platform. Your data stays in the cloud, nothing is lost.`
+    : `<strong>${fromLabel} → ${toLabel}</strong> migration ready. Follow the 5 steps below.`;
   banner.classList.add('visible');
 
-  // Update Step 2 — install guide for TO platform
-  const toPlat = PLAT[to];
+  // Step 2 — set TO platform, populate prereqs, regenerate command
+  _currentToPlatform = to;
   document.getElementById('step2Desc').textContent =
-    `Follow the ${toPlat.installLabel} — use the same API key.`;
-  const step2Link = document.getElementById('step2Link');
-  step2Link.href        = toPlat.installUrl;
-  step2Link.textContent = toPlat.installLabel + ' →';
+    `Get your ${PLAT[to].label} terminal open, fill in your API key and site name, then copy and run the command below.`;
+  document.getElementById('step2Prereqs').innerHTML = PREREQS[to];
+  document.getElementById('upgWzCmdLabel').textContent = PLAT[to].cmdLabel;
+  upgWzUpdate(); // refresh command with current input values
 
-  // Update Step 4 — stop commands for FROM platform
+  // Step 4 — stop commands for FROM platform
   document.getElementById('step4Desc').textContent =
     `Once the new device is confirmed running, stop the old agent on your ${fromLabel} machine.`;
   document.getElementById('step4Body').innerHTML = STOP_CMDS[from];
@@ -454,7 +582,7 @@ function updateWizard() {
   steps.classList.add('visible');
 }
 
-/* ── Copy button ── */
+/* ── Copy button for static code blocks ── */
 function copyCode(btn) {
   const code = btn.closest('.code-block').querySelector('code').innerText;
   navigator.clipboard.writeText(code).then(() => {
@@ -474,7 +602,12 @@ function toggleFaq(el) {
 </script>
 
 <script>
+/* ── Pre-fill API key from localStorage if signed in ── */
 (function(){
+  try {
+    const key = localStorage.getItem('spangate_api_key');
+    if (key) { const el = document.getElementById('upgWzKey'); if (el) { el.value = key; upgWzUpdate(); } }
+  } catch(e) {}
   try {
     var raw  = localStorage.getItem('sb-tiviipaamwvfjvoscnyk-auth-token');
     var data = raw ? JSON.parse(raw) : null;
