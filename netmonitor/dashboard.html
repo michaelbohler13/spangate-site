@@ -326,6 +326,12 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   color:var(--text-muted);border-radius:6px;padding:5px 14px;font-size:0.74rem;
   cursor:pointer;font-family:var(--sans);transition:all 0.15s;}
 .view-backup-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.4);}
+/* Backup timestamp chip shown in the Last Backup column */
+.backup-ts{background:rgba(0,212,184,0.07);border:0.5px solid rgba(0,212,184,0.25);
+  color:var(--accent);border-radius:6px;padding:3px 9px;font-family:var(--mono);
+  font-size:0.7rem;cursor:pointer;transition:all 0.15s;font-weight:500;white-space:nowrap;}
+.backup-ts:hover{background:rgba(0,212,184,0.16);border-color:var(--accent);}
+.no-backup-yet{font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);}
 
 /* ── GROUP ROWS ──────────────────────────────────────────────────────────── */
 .grp-row td{background:rgba(255,255,255,0.025);color:var(--text-muted);
@@ -623,14 +629,15 @@ curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/
           <th class="sort-th" onclick="setSortCol('vendor')">Vendor<span class="sort-icon" id="si-vendor">⇅</span></th>
           <th class="sort-th" onclick="setSortCol('type')">Type<span class="sort-icon" id="si-type">⇅</span></th>
           <th>Last Seen</th>
+          <th>Last Backup</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="devTbody">
         <!-- skeleton rows shown while initial data loads -->
-        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:72px"></div></td><td><div class="skeleton-bar" style="width:130px"></div></td><td><div class="skeleton-bar" style="width:90px"></div></td><td><div class="skeleton-bar" style="width:55px"></div></td><td><div class="skeleton-bar" style="width:75px"></div></td><td><div class="skeleton-bar" style="width:140px"></div></td><td></td></tr>
-        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:60px"></div></td><td><div class="skeleton-bar" style="width:110px"></div></td><td><div class="skeleton-bar" style="width:95px"></div></td><td><div class="skeleton-bar" style="width:65px"></div></td><td><div class="skeleton-bar" style="width:80px"></div></td><td><div class="skeleton-bar" style="width:120px"></div></td><td></td></tr>
-        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:66px"></div></td><td><div class="skeleton-bar" style="width:145px"></div></td><td><div class="skeleton-bar" style="width:85px"></div></td><td><div class="skeleton-bar" style="width:50px"></div></td><td><div class="skeleton-bar" style="width:70px"></div></td><td><div class="skeleton-bar" style="width:135px"></div></td><td></td></tr>
+        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:72px"></div></td><td><div class="skeleton-bar" style="width:130px"></div></td><td><div class="skeleton-bar" style="width:90px"></div></td><td><div class="skeleton-bar" style="width:55px"></div></td><td><div class="skeleton-bar" style="width:75px"></div></td><td><div class="skeleton-bar" style="width:140px"></div></td><td><div class="skeleton-bar" style="width:100px"></div></td><td></td></tr>
+        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:60px"></div></td><td><div class="skeleton-bar" style="width:110px"></div></td><td><div class="skeleton-bar" style="width:95px"></div></td><td><div class="skeleton-bar" style="width:65px"></div></td><td><div class="skeleton-bar" style="width:80px"></div></td><td><div class="skeleton-bar" style="width:120px"></div></td><td><div class="skeleton-bar" style="width:90px"></div></td><td></td></tr>
+        <tr class="skeleton-row"><td><div class="skeleton-bar" style="width:66px"></div></td><td><div class="skeleton-bar" style="width:145px"></div></td><td><div class="skeleton-bar" style="width:85px"></div></td><td><div class="skeleton-bar" style="width:50px"></div></td><td><div class="skeleton-bar" style="width:70px"></div></td><td><div class="skeleton-bar" style="width:135px"></div></td><td><div class="skeleton-bar" style="width:95px"></div></td><td></td></tr>
       </tbody>
     </table>
   </div>
@@ -1269,7 +1276,7 @@ function renderDevices() {
   const allHostnames = [...new Set([...Object.keys(liveMap), ...Object.keys(cfgMap)])];
 
   if (!allHostnames.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-st">No devices yet — click <strong style="color:var(--text-muted);">+ Add Device</strong> above to get started.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-st">No devices yet — click <strong style="color:var(--text-muted);">+ Add Device</strong> above to get started.</td></tr>`;
     return;
   }
 
@@ -1344,18 +1351,24 @@ function renderDevices() {
     const sshErrBadge = (cfg?.ssh_enabled && d.last_ssh_error)
       ? `<span class="ssh-err-ind" title="${sshErrTip}">⚠ SSH</span>` : '';
 
-    // Backup indicator — clicking navigates to Configs tab for this device
-    const backupBadge = d.last_config_hash
-      ? `<span class="has-backup-ind" onclick="event.stopPropagation();navToConfigsFor('${esc(hostname)}')" title="Config backup available — click to view">📋</span>` : '';
+    // Last Backup column cell
+    const lastBackupAt = d.last_backup_at ? new Date(d.last_backup_at) : null;
+    const backupCell = lastBackupAt
+      ? `<button class="backup-ts" onclick="event.stopPropagation();navToConfigsFor('${esc(hostname)}')"
+           title="Last backup: ${lastBackupAt.toLocaleString()} — click to view">📋 ${lastBackupAt.toLocaleDateString()}</button>`
+      : cfg?.ssh_enabled
+        ? `<span class="no-backup-yet">no backup yet</span>`
+        : `<span style="color:var(--text-dim);">—</span>`;
 
     let rows = `
     <tr class="dev-row${isExp?' expanded':''}" onclick="toggleDevice('${esc(hostname)}')">
       <td><span class="status-badge ${scls}">${sIcon} ${sLabel}</span></td>
-      <td><span class="hn">${esc(hostname)}</span>${sshErrBadge}${backupBadge}<span class="chevron">›</span></td>
+      <td><span class="hn">${esc(hostname)}</span>${sshErrBadge}<span class="chevron">›</span></td>
       <td><span class="ip-cell">${esc(ip)}</span></td>
       <td><span class="${vcls}">${esc(vendorLabel(vendor))}</span></td>
       <td><span class="dev-type">${esc(device_type)}</span></td>
       <td><span class="ls-cell">${esc(lastSeen)}</span></td>
+      <td>${backupCell}</td>
       <td onclick="event.stopPropagation()" style="text-align:right;white-space:nowrap;padding-right:0.5rem;">${actionCell}</td>
     </tr>`;
 
@@ -1384,7 +1397,7 @@ function renderDevices() {
 
       rows += `
       <tr class="acc-row">
-        <td colspan="7"><div class="acc-inner">
+        <td colspan="8"><div class="acc-inner">
           <div class="acc-grid">
             <div><div class="acc-label">Last config hash</div><div class="acc-val">${d.last_config_hash ? esc(d.last_config_hash) : '— no backup yet'}</div></div>
             <div><div class="acc-label">Vendor</div><div class="acc-val">${esc(vendorLabel(vendor))}</div></div>
@@ -1405,7 +1418,7 @@ function renderDevices() {
     const isCollapsed = collapsedGroups.has(gn);
     if (gn !== '') {
       const icon = isCollapsed ? '▶' : '▼';
-      html += `<tr class="grp-row" onclick="toggleGroup(${JSON.stringify(gn)})"><td colspan="7"><span class="grp-toggle">${icon}</span>${esc(gn)}<span style="font-weight:400;opacity:0.55;margin-left:6px;">(${hostnames.length})</span></td></tr>`;
+      html += `<tr class="grp-row" onclick="toggleGroup(${JSON.stringify(gn)})"><td colspan="8"><span class="grp-toggle">${icon}</span>${esc(gn)}<span style="font-weight:400;opacity:0.55;margin-left:6px;">(${hostnames.length})</span></td></tr>`;
     }
     if (!isCollapsed) hostnames.forEach(h => { html += deviceRow(h); });
   });

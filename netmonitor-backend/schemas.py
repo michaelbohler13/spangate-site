@@ -83,6 +83,7 @@ class DeviceStatus(BaseModel):
     status:           str           # "up" | "down" | "unknown"
     last_seen:        Optional[datetime]
     last_config_hash: Optional[str]
+    last_backup_at:   Optional[datetime] = None  # pulled_at of most recent Config row
     last_ssh_error:   Optional[str]      = None
     last_ssh_at:      Optional[datetime] = None
 

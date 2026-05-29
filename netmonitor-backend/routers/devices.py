@@ -92,14 +92,16 @@ async def list_devices(
 
     response: list[DeviceStatus] = []
     for device in devices:
-        # Latest config hash from DB
+        # Latest config hash + timestamp from DB
         hash_result = await db.execute(
-            select(Config.config_hash)
+            select(Config.config_hash, Config.pulled_at)
             .where(Config.device_id == device.id)
             .order_by(Config.pulled_at.desc())
             .limit(1)
         )
-        last_config_hash = hash_result.scalar_one_or_none()
+        config_row      = hash_result.first()
+        last_config_hash = config_row.config_hash if config_row else None
+        last_backup_at   = config_row.pulled_at   if config_row else None
 
         response.append(
             DeviceStatus(
@@ -110,6 +112,7 @@ async def list_devices(
                 status=device.status,        # persisted in DB
                 last_seen=device.last_seen,  # persisted in DB
                 last_config_hash=last_config_hash,
+                last_backup_at=last_backup_at,
                 last_ssh_error=device.last_ssh_error,
                 last_ssh_at=device.last_ssh_at,
             )
