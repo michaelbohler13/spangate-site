@@ -156,6 +156,25 @@
   .yaml-val{color:#a5d6ff;}
   .yaml-cmt{color:var(--text-dim);}
   .yaml-str{color:#a8d8a8;}
+
+  /* SETUP WIZARD */
+  .wiz-card{background:rgba(0,212,184,0.04);border:0.5px solid rgba(0,212,184,0.25);border-radius:14px;padding:1.5rem;margin-bottom:2.5rem;}
+  .wiz-title{font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:1.1rem;font-family:var(--mono);}
+  .wiz-fields{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.1rem;}
+  @media(max-width:520px){.wiz-fields{grid-template-columns:1fr;}}
+  .wiz-row{display:flex;flex-direction:column;gap:5px;}
+  .wiz-label{font-size:0.68rem;color:var(--text-dim);font-family:var(--mono);font-weight:500;}
+  .wiz-input{background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:0.8rem;color:var(--text);outline:none;transition:border-color 0.15s;width:100%;}
+  .wiz-input:focus{border-color:rgba(0,212,184,0.5);}
+  .wiz-input::placeholder{color:var(--text-dim);}
+  .wiz-hint{font-size:0.7rem;color:var(--text-dim);line-height:1.5;}
+  .wiz-hint a{color:var(--accent);text-decoration:none;}
+  .wiz-hint a:hover{text-decoration:underline;}
+  .wiz-cmd{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;}
+  .wiz-cmd-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border-bottom:0.5px solid var(--border);}
+  .wiz-cmd code{display:block;padding:1rem 1.1rem;font-family:var(--mono);font-size:0.78rem;line-height:1.7;color:#cdd9e5;white-space:pre;overflow-x:auto;}
+  .wk{color:#00d4b8;}
+  .wp{color:var(--text-dim);font-style:italic;}
 </style>
 </head>
 <body>
@@ -207,6 +226,32 @@
     <a href="/netmonitor/install-pi" class="active"><span class="plat-icon">🍓</span> Raspberry Pi</a>
     <a href="/netmonitor/install-windows"><span class="plat-icon">⊞</span> Windows</a>
     <a href="/netmonitor/install-mac"><span class="plat-icon">⌘</span> macOS</a>
+  </div>
+
+  <!-- SETUP WIZARD -->
+  <div class="wiz-card">
+    <div class="wiz-title">⚡ Quick Setup Wizard — Pre-Fill Your Command</div>
+    <div class="wiz-fields">
+      <div class="wiz-row">
+        <label class="wiz-label" for="wzKey">API Key</label>
+        <input class="wiz-input" id="wzKey" type="text" placeholder="spng_…" autocomplete="off" spellcheck="false" oninput="wzUpdate()">
+        <div class="wiz-hint">Copy from <a href="/netmonitor/settings">Settings → API Key</a></div>
+      </div>
+      <div class="wiz-row">
+        <label class="wiz-label" for="wzSite">Site Name</label>
+        <input class="wiz-input" id="wzSite" type="text" placeholder="My Site" oninput="wzUpdate()">
+        <div class="wiz-hint">Shown in your dashboard (e.g. Main Campus)</div>
+      </div>
+    </div>
+    <div class="wiz-cmd">
+      <div class="wiz-cmd-bar">
+        <span class="code-lang">bash — ready to paste into your Pi terminal</span>
+        <button class="copy-btn" onclick="wzCopy(this)">Copy</button>
+      </div>
+      <code id="wzCmd">export SPNG_API_KEY="<span class="wp">paste key above</span>"
+export SPNG_SITE_NAME="<span class="wp">enter site name above</span>"
+curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash</code>
+    </div>
   </div>
 
   <!-- REQUIREMENTS -->
@@ -349,11 +394,13 @@
       </div>
     </div>
     <div class="step-body">
-      <p>Copy your API key from <a href="/netmonitor/settings">Settings</a>, then SSH into your Pi and paste these two lines:</p>
+      <p>Use the <strong>Quick Setup Wizard</strong> at the top of this page — fill in your API key and site name, then click <strong>Copy</strong> and paste the command into your Pi terminal. That's it.</p>
+      <p>Or paste this manually and replace the placeholder values:</p>
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>export SPNG_API_KEY="your_spng_key_here"
-curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash</code></pre>
+        <pre><code>export SPNG_API_KEY="your_api_key_here"
+export SPNG_SITE_NAME="My Site"
+curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash</code></pre>
       </div>
       <div class="callout tip">
         <span class="callout-icon">✓</span>
@@ -453,6 +500,42 @@ function copyIni(btn) {
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
   });
 }
+
+// ── Setup Wizard ────────────────────────────────────────────────────────────
+function _wzEsc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function wzUpdate() {
+  const key  = document.getElementById('wzKey').value.trim();
+  const site = document.getElementById('wzSite').value.trim();
+  const cmd  = document.getElementById('wzCmd');
+  if (!cmd) return;
+  const kHtml = key  ? `<span class="wk">${_wzEsc(key)}</span>`  : `<span class="wp">paste key above</span>`;
+  const sHtml = site ? `<span class="wk">${_wzEsc(site)}</span>` : `<span class="wp">enter site name above</span>`;
+  cmd.innerHTML =
+    `export SPNG_API_KEY="${kHtml}"\n` +
+    `export SPNG_SITE_NAME="${sHtml}"\n` +
+    `curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash`;
+}
+function wzCopy(btn) {
+  const key  = document.getElementById('wzKey').value.trim()  || 'YOUR_API_KEY';
+  const site = document.getElementById('wzSite').value.trim() || 'My Site';
+  const text = `export SPNG_API_KEY="${key}"\nexport SPNG_SITE_NAME="${site}"\ncurl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash`;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => { btn.textContent = 'Failed'; setTimeout(() => btn.textContent = 'Copy', 2000); });
+}
+// Auto-fill from dashboard cache if available
+(function(){
+  try {
+    const key = localStorage.getItem('spangate_api_key');
+    if (key) {
+      const el = document.getElementById('wzKey');
+      if (el) { el.value = key; wzUpdate(); }
+    }
+  } catch(e) {}
+})();
 </script>
 <script>
 (function(){

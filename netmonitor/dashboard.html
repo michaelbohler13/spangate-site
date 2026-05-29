@@ -514,7 +514,7 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
             <div class="code-block">
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
               <pre>export SPNG_API_KEY="<span class="inject-api-key">YOUR_API_KEY</span>"
-curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash</pre>
+curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash</pre>
             </div>
             <div class="sub-step-note">The wizard will ask for your site name, then the agent starts automatically and restarts on reboot.</div>
           </div>
@@ -540,7 +540,7 @@ curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/
             <div class="code-block">
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
               <pre>$env:SPNG_API_KEY = "<span class="inject-api-key">YOUR_API_KEY</span>"
-irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex</pre>
+irm https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.ps1 | iex</pre>
             </div>
             <div class="sub-step-note">The wizard will ask for your site name, then the agent starts as a Docker container that restarts automatically.</div>
           </div>
@@ -566,7 +566,7 @@ irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmoni
             <div class="code-block">
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
               <pre>export SPNG_API_KEY="<span class="inject-api-key">YOUR_API_KEY</span>"
-curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash</pre>
+curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash</pre>
             </div>
             <div class="sub-step-note">The wizard will ask for your site name, then the agent starts as a Docker container that restarts automatically.</div>
           </div>
@@ -1184,6 +1184,8 @@ function injectApiKey(key) {
   document.querySelectorAll('.inject-api-key').forEach(el => {
     el.textContent = key;
   });
+  // Cache key so the install guide can pre-fill the wizard without a DB query
+  try { localStorage.setItem('spangate_api_key', key); } catch(e) {}
 }
 
 function simulateConnect() {

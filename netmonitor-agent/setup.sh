@@ -4,7 +4,7 @@
 #
 # Run this ONE command on your Pi, Mac, or Linux box:
 #
-#   curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash
+#   curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash
 #
 # What this does:
 #   1. Checks that Docker is installed (and helps you install it if not)
