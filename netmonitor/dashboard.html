@@ -393,6 +393,12 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 
 /* ── DEVICE MANAGEMENT ────────────────────────────────────────────────────── */
 .pane-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;}
+.plan-usage{display:inline-flex;align-items:center;gap:6px;font-size:0.72rem;font-family:var(--mono);color:var(--text-muted);margin-right:14px;}
+.plan-bar-wrap{width:44px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;}
+.plan-bar{height:100%;border-radius:2px;transition:width 0.4s ease,background 0.4s ease;}
+.plan-bar.ok  {background:var(--accent);}
+.plan-bar.warn{background:#f5a623;}
+.plan-bar.crit{background:#ff5f57;}
 .dev-action-btn{background:transparent;border:0.5px solid var(--border-bright);border-radius:5px;
   padding:3px 9px;font-size:0.72rem;cursor:pointer;transition:all 0.15s;
   line-height:1.4;font-family:var(--sans);}
@@ -737,9 +743,14 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
   <div class="tab-pane active" id="pane-devices">
     <div class="pane-toolbar">
       <span id="devRefreshStamp" style="font-size:0.72rem;color:var(--text-dim);font-family:var(--mono);margin-right:auto;"></span>
+      <span class="plan-usage" id="planUsage" style="display:none;">
+        <span id="planUsageTxt">0 / 10</span>
+        <div class="plan-bar-wrap"><div class="plan-bar ok" id="planUsageBar" style="width:0%"></div></div>
+        <span id="planName" style="opacity:0.55;font-size:0.68rem;">Free</span>
+      </span>
       <button class="btn btn-ghost" onclick="manualRefresh()" style="font-size:0.78rem;padding:6px 14px;margin-right:10px;">↻ Refresh</button>
-      <button class="btn btn-ghost" onclick="openImportModal()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬆ Import CSV</button>
-      <button class="btn btn-outline" onclick="openAddDevice()" style="font-size:0.8rem;padding:7px 18px;">+ Add Device</button>
+      <button id="importCsvBtn" class="btn btn-ghost" onclick="openImportModal()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬆ Import CSV</button>
+      <button id="addDeviceBtn" class="btn btn-outline" onclick="openAddDevice()" style="font-size:0.8rem;padding:7px 18px;">+ Add Device</button>
     </div>
     <table class="dev-table" id="devTable">
       <thead>
@@ -1027,6 +1038,7 @@ let lastRefreshedAt  = null;
 let sortCol        = 'status';
 let sortDir        = 1;          // 1 = asc, -1 = desc
 let collapsedGroups = new Set();
+let planInfo       = { plan: 'free', device_limit: 10, device_count: 0, devices_remaining: 10 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -1131,6 +1143,9 @@ async function determineState() {
   updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
   updateAgentHealth(data);
 
+  // Fetch plan usage (non-blocking)
+  _refreshPlanInfo();
+
   // Fetch device-configs separately so a failure doesn't block devices/alerts.
   let dcRes = null;
   try {
@@ -1228,6 +1243,7 @@ function startLiveRefresh() {
         updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
         updateAgentHealth(data);
       }
+      _refreshPlanInfo();
       renderDevices();
       renderAlerts();
       updateAlertCounts();
@@ -1399,6 +1415,48 @@ function showDashboard(agentOnline, lastHeartbeat) {
   renderDevices();
   renderAlerts();
   updateAlertCounts();
+}
+
+function updatePlanUsage(info) {
+  planInfo = info;
+  const el   = document.getElementById('planUsage');
+  const txt  = document.getElementById('planUsageTxt');
+  const bar  = document.getElementById('planUsageBar');
+  const name = document.getElementById('planName');
+  if (!el) return;
+
+  el.style.display = '';
+  const pct = info.device_limit > 0
+    ? Math.min(100, Math.round(info.device_count / info.device_limit * 100))
+    : 0;
+  const cls   = pct >= 90 ? 'crit' : pct >= 75 ? 'warn' : 'ok';
+  txt.textContent  = `${info.device_count} / ${info.device_limit}`;
+  bar.className    = 'plan-bar ' + cls;
+  bar.style.width  = pct + '%';
+  name.textContent = info.plan.charAt(0).toUpperCase() + info.plan.slice(1);
+
+  // Gate add/import buttons when at limit
+  const atLimit   = info.device_count >= info.device_limit;
+  const limitTip  = `${info.plan.charAt(0).toUpperCase() + info.plan.slice(1)} plan limit: ${info.device_limit} devices. Upgrade to add more.`;
+  const importBtn = document.getElementById('importCsvBtn');
+  const addBtn    = document.getElementById('addDeviceBtn');
+  [importBtn, addBtn].forEach(btn => {
+    if (!btn) return;
+    btn.disabled       = atLimit;
+    btn.style.opacity  = atLimit ? '0.35' : '';
+    btn.style.cursor   = atLimit ? 'not-allowed' : '';
+    btn.title          = atLimit ? limitTip : '';
+  });
+}
+
+async function _refreshPlanInfo() {
+  if (!apiKey) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/plan`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (res.ok) updatePlanUsage(await res.json());
+  } catch(e) {}
 }
 
 function updateAgentStatus(online, lastHeartbeat) {
@@ -2274,6 +2332,7 @@ async function saveDevice() {
     closeDeviceModal();
     await _reloadDeviceConfigs();
     renderDevices();
+    _refreshPlanInfo();
 
   } catch(e) {
     errEl.textContent = 'Network error — please try again.';
@@ -2299,6 +2358,7 @@ async function deleteDevice(id, hostname, event) {
     }
     await _reloadDeviceConfigs();
     renderDevices();
+    _refreshPlanInfo();
   } catch(e) {
     alert('Network error — could not remove device.');
   }
@@ -2531,7 +2591,7 @@ async function runCsvImport() {
   const fill = document.getElementById('csvProgressFill');
   const lbl  = document.getElementById('csvProgressLbl');
 
-  let added = 0, skipped = 0, failed = 0;
+  let added = 0, skipped = 0, failed = 0, planLimitMsg = null;
 
   for (let i = 0; i < valid.length; i++) {
     const r = valid[i];
@@ -2556,9 +2616,20 @@ async function runCsvImport() {
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       });
-      if      (res.status === 201) { added++;   r.status = 'imported'; }
-      else if (res.status === 409) { skipped++; r.status = 'skip'; }
-      else                         { failed++;  r.status = 'fail'; }
+      if (res.status === 201) {
+        added++; r.status = 'imported';
+      } else if (res.status === 409) {
+        skipped++; r.status = 'skip';
+      } else if (res.status === 403) {
+        // Plan limit hit — all remaining rows will also fail; stop now
+        const errData = await res.json().catch(() => ({}));
+        planLimitMsg = errData.detail || 'Plan device limit reached.';
+        r.status = 'fail'; failed++;
+        for (let j = i + 1; j < valid.length; j++) { valid[j].status = 'fail'; failed++; }
+        break;
+      } else {
+        failed++; r.status = 'fail';
+      }
     } catch(e) { failed++; r.status = 'fail'; }
   }
 
@@ -2566,18 +2637,26 @@ async function runCsvImport() {
   lbl.textContent  = 'Done';
 
   const parts = [`${added} device${added !== 1 ? 's' : ''} added`];
-  if (skipped) parts.push(`${skipped} already existed`);
-  if (failed)  parts.push(`${failed} failed`);
+  if (skipped)       parts.push(`${skipped} already existed`);
+  if (failed && !planLimitMsg) parts.push(`${failed} failed`);
+  if (planLimitMsg)  parts.push(`${failed} skipped — plan limit reached`);
+
   const resultEl = document.getElementById('csvResult');
-  resultEl.textContent  = parts.join(' · ');
-  resultEl.className    = 'csv-result ' + (failed ? 'warn' : 'ok');
+  resultEl.className    = 'csv-result ' + (planLimitMsg ? 'warn' : failed ? 'warn' : 'ok');
   resultEl.style.display = '';
+
+  if (planLimitMsg) {
+    resultEl.innerHTML = `${esc(parts.join(' · '))}<br><span style="font-size:0.72rem;opacity:0.85;">${esc(planLimitMsg)}</span>`;
+  } else {
+    resultEl.textContent = parts.join(' · ');
+  }
 
   await _reloadDeviceConfigs();
   renderDevices();
+  _refreshPlanInfo();
 
   // Auto-close on a clean import; leave open so user can review warnings/errors
-  if (!failed) {
+  if (!failed && !planLimitMsg) {
     setTimeout(() => closeCsvModal(), 1800);
   }
 }

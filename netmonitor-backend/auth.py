@@ -84,7 +84,7 @@ async def verify_api_key(
         client = _get_supabase()
         result = (
             client.table("nm_profiles")
-            .select("id, site_id")
+            .select("id, site_id, plan")
             .eq("api_key", raw_key)
             .single()
             .execute()
@@ -104,12 +104,14 @@ async def verify_api_key(
     # site_id falls back to the user's profile id if not explicitly set
     site_id = profile.get("site_id") or profile["id"]
     user_id = profile["id"]
+    plan    = profile.get("plan") or "free"
 
     # Attach to request state so middleware and other deps can read it
     request.state.user_id = user_id
     request.state.site_id = site_id
+    request.state.plan    = plan
 
-    return {"user_id": user_id, "site_id": site_id}
+    return {"user_id": user_id, "site_id": site_id, "plan": plan}
 
 
 # Convenience type alias — use in route signatures as:  ctx: AuthContext

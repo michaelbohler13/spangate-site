@@ -20,7 +20,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth import AuthContext
@@ -31,6 +31,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Device Configs"])
 
 VALID_VENDORS = {"cisco", "aruba_cx", "juniper", "other", "internet"}
+
+# Device limits per subscription plan
+PLAN_LIMITS: dict[str, int] = {
+    "free":       10,
+    "starter":    50,
+    "pro":        250,
+    "business":   500,
+    "enterprise": 2000,
+}
 
 # Default netmiko device_type per vendor
 VENDOR_DEFAULT_TYPE: dict[str, str] = {
@@ -163,6 +172,23 @@ async def add_device_config(
     db: AsyncSession = Depends(get_db),
 ) -> DeviceConfigOut:
     """Add a new device to the site's monitoring list."""
+    # ── Plan limit check ─────────────────────────────────────────────────────
+    plan  = ctx.get("plan", "free")
+    limit = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
+    count_result = await db.execute(
+        select(func.count(DeviceConfig.id)).where(DeviceConfig.site_id == ctx["site_id"])
+    )
+    current = count_result.scalar_one()
+    if current >= limit:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"Device limit reached. Your {plan.title()} plan allows {limit} "
+                f"device{'s' if limit != 1 else ''}. You currently have {current}. "
+                "Upgrade your plan to add more."
+            ),
+        )
+
     device_type = payload.device_type or VENDOR_DEFAULT_TYPE.get(payload.vendor, "cisco_ios")
 
     row = DeviceConfig(
@@ -252,6 +278,35 @@ async def delete_device_config(
     await db.delete(row)
     await db.commit()
     logger.info("Device removed: site=%s id=%d hostname=%s", ctx["site_id"], device_id, hostname)
+
+
+# ── GET /plan ─────────────────────────────────────────────────────────────────
+
+@router.get("/plan")
+async def get_plan(
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Return the site's current plan and device usage counts.
+
+    Used by the dashboard to render the usage bar and gate the add/import buttons.
+
+    Returns:
+        plan, device_limit, device_count, devices_remaining
+    """
+    plan  = ctx.get("plan", "free")
+    limit = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
+    count_result = await db.execute(
+        select(func.count(DeviceConfig.id)).where(DeviceConfig.site_id == ctx["site_id"])
+    )
+    count = count_result.scalar_one()
+    return {
+        "plan":              plan,
+        "device_limit":      limit,
+        "device_count":      count,
+        "devices_remaining": max(0, limit - count),
+    }
 
 
 # ── POST /device-configs/{id}/request-backup ─────────────────────────────────
