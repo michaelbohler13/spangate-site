@@ -233,6 +233,48 @@ class APIClient:
         }
         return self._post("/api/v1/agent/ssh-status", payload)
 
+    def get_pending_ssh_tests(self) -> list[dict]:
+        """
+        Fetch pending SSH credential tests queued by the dashboard.
+
+        The agent polls this every 10 seconds and runs each test immediately.
+
+        Returns:
+            List of test dicts (id, ip, vendor, device_type, ssh_username,
+            ssh_password, ssh_port).  Returns an empty list on any error so
+            the caller can safely iterate without extra error handling.
+        """
+        url = f"{self.api_url}/api/v1/agent/pending-ssh-tests"
+        try:
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+            return response.json().get("tests", [])
+        except requests.RequestException as exc:
+            logger.debug("Failed to fetch pending SSH tests: %s", exc)
+            return []
+
+    def report_ssh_test_result(
+        self,
+        test_id: int,
+        success: bool,
+        result_msg: str,
+    ) -> bool:
+        """
+        Report the outcome of an SSH credential test back to the backend.
+
+        Args:
+            test_id:    ID of the test row returned by POST /test-ssh.
+            success:    True if SSH connected and pulled config successfully.
+            result_msg: Human-readable result shown to the user.
+
+        Returns:
+            True if successfully delivered.
+        """
+        return self._post(
+            "/api/v1/agent/ssh-test-result",
+            {"test_id": test_id, "success": success, "result_msg": result_msg},
+        )
+
     def heartbeat(
         self,
         site_name: str,

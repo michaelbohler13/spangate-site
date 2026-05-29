@@ -333,6 +333,28 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .backup-ts:hover{background:rgba(0,212,184,0.16);border-color:var(--accent);}
 .no-backup-yet{font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);}
 
+/* ── SSH TESTER ───────────────────────────────────────────────────────────── */
+.ssh-test-box{margin-top:0.9rem;padding:0.85rem 1rem;
+  background:rgba(0,212,184,0.03);border:0.5px solid var(--border);
+  border-radius:10px;}
+.ssh-test-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ssh-test-btn{background:rgba(0,212,184,0.1);border:0.5px solid rgba(0,212,184,0.35);
+  color:var(--accent);border-radius:8px;padding:7px 16px;font-size:0.8rem;
+  font-family:var(--sans);font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.ssh-test-btn:hover{background:rgba(0,212,184,0.18);}
+.ssh-test-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.ssh-test-spinner{width:15px;height:15px;border:2px solid rgba(0,212,184,0.2);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:ldSpin 0.65s linear infinite;flex-shrink:0;display:none;}
+.ssh-test-status{font-size:0.82rem;font-family:var(--mono);font-weight:600;}
+.ssh-test-status.ok{color:var(--accent);}
+.ssh-test-status.fail{color:#ff5f57;}
+.ssh-test-result{margin-top:0.55rem;padding:7px 11px;border-radius:7px;
+  font-family:var(--mono);font-size:0.76rem;line-height:1.55;display:none;}
+.ssh-test-result.ok{background:rgba(0,212,184,0.08);border:0.5px solid rgba(0,212,184,0.25);color:var(--accent);}
+.ssh-test-result.fail{background:rgba(255,95,87,0.08);border:0.5px solid rgba(255,95,87,0.25);color:#ff5f57;}
+.ssh-test-hint{margin-top:0.45rem;font-size:0.68rem;color:var(--text-dim);}
+
 /* ── GROUP ROWS ──────────────────────────────────────────────────────────── */
 .grp-row td{background:rgba(255,255,255,0.025);color:var(--text-muted);
   font-size:0.68rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;
@@ -764,10 +786,24 @@ curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/
             <div class="dm-toggle-desc">Pull running config via SSH (weekly)</div>
           </div>
           <label class="dm-switch">
-            <input type="checkbox" id="dmSshEnabled">
+            <input type="checkbox" id="dmSshEnabled" onchange="dmSshToggleChange()">
             <span class="dm-slider"></span>
           </label>
         </div>
+
+        <!-- SSH credential tester — shown when SSH Config Pull is enabled -->
+        <div id="dmSshTestSection" class="ssh-test-box" style="display:none;">
+          <div class="ssh-test-row">
+            <button id="dmSshTestBtn" class="ssh-test-btn" onclick="testDmSshConnection()">
+              ⚡ Test SSH Connection
+            </button>
+            <div id="dmSshTestSpinner" class="ssh-test-spinner"></div>
+            <span id="dmSshTestStatus" class="ssh-test-status"></span>
+          </div>
+          <div id="dmSshTestResult" class="ssh-test-result"></div>
+          <div class="ssh-test-hint">Test runs through the agent — results appear within ~15 s</div>
+        </div>
+
       </div>
     </div>
     <div class="modal-sec">
@@ -1657,7 +1693,19 @@ function dmVendorChange() {
   document.getElementById('dmSshUsernameField').style.display = hide;
   document.getElementById('dmSshPasswordField').style.display = hide;
   document.getElementById('dmSshToggleRow').style.display     = hide;
-  if (isInternet) document.getElementById('dmSshEnabled').checked = false;
+  if (isInternet) {
+    document.getElementById('dmSshEnabled').checked = false;
+    document.getElementById('dmSshTestSection').style.display = 'none';
+    _resetSshTest();
+  } else {
+    dmSshToggleChange();   // re-evaluate whether tester should be visible
+  }
+}
+
+function dmSshToggleChange() {
+  const on = document.getElementById('dmSshEnabled').checked;
+  document.getElementById('dmSshTestSection').style.display = on ? '' : 'none';
+  if (!on) _resetSshTest();
 }
 
 function openAddDevice() {
@@ -1676,6 +1724,7 @@ function openAddDevice() {
   document.getElementById('dmSshEnabled').checked      = false;
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Add Device';
+  _resetSshTest();
   dmVendorChange();
   populateGroupDropdown();
   document.getElementById('deviceModal').classList.add('open');
@@ -1702,6 +1751,7 @@ function openEditDevice(id, event) {
   document.getElementById('dmSshEnabled').checked      = cfg.ssh_enabled  === true;
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Save Changes';
+  _resetSshTest();
   dmVendorChange();
   populateGroupDropdown();
   document.getElementById('deviceModal').classList.add('open');
@@ -1713,9 +1763,137 @@ function closeDeviceModal() {
   document.getElementById('deviceModal').classList.remove('open');
   document.getElementById('dmGroupDropdown').style.display = 'none';
   document.removeEventListener('keydown', _dmKey);
+  _resetSshTest();
 }
 
 function _dmKey(e) { if (e.key === 'Escape') closeDeviceModal(); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SSH CREDENTIAL TESTER
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Maps vendor → Netmiko device_type (mirrors VENDOR_DEFAULT_TYPE in device_configs.py)
+const _VENDOR_DEVICE_TYPE = {
+  cisco:    'cisco_ios',
+  aruba_cx: 'aruba_aoscx',
+  juniper:  'juniper_junos',
+  other:    'linux',
+};
+
+let _sshTestPollTimer = null;
+
+function _resetSshTest() {
+  if (_sshTestPollTimer) { clearInterval(_sshTestPollTimer); _sshTestPollTimer = null; }
+  const spinner = document.getElementById('dmSshTestSpinner');
+  const status  = document.getElementById('dmSshTestStatus');
+  const result  = document.getElementById('dmSshTestResult');
+  const btn     = document.getElementById('dmSshTestBtn');
+  if (spinner) spinner.style.display = 'none';
+  if (status)  { status.textContent = ''; status.className = 'ssh-test-status'; }
+  if (result)  { result.style.display = 'none'; result.className = 'ssh-test-result'; result.textContent = ''; }
+  if (btn)     btn.disabled = false;
+}
+
+function _sshTestDone(success, message) {
+  const spinner = document.getElementById('dmSshTestSpinner');
+  const status  = document.getElementById('dmSshTestStatus');
+  const result  = document.getElementById('dmSshTestResult');
+  const btn     = document.getElementById('dmSshTestBtn');
+
+  if (spinner) spinner.style.display = 'none';
+  if (btn)     btn.disabled = false;
+
+  if (status) {
+    status.textContent = success ? '✓ Connected' : '✗ Failed';
+    status.className   = 'ssh-test-status ' + (success ? 'ok' : 'fail');
+  }
+  if (message && result) {
+    result.textContent  = message;
+    result.className    = 'ssh-test-result ' + (success ? 'ok' : 'fail');
+    result.style.display = 'block';
+  }
+}
+
+async function testDmSshConnection() {
+  const ip      = document.getElementById('dmIp').value.trim();
+  const vendor  = document.getElementById('dmVendor').value;
+  const sshPort = parseInt(document.getElementById('dmSshPort').value, 10) || 22;
+  const sshUser = document.getElementById('dmSshUsername').value.trim();
+  const sshPass = document.getElementById('dmSshPassword').value;
+
+  const errEl = document.getElementById('dmError');
+
+  if (!ip) {
+    errEl.textContent = 'Enter an IP address or domain before testing.';
+    return;
+  }
+  if (!sshUser) {
+    errEl.textContent = 'Enter an SSH username before testing.';
+    return;
+  }
+  // In edit mode the password field may be blank ("keep current") — warn the user
+  if (!sshPass && document.getElementById('dmSshPassword').placeholder.includes('keep')) {
+    errEl.textContent = 'Enter the SSH password to run a connection test.';
+    return;
+  }
+  errEl.textContent = '';
+
+  // Reset and show spinner
+  _resetSshTest();
+  const btn     = document.getElementById('dmSshTestBtn');
+  const spinner = document.getElementById('dmSshTestSpinner');
+  const status  = document.getElementById('dmSshTestStatus');
+  btn.disabled         = true;
+  spinner.style.display = 'block';
+  status.textContent   = 'Connecting…';
+  status.className     = 'ssh-test-status';
+
+  const deviceType = _VENDOR_DEVICE_TYPE[vendor] || 'cisco_ios';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/test-ssh`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ip, vendor, device_type: deviceType,
+        ssh_username: sshUser, ssh_password: sshPass, ssh_port: sshPort,
+      }),
+    });
+    if (!res.ok) {
+      _sshTestDone(false, 'Could not queue test — please try again.');
+      return;
+    }
+    const { test_id } = await res.json();
+
+    // Poll every 2 s for up to 90 s
+    let attempts = 0;
+    _sshTestPollTimer = setInterval(async () => {
+      attempts++;
+      if (attempts > 45) {
+        clearInterval(_sshTestPollTimer); _sshTestPollTimer = null;
+        _sshTestDone(false, 'Timed out waiting for agent — verify the agent is running and connected.');
+        return;
+      }
+      try {
+        const pRes = await fetch(`${API_BASE}/api/v1/test-ssh/${test_id}`, {
+          headers: { 'Authorization': `Bearer ${apiKey}` }
+        });
+        if (!pRes.ok) return;
+        const data = await pRes.json();
+        if (data.status === 'pending') return;  // still running
+        clearInterval(_sshTestPollTimer); _sshTestPollTimer = null;
+        if (data.status === 'expired') {
+          _sshTestDone(false, 'Agent did not respond — check that the agent is running.');
+        } else {
+          _sshTestDone(data.status === 'success', data.result_msg || '');
+        }
+      } catch(e) {}
+    }, 2000);
+
+  } catch(e) {
+    _sshTestDone(false, 'Network error — please try again.');
+  }
+}
 
 async function saveDevice() {
   const btn   = document.getElementById('dmSaveBtn');

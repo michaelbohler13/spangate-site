@@ -186,6 +186,54 @@ class SSHPuller:
         self.api.config_backup(hostname, config_text, new_hash)
         logger.info("[SSH] Config backup sent for %s", hostname)
 
+    def run_connection_test(self, test: dict[str, Any]) -> tuple[bool, str]:
+        """
+        Attempt an SSH connection for an ad-hoc credential test request.
+
+        Used by ssh_test_loop in agent.py.  The device is NOT added to the
+        monitored list; this is purely a one-shot connectivity check.
+
+        Args:
+            test: Test dict from /agent/pending-ssh-tests
+                  (id, ip, vendor, device_type, ssh_username, ssh_password, ssh_port).
+
+        Returns:
+            ``(True, "<success message>")`` on success.
+            ``(False, "<error message>")`` on failure.
+        """
+        # Build a throwaway device dict that _pull_config_ssh can use
+        test_device: dict[str, Any] = {
+            "hostname":     f"test-{test['id']}",
+            "ip":           test["ip"],
+            "vendor":       test.get("vendor", "cisco"),
+            "device_type":  test.get("device_type") or "",
+            "ssh_username": test.get("ssh_username", ""),
+            "ssh_password": test.get("ssh_password", ""),
+            "ssh_port":     test.get("ssh_port", 22),
+        }
+
+        logger.info(
+            "[SSH-TEST] #%d — testing %s (%s/%s)",
+            test["id"], test["ip"], test.get("vendor"), test.get("device_type"),
+        )
+
+        config_text, error_type = _pull_config_ssh(test_device)
+
+        if config_text is not None:
+            lines = len(config_text.splitlines())
+            msg = f"Connected successfully — pulled {lines:,} lines of config"
+            logger.info("[SSH-TEST] #%d ✓ %s", test["id"], msg)
+            return True, msg
+
+        msgs = {
+            "auth_failed": "Authentication failed — check SSH username and password",
+            "timeout":     "Connection timed out — verify the IP address and SSH port",
+            "other":       "SSH connection failed — check device type and reachability",
+        }
+        msg = msgs.get(error_type or "other", "SSH connection failed")
+        logger.info("[SSH-TEST] #%d ✗ %s (%s)", test["id"], msg, error_type)
+        return False, msg
+
     def pull_device_now(self, device: dict[str, Any]) -> None:
         """
         Trigger an immediate config pull for a device.

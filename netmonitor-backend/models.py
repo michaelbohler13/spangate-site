@@ -279,3 +279,39 @@ class DeviceConfig(Base):
 
     def __repr__(self) -> str:
         return f"<DeviceConfig site={self.site_id!r} hostname={self.hostname!r}>"
+
+
+# ── SshTest ───────────────────────────────────────────────────────────────────
+
+class SshTest(Base):
+    """
+    A short-lived SSH credential test request queued by the dashboard.
+
+    The monitoring agent polls GET /agent/pending-ssh-tests every 10 seconds,
+    runs the SSH connection attempt from the LAN, and reports the result back
+    via POST /agent/ssh-test-result.  Rows expire automatically after 5 minutes.
+
+    status: "pending" | "success" | "failed" | "expired"
+    """
+
+    __tablename__ = "ssh_tests"
+
+    id:           Mapped[int]           = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    site_id:      Mapped[str]           = mapped_column(String(255), nullable=False, index=True)
+    ip:           Mapped[str]           = mapped_column(String(253), nullable=False)
+    vendor:       Mapped[str]           = mapped_column(String(100), nullable=False, default="cisco")
+    device_type:  Mapped[str]           = mapped_column(String(100), nullable=False, default="cisco_ios")
+    ssh_username: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    ssh_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    ssh_port:     Mapped[int]           = mapped_column(Integer,     nullable=False, default=22)
+    status:       Mapped[str]           = mapped_column(String(20),  nullable=False, default="pending")
+    result_msg:   Mapped[Optional[str]] = mapped_column(Text,        nullable=True)
+    created_at:   Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expires_at:   Mapped[datetime]      = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index("ix_ssh_tests_site_status", "site_id", "status", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<SshTest id={self.id} site={self.site_id!r} ip={self.ip!r} status={self.status!r}>"

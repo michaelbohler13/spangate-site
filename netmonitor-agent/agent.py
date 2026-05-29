@@ -202,6 +202,37 @@ async def backup_request_loop(
                 api.clear_backup_request(hostname)
 
 
+async def ssh_test_loop(
+    api: APIClient,
+    ssh_puller: SSHPuller,
+) -> None:
+    """
+    Fast-path poller (10 s) for on-demand SSH credential tests.
+
+    When the user clicks "Test SSH Connection" in the dashboard, a test row
+    is queued in the backend.  This loop picks it up within 10 seconds,
+    runs _pull_config_ssh from the Pi (which has LAN access), and reports
+    the result back so the dashboard can show ✓ or ✗ immediately.
+
+    Args:
+        api:        Authenticated API client.
+        ssh_puller: SSHPuller instance that provides run_connection_test().
+    """
+    logger.info("[ST] SSH test loop started — polling every 10s")
+    while True:
+        await asyncio.sleep(10)
+        tests = api.get_pending_ssh_tests()
+        if not tests:
+            continue
+        loop = asyncio.get_event_loop()
+        for test in tests:
+            logger.info("[ST] Running credential test #%d for %s", test["id"], test["ip"])
+            success, msg = await loop.run_in_executor(
+                None, ssh_puller.run_connection_test, test
+            )
+            api.report_ssh_test_result(test["id"], success=success, result_msg=msg)
+
+
 async def heartbeat_loop(
     api: APIClient,
     site_name: str,
@@ -313,6 +344,7 @@ async def main() -> None:
             heartbeat_loop(api, site_name, len(devices), ping_loop),
             device_config_loop(api, devices, ssh_puller),
             backup_request_loop(api, ssh_puller),
+            ssh_test_loop(api, ssh_puller),
         )
     except asyncio.CancelledError:
         logger.info("Agent shut down cleanly.")
