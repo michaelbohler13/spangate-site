@@ -55,6 +55,8 @@ class Device(Base):
     last_status_change: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     last_ssh_error:     Mapped[Optional[str]]      = mapped_column(Text, nullable=True)
     last_ssh_at:        Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Maintenance mode — suppresses ping alerts and status updates while True
+    maintenance:        Mapped[bool]           = mapped_column(Boolean, nullable=False, default=False)
     created_at:         Mapped[datetime]       = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

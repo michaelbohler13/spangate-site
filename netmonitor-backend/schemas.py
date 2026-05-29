@@ -91,6 +91,7 @@ class DeviceStatus(BaseModel):
     last_backup_at:   Optional[datetime] = None  # pulled_at of most recent Config row
     last_ssh_error:   Optional[str]      = None
     last_ssh_at:      Optional[datetime] = None
+    maintenance:      bool               = False
 
 
 class SshStatusReport(BaseModel):

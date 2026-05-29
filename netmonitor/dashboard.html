@@ -220,6 +220,7 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .s-down{background:rgba(255,95,87,0.14);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.3);}
 .s-unknown{background:rgba(255,255,255,0.06);color:var(--text-muted);border:0.5px solid rgba(255,255,255,0.15);}
 .s-configured{background:rgba(167,139,250,0.1);color:#a78bfa;border:0.5px solid rgba(167,139,250,0.3);}
+.s-maintenance{background:rgba(255,193,7,0.12);color:#ffc107;border:0.5px solid rgba(255,193,7,0.35);}
 .v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;}
 .v-internet{color:#a78bfa;} .v-other{color:var(--text-muted);}
 .hn{font-family:var(--mono);font-size:0.78rem;color:var(--text);}
@@ -385,6 +386,10 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   cursor:pointer;user-select:none;}
 .grp-row:hover td{color:var(--text);background:rgba(255,255,255,0.04);}
 .grp-toggle{margin-right:6px;font-size:0.6rem;color:var(--text-dim);}
+.grp-count{font-weight:400;opacity:0.55;margin-left:6px;}
+.grp-pill{display:inline-block;font-size:0.6rem;font-weight:600;padding:1px 7px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;vertical-align:middle;}
+.grp-pill-down{background:rgba(255,95,87,0.15);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.35);}
+.grp-pill-maint{background:rgba(255,193,7,0.12);color:#ffc107;border:0.5px solid rgba(255,193,7,0.35);}
 
 /* ── DEVICE MANAGEMENT ────────────────────────────────────────────────────── */
 .pane-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;}
@@ -395,6 +400,9 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .dev-edit-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.4);}
 .dev-del-btn{color:var(--text-dim);margin-left:4px;}
 .dev-del-btn:hover{color:#ff5f57;border-color:rgba(255,95,87,0.4);}
+.dev-maint-btn{color:var(--text-dim);margin-left:4px;}
+.dev-maint-btn:hover{color:#ffc107;border-color:rgba(255,193,7,0.4);}
+.dev-maint-btn.active{color:#ffc107;border-color:rgba(255,193,7,0.4);background:rgba(255,193,7,0.08);}
 #deviceModal{position:fixed;inset:0;z-index:1000;display:none;align-items:flex-start;
   justify-content:center;padding:2.5rem 1.25rem;overflow-y:auto;}
 #deviceModal.open{display:flex;}
@@ -1546,9 +1554,19 @@ function renderDevices() {
     }
   }
 
+  // Primary sort key: downs always float to top regardless of column choice
+  function _statusPri(hostname) {
+    const d = liveMap[hostname] || {};
+    if (d.maintenance) return 2;
+    const s = d.status || (cfgMap[hostname] ? 'configured' : 'unknown');
+    return ({down:0, up:1, configured:3, unknown:4}[s] ?? 4);
+  }
+
   function sortedList(arr) {
     return [...arr].sort((a, b) => {
-      const ka = sortKey(a), kb = sortKey(b);
+      const pa = _statusPri(a), pb = _statusPri(b);
+      if (pa !== pb) return pa - pb;          // downs first, always
+      const ka = sortKey(a), kb = sortKey(b); // then user's chosen column
       if (typeof ka === 'number') return (ka - kb) * sortDir;
       if (ka < kb) return -sortDir; if (ka > kb) return sortDir;
       return a.localeCompare(b);
@@ -1572,11 +1590,19 @@ function renderDevices() {
     const cfg = cfgMap[hostname];
     const isExp = expandedDevice === hostname;
 
-    const status = d.status || (cfg ? 'configured' : 'unknown');
-    const scls   = status === 'up' ? 's-up' : status === 'down' ? 's-down'
-                 : status === 'configured' ? 's-configured' : 's-unknown';
-    const sIcon  = status === 'up' ? '↑' : status === 'down' ? '↓' : status === 'configured' ? '◎' : '?';
-    const sLabel = status === 'configured' ? 'CONFIGURED' : status.toUpperCase();
+    const rawStatus = d.status || (cfg ? 'configured' : 'unknown');
+    const isMaint   = !!d.maintenance;
+    const status    = isMaint ? 'maintenance' : rawStatus;
+    const scls      = isMaint               ? 's-maintenance'
+                    : status === 'up'       ? 's-up'
+                    : status === 'down'     ? 's-down'
+                    : status === 'configured' ? 's-configured' : 's-unknown';
+    const sIcon     = isMaint               ? '🔧'
+                    : status === 'up'       ? '↑'
+                    : status === 'down'     ? '↓'
+                    : status === 'configured' ? '◎' : '?';
+    const sLabel    = isMaint               ? 'MAINTENANCE'
+                    : status === 'configured' ? 'CONFIGURED' : status.toUpperCase();
 
     const ip          = d.ip || cfg?.ip || '—';
     const vendor      = (d.vendor && d.vendor !== 'unknown') ? d.vendor : (cfg?.vendor || d.vendor || '');
@@ -1584,10 +1610,11 @@ function renderDevices() {
     const vcls        = vendorClass(vendor);
     const lastSeen    = d.last_seen ? new Date(d.last_seen).toLocaleString() : (cfg ? 'Not seen yet' : '—');
 
+    const maintBtn = `<button class="dev-action-btn dev-maint-btn${isMaint ? ' active' : ''}" onclick="toggleMaintenance('${esc(hostname)}',${isMaint},event)" title="${isMaint ? 'Remove from maintenance' : 'Put in maintenance mode'}">🔧</button>`;
     const actionCell = cfg
-      ? `<button class="dev-action-btn dev-edit-btn" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
+      ? `${maintBtn}<button class="dev-action-btn dev-edit-btn" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
         ><button class="dev-action-btn dev-del-btn" onclick="deleteDevice(${cfg.id},'${esc(hostname)}',event)" title="Remove device">✕</button>`
-      : `<button class="dev-action-btn dev-del-btn" onclick="deleteLiveDevice('${esc(hostname)}',event)" title="Remove device">✕</button>`;
+      : `${maintBtn}<button class="dev-action-btn dev-del-btn" onclick="deleteLiveDevice('${esc(hostname)}',event)" title="Remove device">✕</button>`;
 
     // SSH error badge — only for ssh_enabled devices that have an error
     const sshErrTip  = d.last_ssh_error ? esc(d.last_ssh_error) : '';
@@ -1667,8 +1694,12 @@ function renderDevices() {
     const hostnames   = sortedList(groups.get(gn));
     const isCollapsed = collapsedGroups.has(gn);
     if (gn !== '') {
+      const grpDowns  = hostnames.filter(h => !liveMap[h]?.maintenance && liveMap[h]?.status === 'down').length;
+      const grpMaints = hostnames.filter(h => !!liveMap[h]?.maintenance).length;
+      const grpPills  = (grpDowns  ? `<span class="grp-pill grp-pill-down">↓ ${grpDowns}</span>` : '')
+                      + (grpMaints ? `<span class="grp-pill grp-pill-maint">🔧 ${grpMaints}</span>` : '');
       const icon = isCollapsed ? '▶' : '▼';
-      html += `<tr class="grp-row" onclick="toggleGroup(${JSON.stringify(gn)})"><td colspan="8"><span class="grp-toggle">${icon}</span>${esc(gn)}<span style="font-weight:400;opacity:0.55;margin-left:6px;">(${hostnames.length})</span></td></tr>`;
+      html += `<tr class="grp-row" onclick="toggleGroup(${JSON.stringify(gn)})"><td colspan="8"><span class="grp-toggle">${icon}</span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${grpPills}</td></tr>`;
     }
     if (!isCollapsed) hostnames.forEach(h => { html += deviceRow(h); });
   });
@@ -1678,6 +1709,27 @@ function renderDevices() {
 function toggleDevice(hostname) {
   expandedDevice = expandedDevice === hostname ? null : hostname;
   renderDevices();
+}
+
+async function toggleMaintenance(hostname, currentMaint, event) {
+  event.stopPropagation();
+  if (!apiKey) return;
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/devices/${encodeURIComponent(hostname)}/maintenance`,
+      {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maintenance: !currentMaint }),
+      }
+    );
+    if (res.ok) {
+      // Instant local update — no need to wait for the next refresh cycle
+      const d = liveDevices.find(d => d.hostname === hostname);
+      if (d) d.maintenance = !currentMaint;
+      renderDevices();
+    }
+  } catch(e) { /* silently ignore network errors */ }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

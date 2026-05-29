@@ -119,6 +119,13 @@ async def ping_alert(
     try:
         device = await _get_or_create_device(db, site_id, body.hostname, body.ip)
 
+        # Suppress status updates and alerts while device is in maintenance mode
+        if device.maintenance:
+            logger.debug(
+                "[PING] %s/%s in maintenance — alert suppressed", site_id, body.hostname
+            )
+            return {"ok": True, "alert_id": None, "suppressed": True}
+
         # Persist live status to DB so it survives serverless restarts
         await update_device_status(
             db=db,

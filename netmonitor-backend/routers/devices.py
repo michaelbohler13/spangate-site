@@ -15,6 +15,7 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -115,6 +116,7 @@ async def list_devices(
                 last_backup_at=last_backup_at,
                 last_ssh_error=device.last_ssh_error,
                 last_ssh_at=device.last_ssh_at,
+                maintenance=device.maintenance,
             )
         )
 
@@ -205,4 +207,50 @@ async def get_device(
         last_config_hash=config_row.config_hash if config_row else None,
         last_config_at=config_row.pulled_at.isoformat() if config_row else None,
         recent_alerts=recent_alerts,
+        maintenance=device.maintenance,
     )
+
+
+# ── PUT /devices/{hostname}/maintenance ──────────────────────────────────────
+
+class MaintenanceUpdate(BaseModel):
+    maintenance: bool
+
+
+@router.put("/devices/{hostname}/maintenance", status_code=200)
+async def set_maintenance(
+    hostname: str,
+    body: MaintenanceUpdate,
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Enable or disable maintenance mode for a device.
+
+    While maintenance=True the ping alert endpoint silently suppresses status
+    updates and alert creation for this device.  The dashboard shows a
+    🔧 MAINTENANCE badge instead of up/down.
+
+    Args:
+        hostname: Device hostname.
+        body: ``{"maintenance": true|false}``
+        ctx: Auth context with site_id.
+        db: Async database session.
+
+    Returns:
+        ``{"ok": True, "maintenance": <bool>}``
+    """
+    result = await db.execute(
+        select(Device).where(Device.site_id == ctx["site_id"], Device.hostname == hostname)
+    )
+    device = result.scalar_one_or_none()
+    if device is None:
+        raise HTTPException(status_code=404, detail=f"Device '{hostname}' not found")
+
+    device.maintenance = body.maintenance
+    await db.commit()
+    logger.info(
+        "[MAINTENANCE] %s/%s → %s",
+        ctx["site_id"], hostname, "ON" if body.maintenance else "OFF",
+    )
+    return {"ok": True, "maintenance": body.maintenance}
