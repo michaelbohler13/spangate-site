@@ -982,19 +982,6 @@ async function _applyDataResponses(devRes, alertRes, dcRes) {
   }
   if (dcRes && dcRes.ok) deviceConfigs = await dcRes.json();
 
-  // Populate configs device dropdown — only SSH-enabled devices can have backups.
-  // Must run after deviceConfigs is set above.
-  const sel = document.getElementById('cfgDeviceSelect');
-  if (sel) {
-    const sshDevices = deviceConfigs.filter(c => c.ssh_enabled);
-    if (sshDevices.length) {
-      sel.innerHTML = '<option value="">Select device…</option>' +
-        sshDevices.map(c => `<option value="${esc(c.hostname)}">${esc(c.hostname)}</option>`).join('');
-    } else {
-      sel.innerHTML = '<option value="">No SSH-enabled devices</option>';
-    }
-  }
-
   lastRefreshedAt = new Date();
   _updateRefreshStamp();
 
