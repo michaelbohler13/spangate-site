@@ -1412,7 +1412,14 @@ function renderDevices() {
     </tr>`;
 
     if (isExp) {
-      const devAlerts = [...activeAlerts, ...resolvedAlerts].filter(a => a.hostname === hostname).slice(0,3);
+      // Collect alerts for this device, then remove consecutive same-type
+      // entries so three "Device Up" pings on restart show as one, while real
+      // status changes (up → down → up) still show all transitions.
+      const rawDevAlerts = [...activeAlerts, ...resolvedAlerts].filter(a => a.hostname === hostname);
+      const devAlerts = rawDevAlerts.reduce((acc, a) => {
+        if (!acc.length || acc[acc.length - 1].type !== a.type) acc.push(a);
+        return acc;
+      }, []).slice(0, 3);
       const alertBadges = devAlerts.length
         ? devAlerts.map(a => `<span class="mini-badge">${alertBadgeLabel(a.type)} · ${a.ts}</span>`).join('')
         : '<span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim);">No recent alerts</span>';
@@ -1438,7 +1445,7 @@ function renderDevices() {
       <tr class="acc-row">
         <td colspan="8"><div class="acc-inner">
           <div class="acc-grid">
-            <div><div class="acc-label">Last config hash</div><div class="acc-val">${d.last_config_hash ? esc(d.last_config_hash) : '— no backup yet'}</div></div>
+            <div><div class="acc-label">Last backed up</div><div class="acc-val">${d.last_backup_at ? new Date(d.last_backup_at).toLocaleString() : '— no backup yet'}</div></div>
             <div><div class="acc-label">Vendor</div><div class="acc-val">${esc(vendorLabel(vendor))}</div></div>
             ${sshStatusRow}
           </div>

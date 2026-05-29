@@ -9,6 +9,7 @@ Config hashes are stored in memory only — nothing is written to disk.
 import asyncio
 import hashlib
 import logging
+import re
 from typing import Any
 
 from netmiko import ConnectHandler, NetmikoAuthenticationException, NetmikoTimeoutException
@@ -33,6 +34,45 @@ VENDOR_COMMAND: dict[str, str] = {
     "aruba_cx": "show running-config",
     "juniper":  "show configuration",
 }
+
+
+# Matches comment/header lines that contain volatile timestamps so they can be
+# stripped before hashing.  The full config text is still sent to the backend
+# unchanged — only the hash is based on stable content.
+#
+# Covers common patterns across vendors:
+#   Cisco IOS:   "! Last configuration change at 14:23:11 UTC Thu May 28 2026"
+#   Aruba AOS-CX: "Current configuration:" header line
+#   Juniper:      "## Last changed: 2026-05-28 21:41:40 UTC"
+_VOLATILE_LINE_RE = re.compile(
+    r"^\s*(?:"
+    r"Current configuration:"                        # Aruba AOS-CX header
+    r"|[!#].*?(?:Last (?:configuration )?(?:change|modified|changed)|"
+    r"generated(?: on)?|at \d{1,2}:\d{2}:\d{2})"   # Cisco / Juniper timestamps
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _normalize_for_hash(text: str) -> str:
+    """
+    Strip volatile header/timestamp lines from config text before hashing.
+
+    This prevents false "config changed" detections when a device embeds a
+    "Last modified at <time>" comment in its running-config output.  The
+    full text (with those lines) is still sent to the backend for storage;
+    only the hash calculation uses the stripped version.
+
+    Args:
+        text: Raw running-config text from the device.
+
+    Returns:
+        Config text with volatile comment/header lines removed.
+    """
+    return "\n".join(
+        line for line in text.splitlines()
+        if not _VOLATILE_LINE_RE.match(line)
+    )
 
 
 def _sha256(text: str) -> str:
@@ -163,7 +203,10 @@ class SSHPuller:
         # Successful pull — report to backend (clears any previous error)
         self.api.ssh_status(hostname, success=True)
 
-        new_hash = _sha256(config_text)
+        # Hash the normalised text so volatile timestamp lines (e.g. Aruba's
+        # "Current configuration:" header or Cisco's "Last configuration change
+        # at …" comment) don't cause false change detections or duplicate backups.
+        new_hash = _sha256(_normalize_for_hash(config_text))
         old_hash = self._hashes.get(hostname)
 
         if old_hash is None:

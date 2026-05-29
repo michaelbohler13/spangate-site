@@ -139,13 +139,14 @@ async def device_config_loop(
     Poll the dashboard every DEVICE_POLL_INTERVAL seconds for the latest
     device list and update the shared *devices* list in-place.
 
-    Also checks each device for a force_backup flag set by the dashboard's
-    "Backup Now" button and queues an immediate SSH pull via ssh_puller.
+    On-demand backups ("Backup Now") are handled exclusively by
+    backup_request_loop (60-second fast path), not here, to avoid the same
+    request being picked up by both loops and triggering duplicate backups.
 
     Args:
         api:        Authenticated API client.
         devices:    The shared device list mutated in-place on each update.
-        ssh_puller: SSHPuller instance used to queue forced backups.
+        ssh_puller: SSHPuller instance (kept for signature compatibility).
     """
     logger.info("[DC] Device config loop started — polling every %ds", DEVICE_POLL_INTERVAL)
     while True:
@@ -156,11 +157,6 @@ async def device_config_loop(
         elif not new_devices:
             logger.info("[DC] Dashboard has no devices configured yet — keeping current list")
         else:
-            # Queue forced backups before updating the shared list
-            for d in new_devices:
-                if d.get("force_backup"):
-                    ssh_puller.queue_backup(d["hostname"])
-
             if new_devices != devices:
                 _apply_device_list(devices, new_devices)
                 logger.info("[DC] Device list updated from dashboard — %d device(s)", len(devices))
