@@ -202,6 +202,7 @@
       <li><a href="/netmonitor/install-windows">Windows</a></li>
       <li><a href="/netmonitor/install-mac">macOS</a></li>
       <li><a href="/netmonitor/settings">Settings</a></li>
+      <li><a href="/netmonitor/upgrade">Upgrade</a></li>
     </ul>
     <div class="nav-spacer"></div>
     <div class="nav-right">
@@ -481,122 +482,16 @@ docker pull spangate/netmonitor-agent:latest  # update to latest version</code><
     </table>
   </div>
 
-  <hr class="guide-divider" id="upgrade">
+  <hr class="guide-divider">
 
-  <!-- UPGRADING TO A NEW PI -->
-  <div style="margin-bottom:3rem;">
-    <h2 class="section-head">🔄 Upgrading to a New Pi</h2>
-    <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.65;margin-bottom:1.25rem;">
-      Moving to a bigger Pi — or replacing a failed one? Your device list, alert history,
-      and config backups all live in the cloud. Nothing is lost. Follow these five steps
-      to migrate in under 10 minutes.
-    </p>
-
-    <div class="callout tip" style="margin-bottom:1.5rem;">
-      <span class="callout-icon">☁️</span>
-      <div class="callout-text">
-        Your <strong>same API key</strong> is the link between your Pi and your data.
-        As long as the new Pi uses the same key, it will immediately see all your existing
-        devices, groups, and settings — no re-import needed if you kept your device list
-        in the dashboard.
-      </div>
+  <!-- UPGRADE CALLOUT -->
+  <div class="callout tip" style="margin-bottom:2rem;">
+    <span class="callout-icon">🔄</span>
+    <div class="callout-text">
+      <strong>Upgrading to a bigger Pi or switching to Windows / macOS?</strong>
+      Your device list, alert history, and config backups all live in the cloud — nothing is lost.
+      <a href="/netmonitor/upgrade" style="color:var(--accent);font-weight:600;">See the Upgrade &amp; Migration Guide →</a>
     </div>
-
-    <!-- Step 1 -->
-    <div class="guide-step" style="margin-bottom:1.75rem;">
-      <div class="step-head">
-        <div class="step-badge" style="background:rgba(0,212,184,0.06);font-size:0.65rem;">01</div>
-        <div class="step-info">
-          <div class="step-title">Export your device list from the dashboard</div>
-          <div class="step-desc">In case you want a local backup or plan to re-import on the new Pi.</div>
-        </div>
-      </div>
-      <div class="step-body">
-        <p>Go to <a href="/netmonitor/dashboard">Network Monitor → Devices</a> and click <strong>⬇ Export CSV</strong>.
-        Save the file — it contains all your hostnames, IPs, vendors, groups, and SSH settings
-        (passwords are not exported for security; you'll re-enter those on any device that needs SSH backup).</p>
-      </div>
-    </div>
-
-    <!-- Step 2 -->
-    <div class="guide-step" style="margin-bottom:1.75rem;">
-      <div class="step-head">
-        <div class="step-badge" style="background:rgba(0,212,184,0.06);font-size:0.65rem;">02</div>
-        <div class="step-info">
-          <div class="step-title">Set up the new Pi</div>
-          <div class="step-desc">Follow this install guide from Step 1 as if it's a brand new install.</div>
-        </div>
-      </div>
-      <div class="step-body">
-        <p>Flash the OS, connect, and run the setup wizard — <strong>using the exact same API key</strong> as your old Pi.
-        The site name can stay the same too.</p>
-        <div class="callout warn">
-          <span class="callout-icon">⚠️</span>
-          <div class="callout-text">Do <strong>not</strong> decommission the old Pi yet — leave it running until the new Pi is confirmed online and sending heartbeats.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 3 -->
-    <div class="guide-step" style="margin-bottom:1.75rem;">
-      <div class="step-head">
-        <div class="step-badge" style="background:rgba(0,212,184,0.06);font-size:0.65rem;">03</div>
-        <div class="step-info">
-          <div class="step-title">Confirm the new Pi appears in the dashboard</div>
-          <div class="step-desc">Look for the agent heartbeat to switch over.</div>
-        </div>
-      </div>
-      <div class="step-body">
-        <p>Open the dashboard and watch the <strong>Agent</strong> health card at the top.
-        Within 5 minutes you should see the heartbeat timestamp update and devices
-        start reporting. Both Pis will be sending pings briefly — that's fine.</p>
-      </div>
-    </div>
-
-    <!-- Step 4 -->
-    <div class="guide-step" style="margin-bottom:1.75rem;">
-      <div class="step-head">
-        <div class="step-badge" style="background:rgba(0,212,184,0.06);font-size:0.65rem;">04</div>
-        <div class="step-info">
-          <div class="step-title">Stop the old Pi</div>
-          <div class="step-desc">Once the new Pi is running cleanly, decommission the old one.</div>
-        </div>
-      </div>
-      <div class="step-body">
-        <p>SSH into the old Pi and stop the agent:</p>
-        <div class="code-block">
-          <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-          <pre><code>sudo systemctl stop spangate-netmonitor
-sudo systemctl disable spangate-netmonitor</code></pre>
-        </div>
-        <p>Or if using Docker:</p>
-        <div class="code-block">
-          <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-          <pre><code>cd ~/spangate-agent && docker compose down</code></pre>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 5 -->
-    <div class="guide-step" style="margin-bottom:0;">
-      <div class="step-head">
-        <div class="step-badge" style="background:rgba(0,212,184,0.06);font-size:0.65rem;">05</div>
-        <div class="step-info">
-          <div class="step-title">Re-enter SSH passwords (if needed)</div>
-          <div class="step-desc">SSH passwords are never exported — update any devices that use SSH backup.</div>
-        </div>
-      </div>
-      <div class="step-body">
-        <p>In the dashboard go to <strong>Settings → Devices</strong>, click <strong>✎ Edit</strong> on any device
-        that has SSH backup enabled, and re-enter the password. The device list, groups, ping monitoring,
-        and config history are all already there — only the passwords need updating.</p>
-        <div class="callout tip">
-          <span class="callout-icon">✓</span>
-          <div class="callout-text">That's it. All your alert history, config backups, and device groups are stored in the cloud and carry over automatically.</div>
-        </div>
-      </div>
-    </div>
-
   </div>
 
 </div><!-- /guide-page -->

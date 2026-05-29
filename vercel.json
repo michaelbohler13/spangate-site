@@ -14,6 +14,7 @@
     { "source": "/netmonitor/install-windows", "destination": "/netmonitor/install-windows.html" },
     { "source": "/netmonitor/install-mac", "destination": "/netmonitor/install-mac.html" },
     { "source": "/netmonitor/settings", "destination": "/netmonitor/settings.html" },
+    { "source": "/netmonitor/upgrade", "destination": "/netmonitor/upgrade.html" },
     { "source": "/assettracker", "destination": "/assettracker/index.html" }
   ],
   "headers": [

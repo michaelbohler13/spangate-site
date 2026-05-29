@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Monitor — Upgrade &amp; Migration Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d1117; --bg2:#0a0a0a; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#222222;
+    --border:rgba(255,255,255,0.08); --border-bright:rgba(255,255,255,0.15);
+    --text:#f5f5f7; --text-muted:#a1a1a6; --text-dim:#6e6e73;
+    --accent:#00d4b8; --teal:#2a8a78;
+    --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+
+  nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);background:rgba(0,0,0,0.72);border-bottom:0.5px solid var(--border);}
+  .nav-top{height:36px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;border-bottom:0.5px solid rgba(255,255,255,0.06);}
+  .nav-top a{font-size:0.8rem;font-weight:500;letter-spacing:-0.01em;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;}
+  .nav-top a:hover{color:#fff;background:rgba(255,255,255,0.05);}
+  .nav-top a.active{color:#00d4b8;background:rgba(0,212,184,0.08);}
+  .nav-bottom{height:48px;display:flex;align-items:center;padding:0 2rem;}
+  .nav-logo{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px;}
+  .nav-links{display:flex;gap:1.75rem;margin-left:2.5rem;list-style:none;}
+  .nav-links a{font-size:0.78rem;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;cursor:pointer;}
+  .nav-links a:hover{color:var(--text);}
+  .nav-links a.active{color:var(--accent);}
+  .nav-spacer{flex:1;}
+  .nav-right{display:flex;align-items:center;gap:12px;}
+  .nav-my-monitor{font-size:0.78rem;font-weight:600;color:#00d4b8;text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;font-family:var(--mono);}
+  .nav-my-monitor:hover{color:#1af0d4;}
+  .nav-signin{font-size:0.78rem;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;}
+  .nav-signin:hover{color:var(--text);}
+  .nav-cta{font-size:0.78rem;font-weight:500;color:var(--text);background:rgba(0,212,184,0.12);border:0.5px solid rgba(0,212,184,0.3);border-radius:980px;padding:5px 14px;text-decoration:none;letter-spacing:-0.01em;transition:all 0.15s;}
+  .nav-cta:hover{background:rgba(0,212,184,0.2);}
+
+  footer{border-top:0.5px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+  .footer-left{font-size:0.75rem;color:var(--text-dim);}
+  .footer-easter{font-family:var(--mono);font-size:0.68rem;}
+  .footer-links{display:flex;gap:1.5rem;list-style:none;}
+  .footer-links a{font-size:0.75rem;color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .footer-links a:hover{color:var(--text-muted);}
+
+  .guide-page{max-width:780px;margin:0 auto;padding:116px 2rem 5rem;}
+  .guide-header{margin-bottom:2.5rem;}
+  .guide-breadcrumb{font-size:0.72rem;color:var(--text-dim);font-family:var(--mono);margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
+  .guide-breadcrumb a{color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .guide-breadcrumb a:hover{color:var(--accent);}
+  .guide-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:600;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.75rem;}
+  .guide-subtitle{font-size:0.95rem;color:var(--text-muted);line-height:1.6;max-width:520px;}
+
+  .guide-step{margin-bottom:3rem;}
+  .step-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.25rem;}
+  .step-badge{flex-shrink:0;width:32px;height:32px;border-radius:8px;background:rgba(0,212,184,0.1);border:0.5px solid rgba(0,212,184,0.25);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;font-weight:600;color:var(--accent);}
+  .step-title{font-size:1.05rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:3px;line-height:1.2;}
+  .step-desc{font-size:0.82rem;color:var(--text-muted);line-height:1.55;}
+  .step-body{padding-left:46px;}
+  .step-body p{font-size:0.85rem;color:var(--text-muted);line-height:1.65;margin-bottom:0.85rem;}
+  .step-body ol,.step-body ul{padding-left:1.25rem;display:flex;flex-direction:column;gap:6px;margin-bottom:0.85rem;}
+  .step-body li{font-size:0.85rem;color:var(--text-muted);line-height:1.55;}
+  .step-body li strong,.step-body p strong{color:var(--text);}
+  .step-body a{color:var(--accent);text-decoration:none;}
+  .step-body a:hover{text-decoration:underline;}
+
+  .code-block{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1rem;font-family:var(--mono);}
+  .code-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border-bottom:0.5px solid var(--border);}
+  .code-lang{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);}
+  .copy-btn{font-size:0.65rem;font-weight:500;color:var(--text-dim);background:none;border:0.5px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-family:var(--mono);transition:all 0.15s;}
+  .copy-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.3);}
+  .copy-btn.copied{color:var(--accent);border-color:rgba(0,212,184,0.4);}
+  .code-block pre{padding:1rem 1.1rem;overflow-x:auto;}
+  .code-block code{font-size:0.78rem;line-height:1.7;color:#cdd9e5;white-space:pre;}
+
+  .callout{display:flex;gap:10px;padding:0.9rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.82rem;line-height:1.55;}
+  .callout.tip{background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.2);}
+  .callout.warn{background:rgba(255,189,46,0.06);border:0.5px solid rgba(255,189,46,0.2);}
+  .callout-icon{flex-shrink:0;font-size:0.9rem;margin-top:1px;}
+  .callout.tip .callout-text{color:#6dcfc3;}
+  .callout.warn .callout-text{color:#d4a035;}
+  .callout.tip .callout-text strong{color:var(--accent);}
+  .callout.warn .callout-text strong{color:#ffc107;}
+
+  .section-head{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:0.5px solid var(--border);}
+  .guide-divider{border:none;border-top:0.5px solid var(--border);margin:2.5rem 0;}
+
+  /* Platform tab strip for "stop old agent" section */
+  .plat-tabs{display:flex;gap:4px;margin-bottom:1rem;}
+  .plat-tab{padding:6px 16px;border-radius:7px;font-size:0.75rem;font-weight:500;border:0.5px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;transition:all 0.15s;font-family:var(--sans);}
+  .plat-tab:hover{color:var(--text);}
+  .plat-tab.active{background:rgba(0,212,184,0.1);border-color:rgba(0,212,184,0.3);color:var(--accent);}
+  .plat-panel{display:none;}
+  .plat-panel.active{display:block;}
+
+  /* Migration route cards */
+  .route-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0.75rem;margin-bottom:2rem;}
+  .route-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:10px;}
+  .route-card .route-arrow{color:var(--accent);font-size:1rem;}
+
+  /* FAQ */
+  .faq-item{border-bottom:0.5px solid var(--border);padding:0.9rem 0;}
+  .faq-item:last-child{border-bottom:none;}
+  .faq-q{font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:1rem;}
+  .faq-q::after{content:'›';color:var(--text-dim);font-size:1rem;flex-shrink:0;transition:transform 0.2s;}
+  .faq-q.open::after{transform:rotate(90deg);}
+  .faq-a{font-size:0.82rem;color:var(--text-muted);line-height:1.65;display:none;padding-top:0.35rem;}
+  .faq-a.open{display:block;}
+  .faq-a a{color:var(--accent);text-decoration:none;}
+  .faq-a a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-top">
+    <a href="../">SpanGate</a>
+    <a href="../configwizard/">Config Wizard</a>
+    <a href="../netmonitor/" class="active">Network Monitor</a>
+    <a href="../assettracker/">Asset Tracker</a>
+  </div>
+  <div class="nav-bottom">
+    <a href="/netmonitor/" class="nav-logo">Network <span style="color:#00d4b8;">Monitor</span></a>
+    <ul class="nav-links">
+      <li><a href="/netmonitor/">Overview</a></li>
+      <li><a href="/netmonitor/dashboard">Dashboard</a></li>
+      <li><a href="/netmonitor/install-pi">Raspberry Pi</a></li>
+      <li><a href="/netmonitor/install-windows">Windows</a></li>
+      <li><a href="/netmonitor/install-mac">macOS</a></li>
+      <li><a href="/netmonitor/upgrade" class="active">Upgrade</a></li>
+      <li><a href="/netmonitor/settings">Settings</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <a href="/netmonitor/dashboard" class="nav-my-monitor">● My Network Monitor</a>
+      <a href="../login.html" class="nav-signin" id="navSignin">Sign in</a>
+      <a href="../login.html" class="nav-cta" id="navCta">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="guide-page">
+
+  <!-- HEADER -->
+  <div class="guide-header">
+    <div class="guide-breadcrumb">
+      <a href="/netmonitor/">Network Monitor</a>
+      <span style="color:var(--border-bright);">/</span>
+      <span style="color:var(--accent);">Upgrade &amp; Migration Guide</span>
+    </div>
+    <h1 class="guide-title">Upgrade &amp; Migration<br><span style="color:var(--accent);">Guide</span></h1>
+    <p class="guide-subtitle">Moving to a bigger Pi, switching to Windows, or replacing a failed device? Your data lives in the cloud — migration takes under 10 minutes.</p>
+  </div>
+
+  <!-- KEY CALLOUT -->
+  <div class="callout tip" style="margin-bottom:2.5rem;">
+    <span class="callout-icon">☁️</span>
+    <div class="callout-text">
+      <strong>Your API key is the key.</strong>
+      All device lists, alert history, config backups, and groups are stored in the cloud.
+      As long as the new device uses the same API key, everything carries over automatically —
+      no re-import, no reconfiguration.
+    </div>
+  </div>
+
+  <!-- SUPPORTED ROUTES -->
+  <h2 class="section-head">Supported Migration Routes</h2>
+  <div class="route-grid">
+    <div class="route-card"><span>🍓 Pi 3 / Zero</span><span class="route-arrow">→</span><span>🍓 Pi 4 / Pi 5</span></div>
+    <div class="route-card"><span>🍓 Raspberry Pi</span><span class="route-arrow">→</span><span>⊞ Windows</span></div>
+    <div class="route-card"><span>🍓 Raspberry Pi</span><span class="route-arrow">→</span><span>⌘ macOS</span></div>
+    <div class="route-card"><span>⊞ Windows</span><span class="route-arrow">→</span><span>🍓 Raspberry Pi</span></div>
+    <div class="route-card"><span>⊞ Windows</span><span class="route-arrow">→</span><span>⌘ macOS</span></div>
+    <div class="route-card"><span>⌘ macOS</span><span class="route-arrow">→</span><span>🍓 Raspberry Pi</span></div>
+  </div>
+  <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;margin-bottom:2.5rem;">
+    The steps below are identical for every combination above.
+    The only difference is the command to stop the old agent on your original device (Step 4).
+  </p>
+
+  <!-- STEP 1 -->
+  <div class="guide-step">
+    <div class="step-head">
+      <div class="step-badge">01</div>
+      <div class="step-info">
+        <div class="step-title">Export your device list (optional safety backup)</div>
+        <div class="step-desc">Saves a local CSV in case you want to verify or re-import.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Go to <a href="/netmonitor/dashboard">Network Monitor → Devices</a> and click <strong>⬇ Export CSV</strong>.
+      The file contains all your hostnames, IPs, vendors, groups, and SSH settings.
+      SSH passwords are never exported for security — you'll re-enter those in Step 5 if needed.</p>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-text">This step is optional. Your device list is already in the cloud and will appear automatically on the new device. Export is just a local safety copy.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="guide-step">
+    <div class="step-head">
+      <div class="step-badge">02</div>
+      <div class="step-info">
+        <div class="step-title">Install the agent on the new device</div>
+        <div class="step-desc">Follow the install guide for your new platform — use the same API key.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Choose your new platform and follow the install guide:</p>
+      <ul>
+        <li><a href="/netmonitor/install-pi">🍓 Raspberry Pi Install Guide</a></li>
+        <li><a href="/netmonitor/install-windows">⊞ Windows Install Guide</a></li>
+        <li><a href="/netmonitor/install-mac">⌘ macOS Install Guide</a></li>
+      </ul>
+      <p style="margin-top:0.75rem;">When the wizard asks for your <strong>API Key</strong>, enter the <strong>exact same key</strong> you used on your old device.
+      You can copy it from <a href="/netmonitor/settings">Settings → API Key</a>.</p>
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-text">Do <strong>not</strong> stop or remove the old agent yet. Keep it running until you confirm the new device is online.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="guide-step">
+    <div class="step-head">
+      <div class="step-badge">03</div>
+      <div class="step-info">
+        <div class="step-title">Confirm the new agent is online</div>
+        <div class="step-desc">Watch the dashboard for the heartbeat to switch over.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Open the <a href="/netmonitor/dashboard">dashboard</a> and check the <strong>Agent</strong> health card at the top of the page.
+      Within 5 minutes you should see:</p>
+      <ul>
+        <li>The <strong>Last seen</strong> timestamp updating</li>
+        <li>Device statuses refreshing</li>
+        <li>CPU / RAM / Temp metrics from the new device</li>
+      </ul>
+      <p>Both old and new agents may run briefly at the same time — that's fine and expected.
+      You might see a few extra ping alerts during the overlap, but nothing is lost or duplicated permanently.</p>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="guide-step">
+    <div class="step-head">
+      <div class="step-badge">04</div>
+      <div class="step-info">
+        <div class="step-title">Stop the old agent</div>
+        <div class="step-desc">Once the new device is confirmed running, decommission the old one.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Choose the platform you're migrating <strong>from</strong>:</p>
+
+      <div class="plat-tabs">
+        <button class="plat-tab active" onclick="showPlat('pi', this)">🍓 Raspberry Pi</button>
+        <button class="plat-tab" onclick="showPlat('win', this)">⊞ Windows</button>
+        <button class="plat-tab" onclick="showPlat('mac', this)">⌘ macOS</button>
+      </div>
+
+      <!-- Pi -->
+      <div class="plat-panel active" id="plat-pi">
+        <p>SSH into the old Pi and run:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-lang">bash — Raspberry Pi</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><code>cd ~/spangate-agent && docker compose down
+docker compose rm -f</code></pre>
+        </div>
+        <p>If you installed manually (without Docker):</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-lang">bash — Raspberry Pi (manual install)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><code>sudo systemctl stop spangate-netmonitor
+sudo systemctl disable spangate-netmonitor</code></pre>
+        </div>
+      </div>
+
+      <!-- Windows -->
+      <div class="plat-panel" id="plat-win">
+        <p>Open <strong>PowerShell</strong> and run:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-lang">powershell — Windows</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><code>cd "$env:USERPROFILE\spangate-agent"
+docker compose down
+docker compose rm -f</code></pre>
+        </div>
+        <p>Then open <strong>Docker Desktop</strong> and remove the <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">spangate-agent</code> container if it still appears in the list.</p>
+      </div>
+
+      <!-- macOS -->
+      <div class="plat-panel" id="plat-mac">
+        <p>Open <strong>Terminal</strong> and run:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-lang">bash — macOS</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><code>cd ~/spangate-agent && docker compose down && docker compose rm -f</code></pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="guide-step">
+    <div class="step-head">
+      <div class="step-badge">05</div>
+      <div class="step-info">
+        <div class="step-title">Re-enter SSH passwords (if needed)</div>
+        <div class="step-desc">Passwords are never stored in the cloud — one-time update for SSH-enabled devices.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>If any of your devices have <strong>SSH backup enabled</strong>, go to
+      <a href="/netmonitor/dashboard">Dashboard → Settings tab → Devices</a>,
+      click <strong>✎ Edit</strong> on each SSH-enabled device, and re-enter the password.</p>
+      <p>Everything else — device list, groups, ping monitoring, alert history, and config backups — is already
+      there from your previous setup.</p>
+      <div class="callout tip">
+        <span class="callout-icon">✓</span>
+        <div class="callout-text">
+          <strong>You're done.</strong> All your data carried over automatically. The new device is now your active monitor.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="guide-divider">
+
+  <!-- FAQ -->
+  <div style="margin-bottom:3rem;">
+    <h2 class="section-head">Frequently Asked Questions</h2>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Can I run both agents at the same time?</div>
+      <div class="faq-a">Yes — briefly running both during migration is fine and even recommended. Both will send pings to the same backend. You may see a small number of duplicate "UP" alerts during the overlap window, but no data is lost and nothing breaks. Stop the old agent once you've confirmed the new one is healthy.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Will I lose my alert history or config backups?</div>
+      <div class="faq-a">No. Alert history and config backups are stored in the cloud against your site ID, not against any specific device. They are completely unaffected by changing the machine running the agent.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Do I need to re-add all my devices on the new device?</div>
+      <div class="faq-a">No. Your device list lives in the cloud. The new agent fetches it automatically within 5 minutes of starting up. You only need to re-enter SSH passwords for devices that have SSH backup enabled, since passwords are never stored in the cloud.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Can I change my site name when migrating?</div>
+      <div class="faq-a">Yes — just enter a different site name in the setup wizard on the new device. The site name is just a display label. Your data is linked to your API key, not the site name.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">What if my new device can't reach some devices on the network?</div>
+      <div class="faq-a">The monitoring agent needs network access (same VLAN or routed path) to the devices it monitors. If the new device is on a different network segment, some devices may show as DOWN. Check routing between the new host and your managed devices. Running <code style="font-family:var(--mono);font-size:0.85em;background:var(--surface2);padding:1px 5px;border-radius:4px;">ping 10.x.x.x</code> from the new device is a quick test.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">I lost my API key — how do I find it?</div>
+      <div class="faq-a">Go to <a href="/netmonitor/settings">Network Monitor → Settings</a>. Your API key is shown there and can be copied or regenerated. If you regenerate it, update the key on both old and new agents before stopping the old one.</div>
+    </div>
+  </div>
+
+</div><!-- /guide-page -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">Network Monitor &copy; 2026 <span class="footer-easter">00:SP:AN:GA:TE:00</span></div>
+  <ul class="footer-links">
+    <li><a href="../">SpanGate</a></li>
+    <li><a href="../configwizard/">Config Wizard</a></li>
+    <li><a href="../assettracker/">Asset Tracker</a></li>
+    <li><a href="/terms.html">Terms</a></li>
+    <li><a href="/privacy.html">Privacy</a></li>
+    <li><a href="../login.html">Sign in</a></li>
+  </ul>
+</footer>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => { btn.textContent = 'Failed'; setTimeout(() => btn.textContent = 'Copy', 2000); });
+}
+
+function showPlat(id, btn) {
+  document.querySelectorAll('.plat-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.plat-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('plat-' + id).classList.add('active');
+}
+
+function toggleFaq(el) {
+  const ans = el.nextElementSibling;
+  const open = ans.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.faq-q').forEach(q => q.classList.remove('open'));
+  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+  if (!open) { el.classList.add('open'); ans.classList.add('open'); }
+}
+</script>
+<script>
+(function(){
+  try {
+    var raw  = localStorage.getItem('sb-tiviipaamwvfjvoscnyk-auth-token');
+    var data = raw ? JSON.parse(raw) : null;
+    var now  = Math.floor(Date.now()/1000);
+    var user = data && data.user && (!data.expires_at || data.expires_at > now) ? data.user : null;
+    if (user) {
+      var s = document.getElementById('navSignin');
+      var c = document.getElementById('navCta');
+      if (s) { s.textContent = user.email; s.style.fontFamily = 'monospace'; s.style.fontSize = '0.72rem'; }
+      if (c) { c.textContent = 'Dashboard'; c.href = '/netmonitor/dashboard'; }
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
