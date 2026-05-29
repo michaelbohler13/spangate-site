@@ -250,7 +250,7 @@ class APIClient:
             response.raise_for_status()
             return response.json().get("tests", [])
         except requests.RequestException as exc:
-            logger.debug("Failed to fetch pending SSH tests: %s", exc)
+            logger.warning("[ST] Failed to fetch pending SSH tests: %s", exc)
             return []
 
     def report_ssh_test_result(

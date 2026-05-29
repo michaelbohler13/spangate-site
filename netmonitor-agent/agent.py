@@ -216,17 +216,26 @@ async def ssh_test_loop(
     """
     logger.info("[ST] SSH test loop started — polling every 10s")
     while True:
-        await asyncio.sleep(10)
-        tests = api.get_pending_ssh_tests()
-        if not tests:
-            continue
-        loop = asyncio.get_event_loop()
-        for test in tests:
-            logger.info("[ST] Running credential test #%d for %s", test["id"], test["ip"])
-            success, msg = await loop.run_in_executor(
-                None, ssh_puller.run_connection_test, test
-            )
-            api.report_ssh_test_result(test["id"], success=success, result_msg=msg)
+        try:
+            await asyncio.sleep(10)
+            tests = api.get_pending_ssh_tests()
+            if not tests:
+                continue
+            loop = asyncio.get_event_loop()
+            for test in tests:
+                logger.info("[ST] Running credential test #%d for %s", test["id"], test["ip"])
+                try:
+                    success, msg = await loop.run_in_executor(
+                        None, ssh_puller.run_connection_test, test
+                    )
+                    api.report_ssh_test_result(test["id"], success=success, result_msg=msg)
+                except Exception as exc:  # noqa: BLE001
+                    logger.error("[ST] Test #%d failed unexpectedly: %s", test["id"], exc)
+                    api.report_ssh_test_result(test["id"], success=False, result_msg=f"Agent error: {exc}")
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[ST] SSH test loop error: %s", exc)
 
 
 async def heartbeat_loop(

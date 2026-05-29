@@ -401,8 +401,13 @@ async def agent_device_list(
     device list, so dashboard changes take effect without a restart.
 
     Returns {"devices": [...], "count": N}
-    force_backup is True for up to 10 minutes after a manual backup is requested,
-    then cleared so the agent only triggers once per request.
+
+    NOTE: force_backup is included for backwards compatibility but
+    backup_requested_at is NO LONGER cleared here.  backup_request_loop
+    (60-second fast path) owns the full lifecycle — it picks up the flag and
+    calls /agent/clear-backup-request after queuing.  Clearing it here caused
+    a race where device-list polled first and erased the flag before
+    backup_request_loop could see it, silently dropping "Backup Now" requests.
     """
     result = await db.execute(
         select(DeviceConfig)
@@ -413,15 +418,14 @@ async def agent_device_list(
 
     now = datetime.now(timezone.utc)
     devices = []
-    to_clear = []
 
     for r in rows:
+        # force_backup kept for backwards compatibility with older agent versions.
+        # New agents ignore it; backup_request_loop handles on-demand backups.
         force = bool(
             r.backup_requested_at
             and (now - r.backup_requested_at) < _BACKUP_REQUEST_TTL
         )
-        if force:
-            to_clear.append(r)
         devices.append({
             "hostname":     r.hostname,
             "ip":           r.ip,
@@ -434,10 +438,5 @@ async def agent_device_list(
             "ssh_enabled":  r.ssh_enabled,
             "force_backup": force,
         })
-
-    if to_clear:
-        for r in to_clear:
-            r.backup_requested_at = None
-        await db.commit()
 
     return {"count": len(rows), "devices": devices}
