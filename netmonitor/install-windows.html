@@ -127,6 +127,12 @@
   /* DIVIDER */
   .guide-divider{border:none;border-top:0.5px solid var(--border);margin:2.5rem 0;}
 
+  /* AUTHORIZED USE CALLOUT */
+  .callout.legal{background:rgba(255,95,87,0.06);border:0.5px solid rgba(255,95,87,0.3);}
+  .callout.legal .callout-text{color:#ff9492;}
+  .callout.legal .callout-text strong{color:#ffb3b1;}
+  .callout.legal .callout-text a{color:#ff9492;text-decoration:underline;}
+
   /* SETUP WIZARD */
   .wiz-card{background:rgba(0,212,184,0.04);border:0.5px solid rgba(0,212,184,0.25);border-radius:14px;padding:1.5rem;margin-bottom:1rem;}
   .wiz-title{font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:1.1rem;font-family:var(--mono);}
@@ -199,6 +205,18 @@
     <a href="/netmonitor/install-mac"><span class="plat-icon">⌘</span> macOS</a>
   </div>
 
+  <!-- AUTHORIZED USE NOTICE -->
+  <div class="callout legal" style="margin-bottom:1.75rem;">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-text">
+      <strong>Authorized Use Only.</strong>
+      Only deploy the SpanGate agent on networks and devices you own or have received explicit written authorization to monitor.
+      Unauthorized monitoring may violate the <strong>Computer Fraud and Abuse Act (18 U.S.C. § 1030)</strong> and other state and federal laws.
+      By proceeding you confirm you have proper authorization.
+      See <a href="/terms.html">Terms of Service — Section 2</a>.
+    </div>
+  </div>
+
   <!-- REQUIREMENTS -->
   <div class="req-card">
     <div class="req-title">Requirements</div>
@@ -257,10 +275,14 @@
             <div class="wiz-hint">Shown in your dashboard (e.g. Main Campus)</div>
           </div>
         </div>
+        <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:0.85rem;cursor:pointer;padding:9px 12px;border-radius:8px;border:0.5px solid rgba(255,95,87,0.25);background:rgba(255,95,87,0.04);">
+          <input type="checkbox" id="wzAuthCheck" onchange="wzAuthToggle()" style="width:15px;height:15px;margin-top:2px;flex-shrink:0;accent-color:#00d4b8;cursor:pointer;">
+          <span style="font-size:0.78rem;color:#ff9492;line-height:1.55;">I confirm I am authorized to monitor the networks and devices I will connect to SpanGate</span>
+        </label>
         <div class="wiz-cmd">
           <div class="wiz-cmd-bar">
             <span class="code-lang">powershell (admin) — ready to paste</span>
-            <button class="copy-btn" onclick="wzCopy(this)">Copy</button>
+            <button class="copy-btn" id="wzCopyBtn" onclick="wzCopy(this)" disabled style="opacity:0.35;cursor:not-allowed;">Copy</button>
           </div>
           <code id="wzCmd">$env:SPNG_API_KEY = "<span class="wp">paste key above</span>"
 $env:SPNG_SITE_NAME = "<span class="wp">enter site name above</span>"
@@ -347,6 +369,8 @@ docker pull spangate/netmonitor-agent:latest        # update to latest version</
     <li><a href="../">SpanGate</a></li>
     <li><a href="../configwizard/">Config Wizard</a></li>
     <li><a href="../assettracker/">Asset Tracker</a></li>
+    <li><a href="/terms.html">Terms</a></li>
+    <li><a href="/privacy.html">Privacy</a></li>
     <li><a href="../login.html">Sign in</a></li>
   </ul>
 </footer>
@@ -380,7 +404,17 @@ function wzUpdate() {
     `$env:SPNG_SITE_NAME = "${sHtml}"\n` +
     `irm https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.ps1 | iex`;
 }
+function wzAuthToggle() {
+  const checked = document.getElementById('wzAuthCheck').checked;
+  const btn = document.getElementById('wzCopyBtn');
+  if (btn) {
+    btn.disabled = !checked;
+    btn.style.opacity = checked ? '' : '0.35';
+    btn.style.cursor  = checked ? '' : 'not-allowed';
+  }
+}
 function wzCopy(btn) {
+  if (!document.getElementById('wzAuthCheck').checked) return;
   const key  = document.getElementById('wzKey').value.trim()  || 'YOUR_API_KEY';
   const site = document.getElementById('wzSite').value.trim() || 'My Site';
   const text = `$env:SPNG_API_KEY = "${key}"\n$env:SPNG_SITE_NAME = "${site}"\nirm https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.ps1 | iex`;

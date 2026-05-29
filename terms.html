@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms of Service — SpanGate LLC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--surface:#0d0d0d;--surface2:#1a1a1a;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --text:#e6edf3;--muted:#8b949e;--faint:#484f58;
+  --accent:#00d4b8;
+  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;line-height:1.7;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;border-bottom:0.5px solid var(--border);
+  background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);}
+.nav-top{height:36px;display:flex;align-items:center;gap:0;padding:0 24px;
+  border-bottom:0.5px solid rgba(255,255,255,0.06);font-size:0.72rem;font-weight:500;letter-spacing:0.02em;}
+.nav-top a{color:var(--muted);text-decoration:none;padding:0 10px;line-height:36px;transition:color .15s;}
+.nav-top a:first-child{padding-left:0;}
+.nav-top a:hover{color:var(--text);}
+.nav-top .sep{width:1px;height:14px;background:var(--border2);margin:0 0.25rem;}
+.nav-bottom{height:48px;display:flex;align-items:center;padding:0 24px;}
+.nav-logo{font-size:0.95rem;font-weight:700;color:var(--text);text-decoration:none;letter-spacing:-0.01em;}
+
+/* LAYOUT */
+.page{max-width:760px;margin:0 auto;padding:calc(84px + 56px) 24px 80px;}
+
+/* HERO */
+.doc-eyebrow{font-family:var(--mono);font-size:0.68rem;font-weight:600;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:0.6rem;}
+.doc-title{font-size:2rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:0.5rem;}
+.doc-meta{font-size:0.8rem;color:var(--muted);font-family:var(--mono);margin-bottom:0.4rem;}
+.doc-warning{display:flex;gap:12px;align-items:flex-start;
+  background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.25);
+  border-radius:10px;padding:1rem 1.2rem;margin:1.5rem 0 2rem;
+  font-size:0.83rem;color:var(--muted);line-height:1.6;}
+.doc-warning-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px;}
+
+/* SECTIONS */
+.doc-section{margin-bottom:2.2rem;}
+h2{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:0.65rem;
+  padding-bottom:0.4rem;border-bottom:0.5px solid var(--border);}
+h2 .sec-num{font-family:var(--mono);font-size:0.72rem;color:var(--accent);
+  font-weight:600;margin-right:0.5rem;letter-spacing:0.05em;}
+p{font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;line-height:1.75;}
+ul{padding-left:1.25rem;margin-bottom:0.75rem;}
+ul li{font-size:0.88rem;color:var(--muted);margin-bottom:0.4rem;line-height:1.7;}
+strong{color:var(--text);font-weight:600;}
+
+.important-box{background:rgba(255,95,87,0.06);border:0.5px solid rgba(255,95,87,0.3);
+  border-radius:8px;padding:0.9rem 1.1rem;margin:0.75rem 0;
+  font-size:0.83rem;color:#ff9492;line-height:1.65;}
+.important-box strong{color:#ffb3b1;}
+
+/* CONTACT */
+.contact-box{background:var(--surface2);border:0.5px solid var(--border2);border-radius:10px;
+  padding:1rem 1.2rem;margin-top:0.75rem;}
+.contact-box a{color:var(--accent);text-decoration:none;}
+.contact-box a:hover{text-decoration:underline;}
+.contact-label{font-size:0.68rem;font-family:var(--mono);font-weight:600;letter-spacing:0.07em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:0.25rem;}
+.contact-val{font-size:0.86rem;color:var(--muted);}
+
+/* TOC */
+.toc{background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;
+  padding:1rem 1.2rem;margin-bottom:2.5rem;}
+.toc-title{font-size:0.68rem;font-family:var(--mono);font-weight:600;letter-spacing:0.07em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:0.6rem;}
+.toc a{display:block;font-size:0.82rem;color:var(--muted);text-decoration:none;
+  padding:3px 0;transition:color .15s;}
+.toc a:hover{color:var(--accent);}
+
+/* FOOTER */
+footer{border-top:0.5px solid var(--border);padding:20px 24px;text-align:center;
+  font-size:0.72rem;color:var(--faint);font-family:var(--mono);letter-spacing:0.04em;}
+footer a{color:var(--muted);text-decoration:none;margin:0 8px;}
+footer a:hover{color:var(--text);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-top">
+    <a href="/">SpanGate</a>
+    <div class="sep"></div>
+    <a href="/configwizard/">Config Wizard</a>
+    <div class="sep"></div>
+    <a href="/netmonitor/">Network Monitor</a>
+    <div class="sep"></div>
+    <a href="/assettracker/">Asset Tracker</a>
+    <div class="sep"></div>
+    <a href="/pricing.html">Pricing</a>
+  </div>
+  <div class="nav-bottom">
+    <a class="nav-logo" href="/">SpanGate <span style="color:var(--muted);font-weight:400;">Technology</span></a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="doc-eyebrow">Legal</div>
+  <h1 class="doc-title">Terms of Service</h1>
+  <div class="doc-meta">SpanGate LLC &nbsp;·&nbsp; Effective June 1, 2026</div>
+
+  <div class="doc-warning">
+    <span class="doc-warning-icon">ℹ</span>
+    <span>By creating a SpanGate account or using any part of the Service you agree to these Terms. Please read them carefully — Section 2 (Authorized Use) is especially important if you are deploying the monitoring agent on a network.</span>
+  </div>
+
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-title">Contents</div>
+    <a href="#s1">1 · Acceptance of Terms</a>
+    <a href="#s2">2 · Authorized Use — Network Monitoring</a>
+    <a href="#s3">3 · Account Registration and Security</a>
+    <a href="#s4">4 · SSH Credentials and Sensitive Data</a>
+    <a href="#s5">5 · Data Retention</a>
+    <a href="#s6">6 · Acceptable Use</a>
+    <a href="#s7">7 · Disclaimer of Warranties</a>
+    <a href="#s8">8 · Limitation of Liability</a>
+    <a href="#s9">9 · Indemnification</a>
+    <a href="#s10">10 · Intellectual Property</a>
+    <a href="#s11">11 · Termination</a>
+    <a href="#s12">12 · Governing Law</a>
+    <a href="#s13">13 · Changes to Terms</a>
+    <a href="#s14">14 · Contact</a>
+  </nav>
+
+  <!-- ── SECTIONS ────────────────────────────────────── -->
+
+  <div class="doc-section" id="s1">
+    <h2><span class="sec-num">01</span>Acceptance of Terms</h2>
+    <p>By accessing or using the SpanGate service ("Service") you confirm that you have read, understood, and agree to be bound by these Terms of Service ("Terms") and our <a href="/privacy.html" style="color:var(--accent);text-decoration:none;">Privacy Policy</a>. If you are using the Service on behalf of an organization, you represent that you have the authority to bind that organization to these Terms.</p>
+  </div>
+
+  <div class="doc-section" id="s2">
+    <h2><span class="sec-num">02</span>Authorized Use — Network Monitoring</h2>
+    <div class="important-box">
+      <strong>THE SPANGATE AGENT SOFTWARE IS DESIGNED SOLELY FOR USE ON NETWORKS AND SYSTEMS YOU OWN OR HAVE RECEIVED EXPLICIT WRITTEN AUTHORIZATION TO MONITOR AND ACCESS.</strong>
+    </div>
+    <p>By using SpanGate you agree that:</p>
+    <ul>
+      <li>You will only deploy monitoring agents on networks, devices, and systems you own or have explicit written authorization to access.</li>
+      <li>You will not use SpanGate to monitor any network, device, or system without the knowledge and authorization of the network owner.</li>
+      <li>Unauthorized use of network monitoring tools may violate the <strong>Computer Fraud and Abuse Act (18 U.S.C. § 1030)</strong>, the Electronic Communications Privacy Act, the <strong>Texas Computer Crimes statute (Tex. Penal Code § 33.02)</strong>, and equivalent state and international laws.</li>
+    </ul>
+    <p>SpanGate LLC assumes no liability for any unauthorized use of the Service. You are solely and personally responsible for ensuring you have proper authorization before deploying any monitoring agent.</p>
+  </div>
+
+  <div class="doc-section" id="s3">
+    <h2><span class="sec-num">03</span>Account Registration and Security</h2>
+    <ul>
+      <li>You must provide accurate, current information when registering an account.</li>
+      <li>You are responsible for maintaining the confidentiality of your account credentials and API keys.</li>
+      <li>You must notify us immediately at <a href="mailto:hello@spangate.com" style="color:var(--accent);text-decoration:none;">hello@spangate.com</a> if you suspect unauthorized access to your account or API keys.</li>
+      <li>You may not share your API keys or account credentials with unauthorized parties.</li>
+    </ul>
+  </div>
+
+  <div class="doc-section" id="s4">
+    <h2><span class="sec-num">04</span>SSH Credentials and Sensitive Data</h2>
+    <p>By enabling SSH Configuration Pull on any device, you acknowledge and accept that:</p>
+    <ul>
+      <li>SSH usernames and passwords you provide are transmitted over encrypted HTTPS and stored encrypted in our cloud database.</li>
+      <li>Running network device configurations — which may contain passwords, SNMP community strings, routing keys, or other sensitive information — are transmitted to and stored on SpanGate cloud servers.</li>
+      <li>SpanGate implements industry-standard security practices but cannot guarantee absolute security of stored credentials or configuration data.</li>
+      <li>You are responsible for using appropriately privileged credentials. We recommend dedicated read-only monitoring accounts where your devices support them.</li>
+    </ul>
+  </div>
+
+  <div class="doc-section" id="s5">
+    <h2><span class="sec-num">05</span>Data Retention</h2>
+    <ul>
+      <li><strong>Device configurations and alert history:</strong> retained for 30 days, then automatically deleted.</li>
+      <li><strong>SSH credentials:</strong> deleted when you remove the associated device from your dashboard.</li>
+      <li><strong>Account data:</strong> retained until you delete your account.</li>
+    </ul>
+  </div>
+
+  <div class="doc-section" id="s6">
+    <h2><span class="sec-num">06</span>Acceptable Use</h2>
+    <p>You agree not to:</p>
+    <ul>
+      <li>Use the Service for any unlawful purpose.</li>
+      <li>Attempt to gain unauthorized access to SpanGate systems or infrastructure.</li>
+      <li>Interfere with or disrupt the availability of the Service for other users.</li>
+      <li>Reverse engineer, decompile, or attempt to extract source code from any component of the Service.</li>
+      <li>Resell or sublicense access to the Service without written permission from SpanGate LLC.</li>
+    </ul>
+  </div>
+
+  <div class="doc-section" id="s7">
+    <h2><span class="sec-num">07</span>Disclaimer of Warranties</h2>
+    <p>THE SERVICE IS PROVIDED <strong>"AS IS"</strong> AND <strong>"AS AVAILABLE"</strong> WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. SPANGATE DOES NOT WARRANT THAT THE SERVICE WILL BE ERROR-FREE, UNINTERRUPTED, SECURE, OR FREE OF VIRUSES OR OTHER HARMFUL COMPONENTS.</p>
+  </div>
+
+  <div class="doc-section" id="s8">
+    <h2><span class="sec-num">08</span>Limitation of Liability</h2>
+    <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, SPANGATE LLC AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF OR INABILITY TO USE THE SERVICE, INCLUDING BUT NOT LIMITED TO:</p>
+    <ul>
+      <li>Network outages, disruptions, or misconfigurations caused directly or indirectly by the monitoring agent.</li>
+      <li>Loss, corruption, or unauthorized access to device configuration data or credentials.</li>
+      <li>Any damages resulting from reliance on configuration data retrieved by the Service.</li>
+    </ul>
+    <p>IN NO EVENT SHALL SPANGATE'S TOTAL CUMULATIVE LIABILITY TO YOU EXCEED ONE HUNDRED DOLLARS ($100.00).</p>
+  </div>
+
+  <div class="doc-section" id="s9">
+    <h2><span class="sec-num">09</span>Indemnification</h2>
+    <p>You agree to indemnify, defend, and hold harmless SpanGate LLC and its officers, directors, employees, and agents from any claims, liabilities, damages, losses, or expenses (including reasonable attorneys' fees) arising from: (a) your use of the Service; (b) your violation of these Terms; (c) your deployment of monitoring agents on networks without proper authorization; or (d) your violation of any third party's rights.</p>
+  </div>
+
+  <div class="doc-section" id="s10">
+    <h2><span class="sec-num">10</span>Intellectual Property</h2>
+    <p>The Service and all associated software, designs, and content are the property of SpanGate LLC. You retain full ownership of your data. By using the Service, you grant SpanGate a limited, non-exclusive license to store and process your data solely to provide the Service to you.</p>
+  </div>
+
+  <div class="doc-section" id="s11">
+    <h2><span class="sec-num">11</span>Termination</h2>
+    <p>We may suspend or terminate your account for material violation of these Terms with or without notice. You may cancel your account at any time by contacting <a href="mailto:hello@spangate.com" style="color:var(--accent);text-decoration:none;">hello@spangate.com</a>. Upon termination, your data will be purged within 30 days.</p>
+  </div>
+
+  <div class="doc-section" id="s12">
+    <h2><span class="sec-num">12</span>Governing Law</h2>
+    <p>These Terms are governed by the laws of the <strong>State of Texas</strong>, without regard to conflict of law principles. Any legal action or proceeding shall be brought exclusively in the state or federal courts located in Texas, and you consent to personal jurisdiction in such courts.</p>
+  </div>
+
+  <div class="doc-section" id="s13">
+    <h2><span class="sec-num">13</span>Changes to Terms</h2>
+    <p>We may update these Terms periodically. We will notify you of material changes by email or by displaying a prominent notice in the Service. Continued use after changes take effect constitutes acceptance of the updated Terms.</p>
+  </div>
+
+  <div class="doc-section" id="s14">
+    <h2><span class="sec-num">14</span>Contact</h2>
+    <div class="contact-box">
+      <div class="contact-label">SpanGate LLC</div>
+      <div class="contact-val">Email: <a href="mailto:hello@spangate.com">hello@spangate.com</a></div>
+      <div class="contact-val" style="margin-top:4px;">Website: <a href="https://spangate.com">spangate.com</a></div>
+    </div>
+    <p style="margin-top:0.75rem;">Also see our <a href="/privacy.html" style="color:var(--accent);text-decoration:none;">Privacy Policy</a>.</p>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  © 2026 SpanGate LLC &nbsp;·&nbsp;
+  <a href="/terms.html">Terms of Service</a>
+  <a href="/privacy.html">Privacy Policy</a>
+  <a href="mailto:hello@spangate.com">hello@spangate.com</a>
+</footer>
+
+</body>
+</html>

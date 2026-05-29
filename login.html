@@ -385,6 +385,30 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ── LEGAL CHECKBOXES (signup) ── */
+  .legal-checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 2px; }
+  .legal-check {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .legal-check:has(input:checked) {
+    border-color: rgba(0,212,184,0.35);
+    background: rgba(0,212,184,0.04);
+  }
+  .legal-check input[type="checkbox"] {
+    width: 15px; height: 15px; margin-top: 2px; flex-shrink: 0;
+    accent-color: #00d4b8; cursor: pointer;
+  }
+  .legal-check-text {
+    font-size: 0.78rem; color: var(--muted); line-height: 1.55;
+  }
+  .legal-check-text a { color: var(--accent); text-decoration: none; }
+  .legal-check-text a:hover { text-decoration: underline; }
+
   /* ── BACKGROUND GLOW ── */
   .bg-glow {
     position: fixed; pointer-events: none; z-index: 0;
@@ -581,6 +605,17 @@
             <div style="font-size:0.72rem;color:#8b949e;font-family:'JetBrains Mono',monospace;margin-top:1px;">No credit card required · Cancel anytime before day 14</div>
           </div>
         </div>
+        <div class="legal-checks">
+          <label class="legal-check">
+            <input type="checkbox" id="chkTos">
+            <span class="legal-check-text">I agree to SpanGate's <a href="/terms.html" target="_blank" onclick="event.stopPropagation()">Terms of Service</a> and <a href="/privacy.html" target="_blank" onclick="event.stopPropagation()">Privacy Policy</a></span>
+          </label>
+          <label class="legal-check">
+            <input type="checkbox" id="chkAuth">
+            <span class="legal-check-text">I confirm I am authorized to monitor the networks I connect to SpanGate</span>
+          </label>
+        </div>
+
         <button class="btn-submit" id="signupBtn" onclick="handleSignUp()">Create Account</button>
 
         <div class="form-divider">or</div>
@@ -646,7 +681,7 @@
 
       <div class="form-footer">
         By continuing you agree to SpanGate's
-        <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+        <a href="/terms.html">Terms of Service</a> and <a href="/privacy.html">Privacy Policy</a>
       </div>
     </div>
   </div>
@@ -816,6 +851,14 @@ async function handleSignUp() {
   if (!email || !pass) { showStatus(status, 'error', 'Please fill in all fields.'); return; }
   if (pass.length < 8)  { showStatus(status, 'error', 'Password must be at least 8 characters.'); return; }
   if (selectedProducts.size === 0) { showStatus(status, 'error', 'Please select at least one product.'); return; }
+  if (!document.getElementById('chkTos').checked) {
+    showStatus(status, 'error', 'Please agree to the Terms of Service and Privacy Policy to continue.');
+    return;
+  }
+  if (!document.getElementById('chkAuth').checked) {
+    showStatus(status, 'error', 'Please confirm you are authorized to monitor the networks you connect to SpanGate.');
+    return;
+  }
 
   // Validate plans selected for products that need them
   for (const code of ['nm', 'at']) {
@@ -834,11 +877,16 @@ async function handleSignUp() {
   if (selectedProducts.has('nm')) productAccess.netmonitor   = { plan: selectedPlans['nm'], active: true };
   if (selectedProducts.has('at')) productAccess.assettracker = { plan: selectedPlans['at'], active: true };
 
+  const nowIso = new Date().toISOString();
   const { data, error } = await _supabase.auth.signUp({
     email,
     password: pass,
     options: {
-      data: { product_access: productAccess }
+      data: {
+        product_access:                  productAccess,
+        accepted_tos_at:                 nowIso,
+        authorized_use_acknowledged_at:  nowIso,
+      }
     }
   });
 

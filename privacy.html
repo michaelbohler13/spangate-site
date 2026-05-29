@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — SpanGate LLC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--surface:#0d0d0d;--surface2:#1a1a1a;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --text:#e6edf3;--muted:#8b949e;--faint:#484f58;
+  --accent:#00d4b8;
+  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;line-height:1.7;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;border-bottom:0.5px solid var(--border);
+  background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);}
+.nav-top{height:36px;display:flex;align-items:center;gap:0;padding:0 24px;
+  border-bottom:0.5px solid rgba(255,255,255,0.06);font-size:0.72rem;font-weight:500;letter-spacing:0.02em;}
+.nav-top a{color:var(--muted);text-decoration:none;padding:0 10px;line-height:36px;transition:color .15s;}
+.nav-top a:first-child{padding-left:0;}
+.nav-top a:hover{color:var(--text);}
+.nav-top .sep{width:1px;height:14px;background:var(--border2);margin:0 0.25rem;}
+.nav-bottom{height:48px;display:flex;align-items:center;padding:0 24px;}
+.nav-logo{font-size:0.95rem;font-weight:700;color:var(--text);text-decoration:none;letter-spacing:-0.01em;}
+
+/* LAYOUT */
+.page{max-width:760px;margin:0 auto;padding:calc(84px + 56px) 24px 80px;}
+
+/* HERO */
+.doc-eyebrow{font-family:var(--mono);font-size:0.68rem;font-weight:600;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:0.6rem;}
+.doc-title{font-size:2rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:0.5rem;}
+.doc-meta{font-size:0.8rem;color:var(--muted);font-family:var(--mono);margin-bottom:0.4rem;}
+.doc-warning{display:flex;gap:12px;align-items:flex-start;
+  background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.25);
+  border-radius:10px;padding:1rem 1.2rem;margin:1.5rem 0 2rem;
+  font-size:0.83rem;color:var(--muted);line-height:1.6;}
+.doc-warning-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px;}
+
+/* SECTIONS */
+.doc-section{margin-bottom:2.2rem;}
+h2{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:0.65rem;
+  padding-bottom:0.4rem;border-bottom:0.5px solid var(--border);}
+h2 .sec-num{font-family:var(--mono);font-size:0.72rem;color:var(--accent);
+  font-weight:600;margin-right:0.5rem;letter-spacing:0.05em;}
+p{font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;line-height:1.75;}
+ul{padding-left:1.25rem;margin-bottom:0.75rem;}
+ul li{font-size:0.88rem;color:var(--muted);margin-bottom:0.4rem;line-height:1.7;}
+strong{color:var(--text);font-weight:600;}
+
+.info-box{background:rgba(0,212,184,0.05);border:0.5px solid rgba(0,212,184,0.2);
+  border-radius:8px;padding:0.9rem 1.1rem;margin:0.75rem 0;
+  font-size:0.83rem;color:var(--muted);line-height:1.65;}
+.info-box strong{color:var(--text);}
+
+/* CONTACT */
+.contact-box{background:var(--surface2);border:0.5px solid var(--border2);border-radius:10px;
+  padding:1rem 1.2rem;margin-top:0.75rem;}
+.contact-box a{color:var(--accent);text-decoration:none;}
+.contact-box a:hover{text-decoration:underline;}
+.contact-label{font-size:0.68rem;font-family:var(--mono);font-weight:600;letter-spacing:0.07em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:0.25rem;}
+.contact-val{font-size:0.86rem;color:var(--muted);}
+
+/* TOC */
+.toc{background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;
+  padding:1rem 1.2rem;margin-bottom:2.5rem;}
+.toc-title{font-size:0.68rem;font-family:var(--mono);font-weight:600;letter-spacing:0.07em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:0.6rem;}
+.toc a{display:block;font-size:0.82rem;color:var(--muted);text-decoration:none;
+  padding:3px 0;transition:color .15s;}
+.toc a:hover{color:var(--accent);}
+
+/* FOOTER */
+footer{border-top:0.5px solid var(--border);padding:20px 24px;text-align:center;
+  font-size:0.72rem;color:var(--faint);font-family:var(--mono);letter-spacing:0.04em;}
+footer a{color:var(--muted);text-decoration:none;margin:0 8px;}
+footer a:hover{color:var(--text);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-top">
+    <a href="/">SpanGate</a>
+    <div class="sep"></div>
+    <a href="/configwizard/">Config Wizard</a>
+    <div class="sep"></div>
+    <a href="/netmonitor/">Network Monitor</a>
+    <div class="sep"></div>
+    <a href="/assettracker/">Asset Tracker</a>
+    <div class="sep"></div>
+    <a href="/pricing.html">Pricing</a>
+  </div>
+  <div class="nav-bottom">
+    <a class="nav-logo" href="/">SpanGate <span style="color:var(--muted);font-weight:400;">Technology</span></a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="doc-eyebrow">Legal</div>
+  <h1 class="doc-title">Privacy Policy</h1>
+  <div class="doc-meta">SpanGate LLC &nbsp;·&nbsp; Effective June 1, 2026</div>
+
+  <div class="doc-warning">
+    <span class="doc-warning-icon">ℹ</span>
+    <span>This Privacy Policy explains what data SpanGate collects, how we store and protect it, and your rights regarding that data. By using SpanGate you agree to the practices described here.</span>
+  </div>
+
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-title">Contents</div>
+    <a href="#s1">1 · Who We Are</a>
+    <a href="#s2">2 · What Data We Collect</a>
+    <a href="#s3">3 · How We Use Your Data</a>
+    <a href="#s4">4 · Data Storage and Security</a>
+    <a href="#s5">5 · Data Retention</a>
+    <a href="#s6">6 · Data Sharing and Third Parties</a>
+    <a href="#s7">7 · Cookies and Analytics</a>
+    <a href="#s8">8 · Your Rights</a>
+    <a href="#s9">9 · California Residents (CCPA)</a>
+    <a href="#s10">10 · International Users</a>
+    <a href="#s11">11 · Changes to This Policy</a>
+    <a href="#s12">12 · Contact</a>
+  </nav>
+
+  <!-- ── SECTIONS ────────────────────────────────────── -->
+
+  <div class="doc-section" id="s1">
+    <h2><span class="sec-num">01</span>Who We Are</h2>
+    <p>SpanGate LLC ("SpanGate", "we", "us", "our") is a technology company providing network monitoring software and related services. Our primary contact for privacy matters is <a href="mailto:hello@spangate.com" style="color:var(--accent);text-decoration:none;">hello@spangate.com</a>.</p>
+    <p>This Privacy Policy applies to the SpanGate website, the Network Monitor dashboard, and the SpanGate agent software (collectively, the "Service").</p>
+  </div>
+
+  <div class="doc-section" id="s2">
+    <h2><span class="sec-num">02</span>What Data We Collect</h2>
+    <p>We collect the following categories of data:</p>
+
+    <p><strong>Account Information</strong></p>
+    <ul>
+      <li>Email address and password hash (via Supabase Auth)</li>
+      <li>Timestamp of account creation and most recent sign-in</li>
+      <li>Acceptance timestamp for Terms of Service</li>
+    </ul>
+
+    <p><strong>Device and Network Data</strong> (collected by the monitoring agent you install)</p>
+    <ul>
+      <li>Device hostnames, IP addresses, vendor, and type information you configure</li>
+      <li>SSH usernames and passwords you provide for configuration pull (encrypted at rest)</li>
+      <li>Running network device configurations retrieved via SSH</li>
+      <li>ICMP ping response times and packet-loss statistics</li>
+      <li>Agent heartbeat timestamps</li>
+    </ul>
+
+    <p><strong>Usage and Operational Data</strong></p>
+    <ul>
+      <li>API request logs (timestamp, endpoint, HTTP status — no request body content is logged)</li>
+      <li>Agent software version and check-in timestamps</li>
+    </ul>
+
+    <div class="info-box">
+      <strong>Note:</strong> We do not collect, store, or process the contents of network traffic passing through your monitored devices. SpanGate collects only the device management-plane data described above.
+    </div>
+  </div>
+
+  <div class="doc-section" id="s3">
+    <h2><span class="sec-num">03</span>How We Use Your Data</h2>
+    <p>We use your data solely to provide and improve the Service:</p>
+    <ul>
+      <li><strong>Service delivery:</strong> Storing device configurations, displaying dashboard data, generating alerts.</li>
+      <li><strong>Authentication:</strong> Verifying your identity and associating data with your account.</li>
+      <li><strong>Security:</strong> Detecting abuse, unauthorized access attempts, or abnormal usage patterns.</li>
+      <li><strong>Legal compliance:</strong> Maintaining records required by applicable law and enforcing our Terms of Service.</li>
+    </ul>
+    <p>We do <strong>not</strong> sell your data, use it for advertising, or share it with third parties for marketing purposes.</p>
+  </div>
+
+  <div class="doc-section" id="s4">
+    <h2><span class="sec-num">04</span>Data Storage and Security</h2>
+    <p>Your data is stored using the following infrastructure:</p>
+    <ul>
+      <li><strong>Supabase (PostgreSQL):</strong> Account data, device configurations, alerts, and SSH credentials are stored in a Supabase-managed PostgreSQL database with encryption at rest.</li>
+      <li><strong>Vercel:</strong> The SpanGate web application and API are hosted on Vercel's serverless infrastructure. All traffic is transmitted over TLS (HTTPS).</li>
+    </ul>
+    <p>SSH credentials are stored encrypted. Configuration data (which may contain sensitive network information) is stored in our database and accessible only via authenticated API requests tied to your site API key.</p>
+    <p>We implement industry-standard security practices including encrypted transport, access controls, and API key authentication. However, no system is completely secure. You are responsible for protecting your API keys and account credentials.</p>
+    <div class="info-box">
+      <strong>SSH Password note:</strong> SSH credentials stored in SpanGate are never returned in any API response visible to the dashboard or external requests. They are used exclusively by the monitoring agent during configuration pull operations.
+    </div>
+  </div>
+
+  <div class="doc-section" id="s5">
+    <h2><span class="sec-num">05</span>Data Retention</h2>
+    <ul>
+      <li><strong>Alert history:</strong> automatically deleted after 30 days.</li>
+      <li><strong>Device configuration backups:</strong> the 4 most recent backups per device are retained; older backups are deleted automatically. All backups are purged after 30 days regardless of count.</li>
+      <li><strong>SSH credentials:</strong> deleted when you remove the associated device from your dashboard.</li>
+      <li><strong>Account data:</strong> retained until you delete your account. After deletion, your data is purged within 30 days.</li>
+    </ul>
+  </div>
+
+  <div class="doc-section" id="s6">
+    <h2><span class="sec-num">06</span>Data Sharing and Third Parties</h2>
+    <p>We share your data only in the following limited circumstances:</p>
+    <ul>
+      <li><strong>Infrastructure providers:</strong> Supabase (database hosting) and Vercel (application hosting) process your data as sub-processors under their respective security and privacy commitments. We do not share more data with them than is necessary to provide the Service.</li>
+      <li><strong>Legal requirements:</strong> We may disclose data if required by law, court order, or government request, or to protect the rights, property, or safety of SpanGate LLC, our users, or the public.</li>
+      <li><strong>Business transfers:</strong> In the event of a merger, acquisition, or sale of assets, your data may be transferred to the acquiring entity. We will provide notice before any such transfer takes effect.</li>
+    </ul>
+    <p>We do <strong>not</strong> sell, rent, or lease your personal information to any third party.</p>
+  </div>
+
+  <div class="doc-section" id="s7">
+    <h2><span class="sec-num">07</span>Cookies and Analytics</h2>
+    <p>SpanGate uses browser localStorage (not cookies) to store your authentication session token client-side. We do not use tracking cookies or third-party advertising cookies.</p>
+    <p>We do not currently use third-party web analytics services. Basic operational metrics (API request counts, error rates) are derived from server logs and are not tied to individual user identities.</p>
+  </div>
+
+  <div class="doc-section" id="s8">
+    <h2><span class="sec-num">08</span>Your Rights</h2>
+    <p>Depending on your jurisdiction, you may have the following rights regarding your personal data:</p>
+    <ul>
+      <li><strong>Access:</strong> Request a copy of the personal data we hold about you.</li>
+      <li><strong>Correction:</strong> Request that we correct inaccurate data.</li>
+      <li><strong>Deletion:</strong> Request deletion of your account and associated data.</li>
+      <li><strong>Portability:</strong> Request an export of your data in a machine-readable format.</li>
+      <li><strong>Objection / Restriction:</strong> Object to or request restriction of certain processing activities.</li>
+    </ul>
+    <p>To exercise any of these rights, contact us at <a href="mailto:hello@spangate.com" style="color:var(--accent);text-decoration:none;">hello@spangate.com</a>. We will respond within 30 days.</p>
+  </div>
+
+  <div class="doc-section" id="s9">
+    <h2><span class="sec-num">09</span>California Residents (CCPA)</h2>
+    <p>If you are a California resident, the California Consumer Privacy Act (CCPA) grants you additional rights:</p>
+    <ul>
+      <li><strong>Right to Know:</strong> You may request details about the categories and specific pieces of personal information we have collected about you.</li>
+      <li><strong>Right to Delete:</strong> You may request deletion of your personal information, subject to certain exceptions.</li>
+      <li><strong>Right to Opt-Out of Sale:</strong> We do not sell your personal information. No opt-out is required.</li>
+      <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising any CCPA right.</li>
+    </ul>
+    <p>To submit a CCPA request, contact us at <a href="mailto:hello@spangate.com" style="color:var(--accent);text-decoration:none;">hello@spangate.com</a> with "CCPA Request" in the subject line.</p>
+  </div>
+
+  <div class="doc-section" id="s10">
+    <h2><span class="sec-num">10</span>International Users</h2>
+    <p>SpanGate is operated from the United States. If you are accessing the Service from outside the United States, you acknowledge that your data will be transferred to, stored, and processed in the United States. By using the Service you consent to this transfer.</p>
+    <p>We do not currently hold certification under Privacy Shield or similar frameworks. If you have questions about cross-border data transfers, contact us at <a href="mailto:hello@spangate.com" style="color:var(--accent);text-decoration:none;">hello@spangate.com</a>.</p>
+  </div>
+
+  <div class="doc-section" id="s11">
+    <h2><span class="sec-num">11</span>Changes to This Policy</h2>
+    <p>We may update this Privacy Policy periodically. We will notify you of material changes by email or by displaying a prominent notice in the Service. The "Effective" date at the top of this page will always reflect the most recent revision. Continued use of the Service after changes take effect constitutes acceptance of the updated Policy.</p>
+  </div>
+
+  <div class="doc-section" id="s12">
+    <h2><span class="sec-num">12</span>Contact</h2>
+    <div class="contact-box">
+      <div class="contact-label">SpanGate LLC — Privacy</div>
+      <div class="contact-val">Email: <a href="mailto:hello@spangate.com">hello@spangate.com</a></div>
+      <div class="contact-val" style="margin-top:4px;">Website: <a href="https://spangate.com">spangate.com</a></div>
+    </div>
+    <p style="margin-top:0.75rem;">Also see our <a href="/terms.html" style="color:var(--accent);text-decoration:none;">Terms of Service</a>.</p>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  © 2026 SpanGate LLC &nbsp;·&nbsp;
+  <a href="/terms.html">Terms of Service</a>
+  <a href="/privacy.html">Privacy Policy</a>
+  <a href="mailto:hello@spangate.com">hello@spangate.com</a>
+</footer>
+
+</body>
+</html>
