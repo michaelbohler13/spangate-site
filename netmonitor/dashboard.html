@@ -2523,6 +2523,11 @@ async function runCsvImport() {
 
   await _reloadDeviceConfigs();
   renderDevices();
+
+  // Auto-close on a clean import; leave open so user can review warnings/errors
+  if (!failed) {
+    setTimeout(() => closeCsvModal(), 1800);
+  }
 }
 </script>
 </body>
