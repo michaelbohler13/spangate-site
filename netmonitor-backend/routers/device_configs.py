@@ -35,7 +35,7 @@ VALID_VENDORS = {"cisco", "aruba_cx", "juniper", "other", "internet"}
 # Default netmiko device_type per vendor
 VENDOR_DEFAULT_TYPE: dict[str, str] = {
     "cisco":    "cisco_ios",
-    "aruba_cx": "aruba_osswitch",
+    "aruba_cx": "aruba_aoscx",    # AOS-CX platform (not legacy ProCurve)
     "juniper":  "juniper_junos",
     "other":    "linux",
     "internet": "ping_only",
