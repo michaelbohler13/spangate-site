@@ -83,6 +83,20 @@ class DeviceStatus(BaseModel):
     status:           str           # "up" | "down" | "unknown"
     last_seen:        Optional[datetime]
     last_config_hash: Optional[str]
+    last_ssh_error:   Optional[str]      = None
+    last_ssh_at:      Optional[datetime] = None
+
+
+class SshStatusReport(BaseModel):
+    """
+    Posted by the agent after each SSH config pull attempt.
+    On success, clears any previous error.  On failure, stores the error.
+    """
+
+    hostname:     str           = Field(..., max_length=255)
+    success:      bool
+    error_type:   Optional[str] = None   # "auth_failed" | "timeout" | "other"
+    error_detail: Optional[str] = None
 
 
 class AlertResponse(BaseModel):

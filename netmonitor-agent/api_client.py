@@ -173,6 +173,66 @@ class APIClient:
             logger.warning("Failed to fetch device list from backend: %s", exc)
             return None
 
+    def get_pending_backups(self) -> list[dict] | None:
+        """
+        Fetch devices that have a pending on-demand backup request.
+
+        Returns:
+            List of device dicts on success (same format as get_device_list),
+            or None on failure.  Empty list means no pending requests.
+        """
+        url = f"{self.api_url}/api/v1/agent/pending-backups"
+        try:
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+            return response.json().get("devices", [])
+        except requests.RequestException as exc:
+            logger.warning("Failed to fetch pending backups: %s", exc)
+            return None
+
+    def clear_backup_request(self, hostname: str) -> bool:
+        """
+        Clear the backup_requested_at flag for a device after the on-demand
+        backup has completed (or failed).
+
+        Args:
+            hostname: Device hostname to clear.
+
+        Returns:
+            True if successfully delivered.
+        """
+        return self._post(
+            "/api/v1/agent/clear-backup-request",
+            {"hostname": hostname},
+        )
+
+    def ssh_status(
+        self,
+        hostname: str,
+        success: bool,
+        error_type: str | None = None,
+        error_detail: str | None = None,
+    ) -> bool:
+        """
+        Report the result of an SSH config-pull attempt to the backend.
+
+        Args:
+            hostname: Device hostname.
+            success: True if the pull succeeded, False otherwise.
+            error_type: "auth_failed" | "timeout" | "other" (only on failure).
+            error_detail: Human-readable error message (only on failure).
+
+        Returns:
+            True if successfully delivered.
+        """
+        payload: dict = {
+            "hostname":     hostname,
+            "success":      success,
+            "error_type":   error_type,
+            "error_detail": error_detail,
+        }
+        return self._post("/api/v1/agent/ssh-status", payload)
+
     def heartbeat(
         self,
         site_name: str,

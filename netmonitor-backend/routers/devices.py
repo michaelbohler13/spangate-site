@@ -76,6 +76,8 @@ async def list_devices(
                 status=device.status,        # persisted in DB
                 last_seen=device.last_seen,  # persisted in DB
                 last_config_hash=last_config_hash,
+                last_ssh_error=device.last_ssh_error,
+                last_ssh_at=device.last_ssh_at,
             )
         )
 

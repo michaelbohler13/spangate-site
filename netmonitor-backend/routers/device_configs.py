@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -90,18 +90,19 @@ class DeviceConfigIn(BaseModel):
 
 class DeviceConfigOut(BaseModel):
     """Returned to the dashboard — ssh_password intentionally excluded."""
-    id:           int
-    hostname:     str
-    ip:           str
-    vendor:       str
-    device_type:  str
-    ssh_username: Optional[str]
-    ssh_port:     int
-    ping_enabled: bool
-    ssh_enabled:  bool
-    group_name:   Optional[str]
-    created_at:   str
-    updated_at:   str
+    id:                  int
+    hostname:            str
+    ip:                  str
+    vendor:              str
+    device_type:         str
+    ssh_username:        Optional[str]
+    ssh_port:            int
+    ping_enabled:        bool
+    ssh_enabled:         bool
+    group_name:          Optional[str]
+    backup_requested_at: Optional[str]
+    created_at:          str
+    updated_at:          str
 
 
 class DeviceConfigPatch(BaseModel):
@@ -131,6 +132,7 @@ def _to_out(row: DeviceConfig) -> DeviceConfigOut:
         ping_enabled=row.ping_enabled,
         ssh_enabled=row.ssh_enabled,
         group_name=row.group_name,
+        backup_requested_at=row.backup_requested_at.isoformat() if row.backup_requested_at else None,
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat(),
     )
@@ -250,6 +252,137 @@ async def delete_device_config(
     await db.delete(row)
     await db.commit()
     logger.info("Device removed: site=%s id=%d hostname=%s", ctx["site_id"], device_id, hostname)
+
+
+# ── POST /device-configs/{id}/request-backup ─────────────────────────────────
+
+@router.post("/device-configs/{device_id}/request-backup", status_code=200)
+async def request_backup(
+    device_id: int,
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Mark a device for an immediate on-demand config backup.
+
+    Sets backup_requested_at = now().  The agent polls /agent/pending-backups
+    every 60 seconds, picks up this flag, triggers an SSH pull, then calls
+    /agent/clear-backup-request to clear the flag.
+
+    Args:
+        device_id: PK of the device_configs row.
+        ctx: Auth context with site_id.
+        db: Async database session.
+
+    Returns:
+        ``{"ok": True, "hostname": ...}``
+
+    Raises:
+        HTTPException 404: Device not found.
+        HTTPException 400: SSH is not enabled for this device.
+    """
+    result = await db.execute(
+        select(DeviceConfig).where(
+            DeviceConfig.id == device_id,
+            DeviceConfig.site_id == ctx["site_id"],
+        )
+    )
+    row = result.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    if not row.ssh_enabled:
+        raise HTTPException(status_code=400, detail="SSH is not enabled for this device")
+
+    row.backup_requested_at = datetime.now(timezone.utc)
+    await db.commit()
+    logger.info(
+        "Backup queued: site=%s hostname=%s", ctx["site_id"], row.hostname
+    )
+    return {"ok": True, "hostname": row.hostname}
+
+
+# ── GET /agent/pending-backups ────────────────────────────────────────────────
+
+@router.get("/agent/pending-backups")
+async def agent_pending_backups(
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Return devices that have a pending on-demand backup request.
+
+    The agent polls this every 60 seconds, executes an SSH pull for each
+    returned device, then calls /agent/clear-backup-request to clear the flag.
+
+    Returns the same format as /agent/device-list for compatibility.
+    """
+    result = await db.execute(
+        select(DeviceConfig)
+        .where(
+            DeviceConfig.site_id == ctx["site_id"],
+            DeviceConfig.ssh_enabled.is_(True),
+            DeviceConfig.backup_requested_at.isnot(None),
+        )
+        .order_by(DeviceConfig.backup_requested_at)
+    )
+    rows = result.scalars().all()
+    return {
+        "count": len(rows),
+        "devices": [
+            {
+                "hostname":     r.hostname,
+                "ip":           r.ip,
+                "vendor":       r.vendor,
+                "device_type":  r.device_type,
+                "ssh_username": r.ssh_username or "",
+                "ssh_password": r.ssh_password or "",
+                "ssh_port":     r.ssh_port,
+                "ping_enabled": r.ping_enabled,
+                "ssh_enabled":  r.ssh_enabled,
+            }
+            for r in rows
+        ],
+    }
+
+
+# ── POST /agent/clear-backup-request ─────────────────────────────────────────
+
+class ClearBackupRequest(BaseModel):
+    hostname: str = Field(..., max_length=255)
+
+
+@router.post("/agent/clear-backup-request", status_code=200)
+async def agent_clear_backup_request(
+    body: ClearBackupRequest,
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Clear the backup_requested_at flag for a device after the agent has
+    completed the on-demand backup.
+
+    Args:
+        body: ``{"hostname": "..."}``
+        ctx: Auth context with site_id.
+        db: Async database session.
+
+    Returns:
+        ``{"ok": True}`` always (silently ignores unknown hostnames).
+    """
+    result = await db.execute(
+        select(DeviceConfig).where(
+            DeviceConfig.site_id == ctx["site_id"],
+            DeviceConfig.hostname == body.hostname,
+        )
+    )
+    row = result.scalar_one_or_none()
+    if row is not None and row.backup_requested_at is not None:
+        row.backup_requested_at = None
+        await db.commit()
+        logger.info(
+            "Backup request cleared: site=%s hostname=%s", ctx["site_id"], body.hostname
+        )
+    return {"ok": True}
 
 
 # ── GET /agent/device-list ────────────────────────────────────────────────────

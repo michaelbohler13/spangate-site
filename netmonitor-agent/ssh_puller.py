@@ -48,15 +48,17 @@ def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def _pull_config_ssh(device: dict[str, Any]) -> str | None:
+def _pull_config_ssh(device: dict[str, Any]) -> tuple[str | None, str | None]:
     """
     Open an SSH session to a device and return its running configuration.
 
     Args:
-        device: Device dict from config.yaml.
+        device: Device dict from config.yaml / agent device-list.
 
     Returns:
-        Configuration text on success, None on any failure.
+        ``(config_text, None)`` on success.
+        ``(None, error_type)`` on failure, where error_type is one of:
+        "auth_failed", "timeout", or "other".
     """
     hostname = device["hostname"]
     vendor = device.get("vendor", "cisco")
@@ -77,14 +79,23 @@ def _pull_config_ssh(device: dict[str, Any]) -> str | None:
     try:
         with ConnectHandler(**connection_params) as conn:
             output = conn.send_command(command, read_timeout=60)
-        return output
+        return output, None
     except NetmikoAuthenticationException:
-        logger.error("[SSH] Auth failed for %s — check credentials", hostname)
+        logger.error("[SSH] Auth failed for %s — check SSH username/password", hostname)
+        return None, "auth_failed"
     except NetmikoTimeoutException:
         logger.error("[SSH] Timeout connecting to %s (%s)", hostname, device["ip"])
+        return None, "timeout"
     except Exception as exc:  # noqa: BLE001
         logger.error("[SSH] Unexpected error pulling config from %s: %s", hostname, exc)
-    return None
+        return None, "other"
+
+
+_SSH_ERROR_MSGS: dict[str, str] = {
+    "auth_failed": "Authentication failed — check SSH username and password",
+    "timeout":     "Connection timed out — verify IP address and SSH port",
+    "other":       "SSH connection failed",
+}
 
 
 class SSHPuller:
@@ -120,15 +131,27 @@ class SSHPuller:
         """
         Pull config for one device, compare hash, and call the API as needed.
 
+        Reports SSH success/failure to the backend so the dashboard can display
+        per-device SSH health.
+
         Args:
-            device: Device dict from config.yaml.
+            device: Device dict from config.yaml / agent device-list.
         """
         hostname = device["hostname"]
-        config_text = _pull_config_ssh(device)
+        config_text, error_type = _pull_config_ssh(device)
 
         if config_text is None:
-            logger.warning("[SSH] Skipping %s — config pull failed", hostname)
+            logger.warning("[SSH] Skipping %s — config pull failed (%s)", hostname, error_type)
+            self.api.ssh_status(
+                hostname,
+                success=False,
+                error_type=error_type,
+                error_detail=_SSH_ERROR_MSGS.get(error_type or "", "SSH error"),
+            )
             return
+
+        # Successful pull — report to backend (clears any previous error)
+        self.api.ssh_status(hostname, success=True)
 
         new_hash = _sha256(config_text)
         old_hash = self._hashes.get(hostname)
@@ -150,9 +173,22 @@ class SSHPuller:
             self._hashes[hostname] = new_hash
             self.api.config_changed(hostname, config_text, old_hash, new_hash)
 
-        # Always ship weekly backup regardless of change
+        # Always ship backup regardless of change
         self.api.config_backup(hostname, config_text, new_hash)
         logger.info("[SSH] Config backup sent for %s", hostname)
+
+    def pull_device_now(self, device: dict[str, Any]) -> None:
+        """
+        Trigger an immediate config pull for a device.
+
+        Called by the backup_request_loop when the user clicks "Backup Now"
+        in the dashboard.
+
+        Args:
+            device: Device dict (same format as agent device-list).
+        """
+        logger.info("[SSH] On-demand backup requested for %s", device["hostname"])
+        self._process_device(device)
 
     async def _pull_all(self) -> None:
         """

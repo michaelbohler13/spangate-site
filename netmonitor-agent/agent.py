@@ -161,6 +161,54 @@ async def device_config_loop(
                 logger.debug("[DC] Device list unchanged")
 
 
+async def backup_request_loop(
+    api: APIClient,
+    devices: list[dict[str, Any]],
+    ssh_puller: SSHPuller,
+) -> None:
+    """
+    Poll for on-demand backup requests every 60 seconds.
+
+    When the user clicks "Backup Now" in the dashboard, the backend sets
+    backup_requested_at on that device.  This loop detects the flag, runs an
+    immediate SSH pull via SSHPuller.pull_device_now(), then clears the flag.
+
+    Args:
+        api:        Authenticated API client.
+        devices:    Shared device list (kept current by device_config_loop).
+        ssh_puller: SSHPuller instance used to execute the pull.
+    """
+    logger.info("[BK] Backup request loop started — checking every 60s")
+    while True:
+        await asyncio.sleep(60)
+        try:
+            pending = api.get_pending_backups()
+        except Exception:
+            continue
+
+        if not pending:
+            continue
+
+        # Build a hostname → device-dict lookup from the live device list
+        dev_map = {d["hostname"]: d for d in devices}
+        loop = asyncio.get_event_loop()
+
+        for req in pending:
+            hostname = req.get("hostname", "")
+            if hostname in dev_map:
+                logger.info("[BK] On-demand backup for %s", hostname)
+                await loop.run_in_executor(
+                    None, ssh_puller.pull_device_now, dev_map[hostname]
+                )
+            else:
+                # Device was removed from dashboard after the request was made
+                logger.warning(
+                    "[BK] Backup requested for unconfigured device %s — skipping", hostname
+                )
+            # Always clear the flag so it doesn't repeat
+            api.clear_backup_request(hostname)
+
+
 async def heartbeat_loop(
     api: APIClient,
     site_name: str,
@@ -270,6 +318,7 @@ async def main() -> None:
             ssh_puller.run(),
             heartbeat_loop(api, site_name, len(devices), ping_loop),
             device_config_loop(api, devices),
+            backup_request_loop(api, devices, ssh_puller),
         )
     except asyncio.CancelledError:
         logger.info("Agent shut down cleanly.")
