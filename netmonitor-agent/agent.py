@@ -21,7 +21,7 @@ from ssh_puller import SSHPuller
 
 AGENT_VERSION = "1.0.0"
 HEARTBEAT_INTERVAL   = 300   # 5 minutes
-DEVICE_POLL_INTERVAL = 300   # 5 minutes — how often to refresh devices from dashboard
+DEVICE_POLL_INTERVAL = 60    # 1 minute — how often to refresh devices from dashboard
 DEFAULT_CONFIG_PATH  = Path(__file__).parent / "config.yaml"
 
 # ── Logging setup ─────────────────────────────────────────────────────────────

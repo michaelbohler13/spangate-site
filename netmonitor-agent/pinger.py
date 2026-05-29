@@ -76,9 +76,13 @@ class PingLoop:
         self.devices = devices
         self.api = api_client
         self.interval = ping_interval
-        # In-memory status store: hostname → bool (True = up, None = unknown)
+        # In-memory status store: hostname → bool (True = up, None = unknown).
+        # Only tracks devices where ping_enabled is True (or absent, for
+        # backwards compatibility with config.yaml-only setups).
         self._status: dict[str, bool | None] = {
-            d["hostname"]: None for d in devices
+            d["hostname"]: None
+            for d in devices
+            if d.get("ping_enabled", True)
         }
 
     def get_status_counts(self) -> tuple[int, int]:
@@ -96,9 +100,17 @@ class PingLoop:
         """
         Ping a single device and fire an alert if its status changed.
 
+        Devices with ping_enabled=False are silently skipped so SSH-only
+        entries don't generate spurious Down/Up ping alerts.
+
         Args:
             device: Device dict with at minimum 'hostname' and 'ip' keys.
         """
+        # Respect ping_enabled flag (default True for config.yaml devices
+        # that pre-date the dashboard and don't carry the field).
+        if not device.get("ping_enabled", True):
+            return
+
         hostname = device["hostname"]
         ip = device["ip"]
 
