@@ -1679,7 +1679,7 @@ function filterGroupDropdown() {
   const matches = q ? _groupOptions.filter(g => g.toLowerCase().includes(q)) : _groupOptions;
   if (!matches.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = matches.map(g =>
-    `<div class="dm-group-opt" onmousedown="selectGroup(${JSON.stringify(g)})">${esc(g)}</div>`
+    `<div class="dm-group-opt" onmousedown='selectGroup(${JSON.stringify(g)})'>${esc(g)}</div>`
   ).join('');
   dd.style.display = 'block';
 }
@@ -1837,10 +1837,10 @@ function _sshTestDone(success, message) {
     status.textContent = success ? '✓ Connected' : '✗ Failed';
     status.className   = 'ssh-test-status ' + (success ? 'ok' : 'fail');
   }
-  if (message && result) {
-    result.textContent  = message;
-    result.className    = 'ssh-test-result ' + (success ? 'ok' : 'fail');
-    result.style.display = 'block';
+  if (result) {
+    result.textContent   = message || '';
+    result.className     = 'ssh-test-result ' + (success ? 'ok' : 'fail');
+    result.style.display = message ? 'block' : 'none';
   }
 }
 
@@ -1850,9 +1850,9 @@ async function testDmSshConnection() {
   const sshPort = parseInt(document.getElementById('dmSshPort').value, 10) || 22;
   const sshUser = document.getElementById('dmSshUsername').value.trim();
   const sshPass = document.getElementById('dmSshPassword').value;
+  const errEl   = document.getElementById('dmError');
 
-  const errEl = document.getElementById('dmError');
-
+  // ── Validation ──────────────────────────────────────────────────────────────
   if (!ip) {
     errEl.textContent = 'Enter an IP address or domain before testing.';
     return;
@@ -1861,68 +1861,80 @@ async function testDmSshConnection() {
     errEl.textContent = 'Enter an SSH username before testing.';
     return;
   }
-  // In edit mode the password field may be blank ("keep current") — warn the user
   if (!sshPass && document.getElementById('dmSshPassword').placeholder.includes('keep')) {
     errEl.textContent = 'Enter the SSH password to run a connection test.';
     return;
   }
   errEl.textContent = '';
 
-  // Reset and show spinner
+  // ── Start spinner ───────────────────────────────────────────────────────────
   _resetSshTest();
   const btn     = document.getElementById('dmSshTestBtn');
   const spinner = document.getElementById('dmSshTestSpinner');
   const status  = document.getElementById('dmSshTestStatus');
-  btn.disabled         = true;
+  btn.disabled          = true;
   spinner.style.display = 'block';
-  status.textContent   = 'Connecting…';
-  status.className     = 'ssh-test-status';
+  status.textContent    = 'Queuing test…';
+  status.className      = 'ssh-test-status';
 
   const deviceType = _VENDOR_DEVICE_TYPE[vendor] || 'cisco_ios';
 
+  // ── POST: queue the test ────────────────────────────────────────────────────
+  let test_id;
   try {
     const res = await fetch(`${API_BASE}/api/v1/test-ssh`, {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ip, vendor, device_type: deviceType,
-        ssh_username: sshUser, ssh_password: sshPass, ssh_port: sshPort,
-      }),
+      body:    JSON.stringify({ ip, vendor, device_type: deviceType,
+                                ssh_username: sshUser, ssh_password: sshPass, ssh_port: sshPort }),
     });
     if (!res.ok) {
-      _sshTestDone(false, 'Could not queue test — please try again.');
+      const err = await res.json().catch(() => ({}));
+      _sshTestDone(false, err.detail || `Server error ${res.status} — please try again.`);
       return;
     }
-    const { test_id } = await res.json();
-
-    // Poll every 2 s for up to 90 s
-    let attempts = 0;
-    _sshTestPollTimer = setInterval(async () => {
-      attempts++;
-      if (attempts > 45) {
-        clearInterval(_sshTestPollTimer); _sshTestPollTimer = null;
-        _sshTestDone(false, 'Timed out waiting for agent — verify the agent is running and connected.');
-        return;
-      }
-      try {
-        const pRes = await fetch(`${API_BASE}/api/v1/test-ssh/${test_id}`, {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (!pRes.ok) return;
-        const data = await pRes.json();
-        if (data.status === 'pending') return;  // still running
-        clearInterval(_sshTestPollTimer); _sshTestPollTimer = null;
-        if (data.status === 'expired') {
-          _sshTestDone(false, 'Agent did not respond — check that the agent is running.');
-        } else {
-          _sshTestDone(data.status === 'success', data.result_msg || '');
-        }
-      } catch(e) {}
-    }, 2000);
-
-  } catch(e) {
-    _sshTestDone(false, 'Network error — please try again.');
+    ({ test_id } = await res.json());
+  } catch (e) {
+    _sshTestDone(false, 'Network error — check your connection and try again.');
+    return;
   }
+
+  // ── Poll for result (2 s cadence, 60 s max) ─────────────────────────────────
+  let elapsed = 0;
+  const MAX_WAIT = 60;  // seconds
+
+  status.textContent = 'Waiting for agent… (0s)';
+
+  _sshTestPollTimer = setInterval(async () => {
+    elapsed += 2;
+
+    if (elapsed > MAX_WAIT) {
+      clearInterval(_sshTestPollTimer); _sshTestPollTimer = null;
+      _sshTestDone(false,
+        'Agent did not respond within 60 s — make sure the agent is running and has been updated to the latest version.');
+      return;
+    }
+
+    // Update live counter so the user knows something is happening
+    status.textContent = `Waiting for agent… (${elapsed}s)`;
+
+    try {
+      const pRes = await fetch(`${API_BASE}/api/v1/test-ssh/${test_id}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      if (!pRes.ok) return;  // transient error — keep polling
+      const data = await pRes.json();
+
+      if (data.status === 'pending') return;  // agent hasn't picked it up yet
+
+      clearInterval(_sshTestPollTimer); _sshTestPollTimer = null;
+      if (data.status === 'expired') {
+        _sshTestDone(false, 'Agent did not respond — verify the agent is running and connected to the backend.');
+      } else {
+        _sshTestDone(data.status === 'success', data.result_msg || '');
+      }
+    } catch (e) { /* transient network error — keep polling */ }
+  }, 2000);
 }
 
 async function saveDevice() {
