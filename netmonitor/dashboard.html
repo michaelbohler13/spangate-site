@@ -402,7 +402,17 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .grp-pill-maint{background:rgba(255,193,7,0.12);color:#ffc107;border:0.5px solid rgba(255,193,7,0.35);}
 
 /* ── DEVICE MANAGEMENT ────────────────────────────────────────────────────── */
-.pane-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;}
+.pane-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:0.6rem;}
+.dev-search-wrap{position:relative;margin-bottom:0.75rem;}
+.dev-search-input{width:100%;background:rgba(255,255,255,0.04);border:0.5px solid var(--border-bright);border-radius:8px;
+  padding:8px 36px 8px 36px;font-size:0.82rem;color:var(--text);font-family:var(--sans);outline:none;transition:border-color 0.15s;}
+.dev-search-input::placeholder{color:var(--text-dim);}
+.dev-search-input:focus{border-color:rgba(0,212,184,0.45);background:rgba(0,212,184,0.03);}
+.dev-search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:0.85rem;color:var(--text-dim);pointer-events:none;}
+.dev-search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;
+  color:var(--text-dim);font-size:1rem;cursor:pointer;padding:2px 4px;line-height:1;display:none;}
+.dev-search-clear:hover{color:var(--text);}
+.dev-search-count{font-size:0.72rem;color:var(--text-dim);font-family:var(--mono);margin-top:-0.4rem;margin-bottom:0.5rem;display:none;}
 .plan-usage{display:inline-flex;align-items:center;gap:6px;font-size:0.72rem;font-family:var(--mono);color:var(--text-muted);margin-right:14px;}
 .plan-bar-wrap{width:44px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;}
 .plan-bar{height:100%;border-radius:2px;transition:width 0.4s ease,background 0.4s ease;}
@@ -764,6 +774,13 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
       <button id="importCsvBtn" class="btn btn-ghost" onclick="openImportModal()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬆ Import CSV</button>
       <button id="addDeviceBtn" class="btn btn-outline" onclick="openAddDevice()" style="font-size:0.8rem;padding:7px 18px;">+ Add Device</button>
     </div>
+    <div class="dev-search-wrap">
+      <span class="dev-search-icon">🔍</span>
+      <input class="dev-search-input" id="devSearchInput" type="text" placeholder="Search by hostname, IP, vendor, group…"
+        oninput="onDeviceSearch(this.value)" />
+      <button class="dev-search-clear" id="devSearchClear" onclick="clearDeviceSearch()" title="Clear search">✕</button>
+    </div>
+    <div class="dev-search-count" id="devSearchCount"></div>
     <table class="dev-table" id="devTable">
       <thead>
         <tr>
@@ -1053,6 +1070,7 @@ let lastRefreshedAt  = null;
 let sortCol        = 'status';
 let sortDir        = 1;          // 1 = asc, -1 = desc
 let collapsedGroups = new Set(JSON.parse(localStorage.getItem('sg-collapsed-groups') || '[]'));
+let deviceSearch   = '';
 let planInfo       = { plan: 'free', device_limit: 10, device_count: 0, devices_remaining: 10 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1579,6 +1597,22 @@ function toggleGroup(gn) {
   renderDevices();
 }
 
+function onDeviceSearch(val) {
+  deviceSearch = val.trim().toLowerCase();
+  const clear = document.getElementById('devSearchClear');
+  if (clear) clear.style.display = deviceSearch ? 'block' : 'none';
+  renderDevices();
+}
+
+function clearDeviceSearch() {
+  deviceSearch = '';
+  const inp = document.getElementById('devSearchInput');
+  const clear = document.getElementById('devSearchClear');
+  if (inp)   inp.value = '';
+  if (clear) clear.style.display = 'none';
+  renderDevices();
+}
+
 function renderDevices() {
   const tbody = document.getElementById('devTbody');
   if (!tbody) return;
@@ -1602,6 +1636,8 @@ function renderDevices() {
 
   if (!allHostnames.length) {
     tbody.innerHTML = `<tr><td colspan="8" class="empty-st">No devices yet — click <strong style="color:var(--text-muted);">+ Add Device</strong> above to get started.</td></tr>`;
+    const countEl = document.getElementById('devSearchCount');
+    if (countEl) { countEl.textContent = ''; countEl.style.display = 'none'; }
     return;
   }
 
@@ -1647,9 +1683,42 @@ function renderDevices() {
     });
   }
 
+  // Apply search filter
+  function matchesSearch(h) {
+    if (!deviceSearch) return true;
+    const d   = liveMap[h] || {};
+    const cfg = cfgMap[h]  || {};
+    const fields = [
+      h,
+      d.ip || cfg.ip || '',
+      d.vendor || cfg.vendor || '',
+      d.device_type || cfg.device_type || '',
+      cfg.group_name || '',
+    ];
+    return fields.some(f => String(f).toLowerCase().includes(deviceSearch));
+  }
+  const visibleHostnames = allHostnames.filter(matchesSearch);
+
+  // Update search result count label
+  const countEl = document.getElementById('devSearchCount');
+  if (countEl) {
+    if (deviceSearch) {
+      countEl.textContent = `${visibleHostnames.length} of ${allHostnames.length} device${allHostnames.length !== 1 ? 's' : ''} matching "${deviceSearch}"`;
+      countEl.style.display = 'block';
+    } else {
+      countEl.textContent = '';
+      countEl.style.display = 'none';
+    }
+  }
+
+  if (deviceSearch && !visibleHostnames.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-st">No devices match "<strong style="color:var(--text-muted);">${esc(deviceSearch)}</strong>"</td></tr>`;
+    return;
+  }
+
   // Group by group_name ('' = ungrouped, shown first without a header)
   const groups = new Map();
-  allHostnames.forEach(h => {
+  visibleHostnames.forEach(h => {
     const gn = cfgMap[h]?.group_name || '';
     if (!groups.has(gn)) groups.set(gn, []);
     groups.get(gn).push(h);
@@ -1777,7 +1846,7 @@ function renderDevices() {
   let html = '';
   allGrpNames.forEach(gn => {
     const hostnames   = sortedList(groups.get(gn) || []);
-    const isCollapsed = collapsedGroups.has(gn);
+    const isCollapsed = deviceSearch ? false : collapsedGroups.has(gn);
     const grpDowns  = hostnames.filter(h => !liveMap[h]?.maintenance && liveMap[h]?.status === 'down').length;
     const grpMaints = hostnames.filter(h => !!liveMap[h]?.maintenance).length;
     const worstCls  = grpDowns ? 'grp-down' : grpMaints ? 'grp-maint' : 'grp-up';
