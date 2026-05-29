@@ -1812,8 +1812,15 @@ async function toggleMaintenance(hostname, currentMaint, event) {
       const d = liveDevices.find(d => d.hostname === hostname);
       if (d) d.maintenance = !currentMaint;
       renderDevices();
+    } else {
+      const body = await res.text().catch(() => '');
+      console.error('[maintenance] PUT failed', res.status, body);
+      showBackendBanner(`Maintenance toggle failed for ${hostname} (HTTP ${res.status}) — check console for details`);
     }
-  } catch(e) { /* silently ignore network errors */ }
+  } catch(e) {
+    console.error('[maintenance] network error', e);
+    showBackendBanner(`Network error updating maintenance for ${hostname}`);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
