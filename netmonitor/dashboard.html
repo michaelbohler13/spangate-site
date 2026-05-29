@@ -759,6 +759,7 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
         <span id="planName" style="opacity:0.55;font-size:0.68rem;">Free</span>
       </span>
       <button class="btn btn-ghost" onclick="manualRefresh()" style="font-size:0.78rem;padding:6px 14px;margin-right:10px;">↻ Refresh</button>
+      <button id="exportCsvBtn" class="btn btn-ghost" onclick="exportDeviceCsv()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬇ Export CSV</button>
       <button id="importCsvBtn" class="btn btn-ghost" onclick="openImportModal()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬆ Import CSV</button>
       <button id="addDeviceBtn" class="btn btn-outline" onclick="openAddDevice()" style="font-size:0.8rem;padding:7px 18px;">+ Add Device</button>
     </div>
@@ -2438,6 +2439,44 @@ document.addEventListener('click', function(e) {
 });
 
 document.addEventListener('DOMContentLoaded', initApp);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSV EXPORT
+// ─────────────────────────────────────────────────────────────────────────────
+
+function exportDeviceCsv() {
+  if (!deviceConfigs || !deviceConfigs.length) {
+    showBackendBanner('No devices to export — add devices first.');
+    return;
+  }
+  // Column order matches the import template exactly so the file can be
+  // re-imported without editing.  ssh_password is always blank for security.
+  const cols = ['hostname','ip','vendor','ssh_port','ssh_username','ssh_password','ping_enabled','ssh_enabled','group_name'];
+  const rows = [cols];
+  deviceConfigs.forEach(d => {
+    rows.push([
+      d.hostname,
+      d.ip,
+      d.vendor       || 'cisco',
+      d.ssh_port     ?? 22,
+      d.ssh_username || '',
+      '',                          // ssh_password — never exported
+      d.ping_enabled ?? true,
+      d.ssh_enabled  ?? false,
+      d.group_name   || '',
+    ]);
+  });
+  const csv  = rows.map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const date = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a    = Object.assign(document.createElement('a'), {
+    href:     URL.createObjectURL(blob),
+    download: `spangate-devices-${date}.csv`,
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CSV IMPORT
