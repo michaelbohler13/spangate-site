@@ -413,6 +413,46 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   cursor:pointer;transition:background 0.1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dm-group-opt:hover{background:rgba(0,212,184,0.07);color:var(--text);}
 .backup-toast{font-family:var(--mono);font-size:0.68rem;margin-left:8px;vertical-align:middle;}
+
+/* ── CSV IMPORT ───────────────────────────────────────────────────────────── */
+#csvModal{position:fixed;inset:0;z-index:1000;display:none;align-items:flex-start;
+  justify-content:center;padding:2.5rem 1.25rem;overflow-y:auto;}
+#csvModal.open{display:flex;}
+.csv-box{max-width:720px;}
+.csv-tpl-row{display:flex;align-items:center;justify-content:space-between;
+  padding:0.75rem 0;border-bottom:0.5px solid var(--border);gap:1rem;}
+.csv-tpl-label{font-size:0.78rem;color:var(--text-muted);line-height:1.45;}
+.csv-tpl-btn{background:transparent;border:0.5px solid rgba(0,212,184,0.3);color:var(--accent);
+  border-radius:6px;padding:5px 14px;font-size:0.75rem;font-family:var(--sans);cursor:pointer;
+  transition:all 0.15s;white-space:nowrap;flex-shrink:0;}
+.csv-tpl-btn:hover{background:rgba(0,212,184,0.08);}
+.csv-drop{border:1.5px dashed rgba(0,212,184,0.28);border-radius:12px;padding:1.75rem 1.25rem;
+  text-align:center;cursor:pointer;transition:all 0.2s;position:relative;margin-top:1rem;}
+.csv-drop:hover,.csv-drop.drag-over{border-color:var(--accent);background:rgba(0,212,184,0.04);}
+.csv-drop-icon{font-size:1.75rem;margin-bottom:0.4rem;}
+.csv-drop-label{font-size:0.83rem;color:var(--text-muted);margin-bottom:0.25rem;}
+.csv-drop-hint{font-size:0.68rem;color:var(--text-dim);font-family:var(--mono);}
+.csv-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.csv-preview{margin-top:0.9rem;}
+.csv-preview-lbl{font-size:0.68rem;color:var(--text-muted);font-family:var(--mono);margin-bottom:0.5rem;}
+.csv-scroll{max-height:240px;overflow-y:auto;border:0.5px solid var(--border);border-radius:8px;}
+.csv-tbl{width:100%;border-collapse:collapse;font-size:0.74rem;}
+.csv-tbl th{font-size:0.58rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;
+  color:var(--text-dim);font-family:var(--mono);padding:6px 10px;text-align:left;
+  border-bottom:0.5px solid var(--border);background:var(--surface2);position:sticky;top:0;}
+.csv-tbl td{padding:5px 10px;font-family:var(--mono);border-bottom:0.5px solid rgba(255,255,255,0.04);}
+.csv-row-ok .csv-st{color:var(--accent);}
+.csv-row-err .csv-st{color:#ff5f57;}
+.csv-row-err td{color:rgba(255,95,87,0.8);}
+.csv-err-note{font-size:0.7rem;color:#ff5f57;margin-top:0.5rem;padding:0 2px;}
+.csv-progress{margin-top:0.85rem;display:none;}
+.csv-progress-bar{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:0.4rem;}
+.csv-progress-fill{height:100%;background:var(--accent);transition:width 0.25s;width:0%;border-radius:2px;}
+.csv-progress-lbl{font-size:0.72rem;color:var(--text-muted);font-family:var(--mono);}
+.csv-result{margin-top:0.75rem;padding:9px 14px;border-radius:8px;font-size:0.79rem;
+  display:none;font-family:var(--mono);}
+.csv-result.ok  {background:rgba(0,212,184,0.08);border:0.5px solid rgba(0,212,184,0.25);color:var(--accent);}
+.csv-result.warn{background:rgba(255,193,7,0.07);border:0.5px solid rgba(255,193,7,0.3);color:#ffc107;}
 </style>
 </head>
 <body>
@@ -644,6 +684,7 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
     <div class="pane-toolbar">
       <span id="devRefreshStamp" style="font-size:0.72rem;color:var(--text-dim);font-family:var(--mono);margin-right:auto;"></span>
       <button class="btn btn-ghost" onclick="manualRefresh()" style="font-size:0.78rem;padding:6px 14px;margin-right:10px;">↻ Refresh</button>
+      <button class="btn btn-ghost" onclick="openImportModal()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬆ Import CSV</button>
       <button class="btn btn-outline" onclick="openAddDevice()" style="font-size:0.8rem;padding:7px 18px;">+ Add Device</button>
     </div>
     <table class="dev-table" id="devTable">
@@ -817,6 +858,57 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
       <div style="display:flex;gap:10px;justify-content:flex-end;">
         <button class="btn btn-ghost" onclick="closeDeviceModal()">Cancel</button>
         <button class="btn btn-primary" id="dmSaveBtn" onclick="saveDevice()">Add Device</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CSV IMPORT MODAL ───────────────────────────────────────────────────── -->
+<div id="csvModal">
+  <div class="modal-bg" onclick="closeCsvModal()"></div>
+  <div class="modal-box csv-box">
+    <div class="modal-hdr">
+      <span class="modal-title">Import Devices from CSV</span>
+      <button class="modal-x" onclick="closeCsvModal()">×</button>
+    </div>
+    <div class="modal-sec">
+      <div class="csv-tpl-row">
+        <span class="csv-tpl-label">Don't have a file? Download the template, fill it in, then upload it below.</span>
+        <button class="csv-tpl-btn" onclick="downloadCsvTemplate()">⬇ Download Template</button>
+      </div>
+      <div class="csv-drop" id="csvDrop"
+           ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDropFile(event)">
+        <input type="file" id="csvFileInput" accept=".csv,text/csv,text/plain" onchange="csvFileChosen(event)">
+        <div class="csv-drop-icon">📂</div>
+        <div class="csv-drop-label" id="csvDropLabel">Click to choose a CSV file, or drag &amp; drop here</div>
+        <div class="csv-drop-hint">hostname · ip · vendor · ssh_port · ssh_username · ssh_password · ping_enabled · ssh_enabled · group_name</div>
+      </div>
+      <div class="csv-preview" id="csvPreview" style="display:none;">
+        <div class="csv-preview-lbl" id="csvPreviewLbl"></div>
+        <div class="csv-scroll">
+          <table class="csv-tbl">
+            <thead><tr>
+              <th style="width:28px;"></th>
+              <th style="width:40px;">Row</th>
+              <th>Hostname</th><th>IP</th><th>Vendor</th>
+              <th style="width:50px;">SSH</th>
+              <th>Group</th>
+            </tr></thead>
+            <tbody id="csvPreviewBody"></tbody>
+          </table>
+        </div>
+        <div class="csv-err-note" id="csvErrNote" style="display:none;"></div>
+      </div>
+      <div class="csv-progress" id="csvProgress">
+        <div class="csv-progress-bar"><div class="csv-progress-fill" id="csvProgressFill"></div></div>
+        <div class="csv-progress-lbl" id="csvProgressLbl"></div>
+      </div>
+      <div class="csv-result" id="csvResult"></div>
+    </div>
+    <div class="modal-sec">
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeCsvModal()">Cancel</button>
+        <button class="btn btn-primary" id="csvImportBtn" onclick="runCsvImport()" disabled>Import Devices</button>
       </div>
     </div>
   </div>
@@ -2096,6 +2188,236 @@ document.addEventListener('click', function(e) {
 });
 
 document.addEventListener('DOMContentLoaded', initApp);
-</script>
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSV IMPORT
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _CSV_VALID_VENDORS = ['cisco','aruba_cx','juniper','other','internet'];
+const _CSV_COLUMNS = ['hostname','ip','vendor','ssh_port','ssh_username','ssh_password','ping_enabled','ssh_enabled','group_name'];
+let _csvRows = [];
+
+function openImportModal() {
+  _csvRows = [];
+  document.getElementById('csvDropLabel').textContent = 'Click to choose a CSV file, or drag & drop here';
+  document.getElementById('csvDrop').classList.remove('drag-over');
+  document.getElementById('csvPreview').style.display  = 'none';
+  document.getElementById('csvProgress').style.display = 'none';
+  document.getElementById('csvResult').style.display   = 'none';
+  document.getElementById('csvImportBtn').disabled     = true;
+  document.getElementById('csvFileInput').value        = '';
+  document.getElementById('csvModal').classList.add('open');
+  document.addEventListener('keydown', _csvKey);
+}
+
+function closeCsvModal() {
+  document.getElementById('csvModal').classList.remove('open');
+  document.removeEventListener('keydown', _csvKey);
+}
+
+function _csvKey(e) { if (e.key === 'Escape') closeCsvModal(); }
+
+// ── Template download ─────────────────────────────────────────────────────────
+function downloadCsvTemplate() {
+  const rows = [
+    _CSV_COLUMNS,
+    ['core-sw-01',   '10.1.1.1',   'cisco',    '22', 'admin', 'cisco123', 'true',  'true',  'Core'],
+    ['access-sw-02', '10.1.1.2',   'aruba_cx', '22', 'admin', 'aruba123', 'true',  'true',  'Building A'],
+    ['firewall-01',  '10.1.1.254', 'cisco',    '22', 'admin', '',         'true',  'false', 'Core'],
+    ['gateway-01',   '192.168.1.1','other',    '22', '',      '',         'true',  'false', ''],
+    ['google-dns',   '8.8.8.8',    'internet', '22', '',      '',         'true',  'false', 'Internet'],
+  ];
+  const csv = rows.map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: 'spangate-device-import-template.csv',
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Drag & drop ───────────────────────────────────────────────────────────────
+function csvDragOver(e)  { e.preventDefault(); document.getElementById('csvDrop').classList.add('drag-over'); }
+function csvDragLeave()  { document.getElementById('csvDrop').classList.remove('drag-over'); }
+function csvDropFile(e)  { e.preventDefault(); csvDragLeave(); const f = e.dataTransfer.files[0]; if (f) _parseCsvFile(f); }
+function csvFileChosen(e){ const f = e.target.files[0]; if (f) _parseCsvFile(f); }
+
+// ── CSV parser — handles quoted fields with commas ────────────────────────────
+function _parseCsvText(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  return lines.map(line => {
+    const fields = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = !inQ;
+      } else if (c === ',' && !inQ) {
+        fields.push(cur.trim()); cur = '';
+      } else { cur += c; }
+    }
+    fields.push(cur.trim());
+    return fields;
+  }).filter(r => r.some(f => f !== ''));
+}
+
+function _parseCsvFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const allRows = _parseCsvText(e.target.result);
+    if (!allRows.length) return;
+
+    // Detect header row by looking for 'hostname' or 'ip' in first row
+    const firstLower = allRows[0].map(f => f.toLowerCase().trim());
+    const hasHeader  = firstLower.includes('hostname') || firstLower.includes('ip');
+    const colMap     = {};
+    let dataRows     = allRows;
+    if (hasHeader) {
+      firstLower.forEach((h, i) => { colMap[h] = i; });
+      dataRows = allRows.slice(1);
+    } else {
+      _CSV_COLUMNS.forEach((col, i) => { colMap[col] = i; });
+    }
+
+    const get = (fields, col) =>
+      (colMap[col] !== undefined ? (fields[colMap[col]] || '') : '').trim();
+
+    _csvRows = dataRows.map((fields, idx) => {
+      const hostname     = get(fields, 'hostname');
+      const ip           = get(fields, 'ip');
+      const vendorRaw    = get(fields, 'vendor') || 'cisco';
+      const vendor       = vendorRaw.toLowerCase();
+      const portRaw      = get(fields, 'ssh_port');
+      const ssh_port     = portRaw ? parseInt(portRaw, 10) : 22;
+      const ssh_username = get(fields, 'ssh_username');
+      const ssh_password = get(fields, 'ssh_password');
+      const pingStr      = (get(fields, 'ping_enabled') || 'true').toLowerCase();
+      const sshStr       = (get(fields, 'ssh_enabled')  || 'false').toLowerCase();
+      const group_name   = get(fields, 'group_name');
+
+      const ping_enabled = pingStr !== 'false' && pingStr !== '0' && pingStr !== 'no';
+      const ssh_enabled  = sshStr === 'true'   || sshStr === '1'   || sshStr === 'yes';
+
+      const errors = [];
+      if (!hostname)              errors.push('hostname required');
+      else if (hostname.length > 255) errors.push('hostname > 255 chars');
+      if (!ip)                    errors.push('ip required');
+      else if (ip.length > 253)   errors.push('ip > 253 chars');
+      if (!_CSV_VALID_VENDORS.includes(vendor))
+        errors.push(`vendor must be: ${_CSV_VALID_VENDORS.join(' / ')}`);
+      if (isNaN(ssh_port) || ssh_port < 1 || ssh_port > 65535)
+        errors.push('ssh_port must be 1–65535');
+
+      return {
+        row: idx + (hasHeader ? 2 : 1),
+        hostname, ip, vendor,
+        ssh_port: isNaN(ssh_port) ? 22 : ssh_port,
+        ssh_username, ssh_password, ping_enabled, ssh_enabled, group_name,
+        errors,
+        status: errors.length ? 'error' : 'ready',
+      };
+    }).filter(r => r.hostname || r.ip);
+
+    _renderCsvPreview(file.name);
+  };
+  reader.readAsText(file);
+}
+
+// ── Preview table ─────────────────────────────────────────────────────────────
+function _renderCsvPreview(filename) {
+  const ready  = _csvRows.filter(r => r.status === 'ready').length;
+  const errors = _csvRows.filter(r => r.status === 'error').length;
+
+  document.getElementById('csvDropLabel').textContent  = `📄 ${filename}`;
+  document.getElementById('csvPreview').style.display  = '';
+  document.getElementById('csvResult').style.display   = 'none';
+  document.getElementById('csvProgress').style.display = 'none';
+  document.getElementById('csvPreviewLbl').textContent =
+    `${_csvRows.length} row${_csvRows.length !== 1 ? 's' : ''} — ${ready} valid, ${errors} with errors`;
+
+  document.getElementById('csvPreviewBody').innerHTML = _csvRows.map(r => {
+    const cls  = r.status === 'error' ? 'csv-row-err' : 'csv-row-ok';
+    const icon = r.status === 'error' ? '✗' : '✓';
+    const errHtml = r.errors.length
+      ? `<tr class="${cls}"><td></td><td colspan="6" style="font-size:0.67rem;color:#ff5f57;padding-bottom:6px;">${esc(r.errors.join(' · '))}</td></tr>`
+      : '';
+    return `<tr class="${cls}">
+      <td class="csv-st">${icon}</td>
+      <td>${r.row}</td>
+      <td>${esc(r.hostname)}</td>
+      <td>${esc(r.ip)}</td>
+      <td>${esc(r.vendor)}</td>
+      <td>${r.ssh_enabled ? '✓' : '—'}</td>
+      <td>${esc(r.group_name || '')}</td>
+    </tr>${errHtml}`;
+  }).join('');
+
+  const errNote = document.getElementById('csvErrNote');
+  if (errors) {
+    errNote.style.display = '';
+    errNote.textContent   = `⚠ ${errors} row${errors !== 1 ? 's' : ''} with errors will be skipped.`;
+  } else {
+    errNote.style.display = 'none';
+  }
+  document.getElementById('csvImportBtn').disabled = ready === 0;
+}
+
+// ── Import executor ───────────────────────────────────────────────────────────
+async function runCsvImport() {
+  const valid = _csvRows.filter(r => r.status === 'ready');
+  if (!valid.length) return;
+
+  document.getElementById('csvImportBtn').disabled     = true;
+  document.getElementById('csvProgress').style.display = '';
+  const fill = document.getElementById('csvProgressFill');
+  const lbl  = document.getElementById('csvProgressLbl');
+
+  let added = 0, skipped = 0, failed = 0;
+
+  for (let i = 0; i < valid.length; i++) {
+    const r = valid[i];
+    fill.style.width = Math.round((i / valid.length) * 100) + '%';
+    lbl.textContent  = `Adding ${i + 1} of ${valid.length} — ${r.hostname}`;
+
+    const body = {
+      hostname:     r.hostname,
+      ip:           r.ip,
+      vendor:       r.vendor,
+      ssh_port:     r.ssh_port,
+      ping_enabled: r.ping_enabled,
+      ssh_enabled:  r.ssh_enabled,
+    };
+    if (r.ssh_username) body.ssh_username = r.ssh_username;
+    if (r.ssh_password) body.ssh_password = r.ssh_password;
+    if (r.group_name)   body.group_name   = r.group_name;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/device-configs`, {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      if      (res.status === 201) { added++;   r.status = 'imported'; }
+      else if (res.status === 409) { skipped++; r.status = 'skip'; }
+      else                         { failed++;  r.status = 'fail'; }
+    } catch(e) { failed++; r.status = 'fail'; }
+  }
+
+  fill.style.width = '100%';
+  lbl.textContent  = 'Done';
+
+  const parts = [`${added} device${added !== 1 ? 's' : ''} added`];
+  if (skipped) parts.push(`${skipped} already existed`);
+  if (failed)  parts.push(`${failed} failed`);
+  const resultEl = document.getElementById('csvResult');
+  resultEl.textContent  = parts.join(' · ');
+  resultEl.className    = 'csv-result ' + (failed ? 'warn' : 'ok');
+  resultEl.style.display = '';
+
+  await _reloadDeviceConfigs();
+  renderDevices();
+}
 </body>
 </html>
