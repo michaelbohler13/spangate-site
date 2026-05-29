@@ -62,10 +62,11 @@ def _pull_config_ssh(device: dict[str, Any]) -> tuple[str | None, str | None]:
     """
     hostname = device["hostname"]
     vendor = device.get("vendor", "cisco")
-    # Use device_type from the dashboard if set; fall back to vendor→type map.
-    # This lets a user override the Netmiko device type per-device without
-    # editing agent code (e.g. cisco_ios vs cisco_xe for the same vendor).
-    device_type = device.get("device_type") or VENDOR_DEVICE_TYPE.get(vendor, "cisco_ios")
+    # For known vendors, the VENDOR_DEVICE_TYPE map is authoritative so that
+    # stale DB values (e.g. old aruba_osswitch rows) don't override the fix.
+    # For "other" vendors the dashboard's device_type field is used, allowing
+    # per-device overrides without editing agent code.
+    device_type = VENDOR_DEVICE_TYPE.get(vendor) or device.get("device_type") or "cisco_ios"
     command = VENDOR_COMMAND.get(vendor, "show running-config")
 
     connection_params = {

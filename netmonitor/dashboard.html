@@ -732,7 +732,8 @@ curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/
         </div>
         <div class="dm-field">
           <label class="dm-label" for="dmIp">IP Address or Domain</label>
-          <input id="dmIp" class="dm-input" type="text" placeholder="10.1.1.1 or cnn.com" autocomplete="off" />
+          <input id="dmIp" class="dm-input" type="text" placeholder="10.1.1.1 or cnn.com" autocomplete="off"
+                 onblur="autoLookupHostname()" />
         </div>
         <div class="dm-field">
           <label class="dm-label" for="dmVendor">Vendor</label>
@@ -1028,17 +1029,19 @@ async function _applyDataResponses(devRes, alertRes, dcRes) {
   lastRefreshedAt = new Date();
   _updateRefreshStamp();
 
-  // Populate configs device dropdown — merge live devices AND configured devices
+  // Populate configs device dropdown — SSH-enabled configured devices only.
+  // Ping-only and internet devices can never have a config backup.
   const sel = document.getElementById('cfgDeviceSelect');
   if (sel) {
-    const prev = sel.value;
-    const allHn = [...new Set([
-      ...liveDevices.map(d => d.hostname),
-      ...deviceConfigs.map(c => c.hostname),
-    ])].sort((a, b) => a.localeCompare(b));
-    sel.innerHTML = '<option value="">Select device...</option>' +
-      allHn.map(h => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
-    if (prev) sel.value = prev;  // restore active selection after refresh
+    const prev    = sel.value;
+    const sshDevs = deviceConfigs.filter(c => c.ssh_enabled)
+                                  .map(c => c.hostname)
+                                  .sort((a, b) => a.localeCompare(b));
+    sel.innerHTML = sshDevs.length
+      ? '<option value="">Select device...</option>' +
+        sshDevs.map(h => `<option value="${esc(h)}">${esc(h)}</option>`).join('')
+      : '<option value="">No SSH-enabled devices configured</option>';
+    if (prev && sshDevs.includes(prev)) sel.value = prev;
   }
 }
 
@@ -1706,6 +1709,33 @@ function dmSshToggleChange() {
   const on = document.getElementById('dmSshEnabled').checked;
   document.getElementById('dmSshTestSection').style.display = on ? '' : 'none';
   if (!on) _resetSshTest();
+}
+
+async function autoLookupHostname() {
+  const ip   = document.getElementById('dmIp').value.trim();
+  const hnEl = document.getElementById('dmHostname');
+  // Only auto-fill if: we have an IP, the hostname field is still empty, and it looks like an IPv4
+  if (!ip || hnEl.value.trim()) return;
+  const parts = ip.split('.');
+  if (parts.length !== 4 || parts.some(p => isNaN(+p) || +p < 0 || +p > 255)) return;
+  // Build PTR name and query Google DNS-over-HTTPS (no backend needed, no CORS issues)
+  const ptrName = [...parts].reverse().join('.') + '.in-addr.arpa';
+  try {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 3000);
+    const res  = await fetch(
+      `https://dns.google/resolve?name=${encodeURIComponent(ptrName)}&type=PTR`,
+      { signal: ctrl.signal }
+    );
+    clearTimeout(tid);
+    if (!res.ok) return;
+    const data   = await res.json();
+    const answer = data.Answer?.[0]?.data;
+    if (!answer) return;
+    // Strip trailing dot and use only the first label (short hostname)
+    const hostname = answer.replace(/\.$/, '').split('.')[0];
+    if (hostname && !hnEl.value.trim()) hnEl.value = hostname;
+  } catch (e) { /* no PTR record or DNS timed out — silently ignore */ }
 }
 
 function openAddDevice() {
