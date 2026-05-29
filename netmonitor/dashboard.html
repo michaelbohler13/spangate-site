@@ -211,7 +211,7 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .dev-row.expanded .chevron{transform:rotate(90deg);}
 
 /* ── ALERTS TAB ──────────────────────────────────────────────────────────── */
-.alert-sub-bar{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:1.1rem;}
+.alert-sub-bar{display:flex;align-items:center;border-bottom:0.5px solid var(--border);margin-bottom:1.1rem;}
 .alert-sub-tab{padding:7px 14px;background:none;border:none;border-bottom:2px solid transparent;
   font-family:var(--sans);font-size:0.8rem;font-weight:500;color:var(--text-muted);
   cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px;}
@@ -236,6 +236,10 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   border-radius:6px;padding:4px 10px;font-size:0.7rem;cursor:pointer;
   font-family:var(--sans);transition:all 0.15s;}
 .ack-btn:hover{background:rgba(0,212,184,0.07);}
+.ack-all-btn{background:transparent;border:0.5px solid rgba(0,212,184,0.3);color:var(--accent);
+  border-radius:6px;padding:4px 12px;font-size:0.7rem;cursor:pointer;
+  font-family:var(--sans);transition:all 0.15s;margin-left:auto;margin-bottom:2px;}
+.ack-all-btn:hover{background:rgba(0,212,184,0.07);}
 .empty-st{text-align:center;padding:2.5rem;font-size:0.8rem;color:var(--text-dim);font-family:var(--mono);}
 
 /* ── CONFIGS TAB ─────────────────────────────────────────────────────────── */
@@ -673,6 +677,7 @@ curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/
       <button class="alert-sub-tab" id="ast-resolved" onclick="switchAlertTab('resolved')">
         Resolved <span class="a-count" id="resolvedCount">0</span>
       </button>
+      <button id="ack-all-btn" class="ack-all-btn" style="display:none" onclick="acknowledgeAllAlerts()">Acknowledge All</button>
     </div>
     <div id="alertsList"></div>
   </div>
@@ -1493,9 +1498,11 @@ function switchAlertTab(tab) {
 
 function renderAlerts() {
   updateAlertCounts();
-  const list   = alertSubTab === 'active' ? activeAlerts : resolvedAlerts;
+  const list    = alertSubTab === 'active' ? activeAlerts : resolvedAlerts;
   const showAck = alertSubTab === 'active';
-  const el     = document.getElementById('alertsList');
+  const el      = document.getElementById('alertsList');
+  const ackAll  = document.getElementById('ack-all-btn');
+  if (ackAll) ackAll.style.display = (showAck && activeAlerts.length > 0) ? '' : 'none';
   if (!el) return;
   if (!list.length) {
     el.innerHTML = `<div class="empty-st">No ${alertSubTab} alerts</div>`;
@@ -1523,12 +1530,28 @@ function acknowledgeAlert(id) {
   const alert = activeAlerts.splice(idx, 1)[0];
   resolvedAlerts.unshift(alert);
   renderAlerts();
-  renderDevices(); // refresh accordion alert badges
+  renderDevices();
   if (!MOCK_MODE) {
     fetch(`${API_BASE}/api/v1/alerts/${id}/acknowledge`, {
       method:'PATCH',
       headers:{ 'Authorization':`Bearer ${apiKey}` }
     }).catch(()=>{});
+  }
+}
+
+function acknowledgeAllAlerts() {
+  if (!activeAlerts.length) return;
+  const ids = activeAlerts.map(a => a.id);
+  resolvedAlerts.unshift(...activeAlerts.splice(0));
+  renderAlerts();
+  renderDevices();
+  if (!MOCK_MODE) {
+    ids.forEach(id => {
+      fetch(`${API_BASE}/api/v1/alerts/${id}/acknowledge`, {
+        method:'PATCH',
+        headers:{ 'Authorization':`Bearer ${apiKey}` }
+      }).catch(()=>{});
+    });
   }
 }
 
