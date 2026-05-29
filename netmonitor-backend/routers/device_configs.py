@@ -15,7 +15,7 @@ dashboard take effect without editing config.yaml or restarting the agent.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -387,6 +387,8 @@ async def agent_clear_backup_request(
 
 # ── GET /agent/device-list ────────────────────────────────────────────────────
 
+_BACKUP_REQUEST_TTL = timedelta(minutes=10)
+
 @router.get("/agent/device-list")
 async def agent_device_list(
     ctx: AuthContext,
@@ -399,6 +401,8 @@ async def agent_device_list(
     device list, so dashboard changes take effect without a restart.
 
     Returns {"devices": [...], "count": N}
+    force_backup is True for up to 10 minutes after a manual backup is requested,
+    then cleared so the agent only triggers once per request.
     """
     result = await db.execute(
         select(DeviceConfig)
@@ -407,20 +411,33 @@ async def agent_device_list(
     )
     rows = result.scalars().all()
 
-    return {
-        "count": len(rows),
-        "devices": [
-            {
-                "hostname":     r.hostname,
-                "ip":           r.ip,
-                "vendor":       r.vendor,
-                "device_type":  r.device_type,
-                "ssh_username": r.ssh_username or "",
-                "ssh_password": r.ssh_password or "",
-                "ssh_port":     r.ssh_port,
-                "ping_enabled": r.ping_enabled,
-                "ssh_enabled":  r.ssh_enabled,
-            }
-            for r in rows
-        ],
-    }
+    now = datetime.now(timezone.utc)
+    devices = []
+    to_clear = []
+
+    for r in rows:
+        force = bool(
+            r.backup_requested_at
+            and (now - r.backup_requested_at) < _BACKUP_REQUEST_TTL
+        )
+        if force:
+            to_clear.append(r)
+        devices.append({
+            "hostname":     r.hostname,
+            "ip":           r.ip,
+            "vendor":       r.vendor,
+            "device_type":  r.device_type,
+            "ssh_username": r.ssh_username or "",
+            "ssh_password": r.ssh_password or "",
+            "ssh_port":     r.ssh_port,
+            "ping_enabled": r.ping_enabled,
+            "ssh_enabled":  r.ssh_enabled,
+            "force_backup": force,
+        })
+
+    if to_clear:
+        for r in to_clear:
+            r.backup_requested_at = None
+        await db.commit()
+
+    return {"count": len(rows), "devices": devices}

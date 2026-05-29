@@ -1,0 +1,70 @@
+name: Build & Push Agent to Docker Hub
+
+# Rebuilds the image whenever agent code or its Dockerfile changes.
+# On the first push you must add two secrets in GitHub:
+#   Settings → Secrets → Actions → New repository secret
+#   DOCKERHUB_USERNAME = spangate
+#   DOCKERHUB_TOKEN    = <Docker Hub access token>
+#
+# Create a token at: https://hub.docker.com/settings/security
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "netmonitor-agent/**"
+      - ".github/workflows/docker-publish.yml"
+  workflow_dispatch:   # allows manual trigger from the Actions tab
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify secrets are present
+        run: |
+          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "::error::DOCKERHUB_USERNAME secret is empty or missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "::error::DOCKERHUB_TOKEN secret is empty or missing"
+            exit 1
+          fi
+          echo "Secrets look good — username length: ${#DOCKERHUB_USERNAME}"
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+      # QEMU lets buildx compile for foreign architectures (Pi ARM, etc.)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # Buildx is the multi-arch build driver
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build for:
+      #   linux/amd64  — standard x86-64 (Intel/AMD PCs, cloud VMs, Mac Intel)
+      #   linux/arm64  — Raspberry Pi 3/4/5 (64-bit OS), Apple Silicon Macs
+      # Note: linux/arm/v7 (32-bit Pi) is excluded — our setup guide requires
+      # Raspberry Pi OS Lite 64-bit, and cryptography has no arm/v7 wheels.
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./netmonitor-agent
+          file: ./netmonitor-agent/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            spangate/netmonitor-agent:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

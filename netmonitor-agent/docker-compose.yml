@@ -1,0 +1,18 @@
+services:
+  spangate-agent:
+    image: spangate/netmonitor-agent:latest
+    container_name: spangate-agent
+    restart: unless-stopped
+    # network_mode: host is required on Linux so the container can send ICMP
+    # pings to all devices on the local network.
+    # Remove this line if running on macOS or Windows Docker Desktop.
+    network_mode: host
+    volumes:
+      # config.yaml is created by setup.sh / setup.ps1 and mounted read-only.
+      # Change the left-hand path if you placed config.yaml elsewhere.
+      - ./config.yaml:/config/config.yaml:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

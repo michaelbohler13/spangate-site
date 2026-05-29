@@ -115,14 +115,6 @@
   /* SECTION HEADING */
   .section-head{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:0.5px solid var(--border);}
 
-  /* NSSM TABLE */
-  .nssm-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1rem;}
-  .nssm-table th{text-align:left;padding:7px 12px;font-size:0.62rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
-  .nssm-table td{padding:9px 12px;color:var(--text-muted);border-bottom:0.5px solid var(--border);vertical-align:top;font-size:0.82rem;line-height:1.5;}
-  .nssm-table tr:last-child td{border-bottom:none;}
-  .nssm-table td:first-child{color:var(--text);font-weight:500;white-space:nowrap;font-family:var(--mono);font-size:0.75rem;}
-  .nssm-table code{font-family:var(--mono);font-size:0.75rem;background:var(--surface2);padding:1px 5px;border-radius:4px;color:var(--accent);}
-
   /* TROUBLESHOOTING TABLE */
   .ts-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
   .ts-table th{text-align:left;padding:8px 12px;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
@@ -131,12 +123,6 @@
   .ts-table td:first-child{color:var(--text-muted);font-family:var(--mono);font-size:0.78rem;}
   .ts-table td:last-child{color:var(--text-muted);}
   .ts-table code{font-family:var(--mono);font-size:0.75rem;background:var(--surface2);padding:1px 5px;border-radius:4px;color:var(--accent);}
-
-  /* YAML */
-  .yaml-key{color:#79c0ff;}
-  .yaml-val{color:#a5d6ff;}
-  .yaml-cmt{color:var(--text-dim);}
-  .yaml-str{color:#a8d8a8;}
 
   /* DIVIDER */
   .guide-divider{border:none;border-top:0.5px solid var(--border);margin:2.5rem 0;}
@@ -183,13 +169,14 @@
       <span style="color:var(--accent);">Windows</span>
     </div>
     <h1 class="guide-title">Windows<br><span style="color:var(--accent);">Install Guide</span></h1>
-    <p class="guide-subtitle">Run the Network Monitor agent on Windows 10 or 11 as a background service using NSSM. Survives reboots — no logged-in user required.</p>
+    <p class="guide-subtitle">Run the Network Monitor agent on Windows 10 or 11 using Docker Desktop. A setup wizard handles everything — no Python, no NSSM, no manual config.</p>
   </div>
 
   <!-- PLATFORM SWITCHER -->
   <div class="platform-switch">
     <a href="/netmonitor/install-pi"><span class="plat-icon">🍓</span> Raspberry Pi</a>
     <a href="/netmonitor/install-windows" class="active"><span class="plat-icon">⊞</span> Windows</a>
+    <a href="/netmonitor/install-mac"><span class="plat-icon">⌘</span> macOS</a>
   </div>
 
   <!-- REQUIREMENTS -->
@@ -197,9 +184,8 @@
     <div class="req-title">Requirements</div>
     <ul class="req-list">
       <li>Windows 10 (version 1903 or later) or Windows 11</li>
-      <li>Python 3.9 or higher</li>
+      <li>Docker Desktop — free, <a href="https://www.docker.com/products/docker-desktop" target="_blank" rel="noopener">download here</a></li>
       <li>Network access to your managed devices — same VLAN or routed</li>
-      <li>SSH enabled on all target switches and routers</li>
       <li>Your SpanGate API key — from <a href="/netmonitor/settings">Network Monitor → Settings</a></li>
     </ul>
   </div>
@@ -209,27 +195,19 @@
     <div class="step-head">
       <div class="step-badge">01</div>
       <div class="step-info">
-        <div class="step-title">Install Python</div>
-        <div class="step-desc">Python 3.9 or higher is required. The installer must add Python to your PATH.</div>
+        <div class="step-title">Install Docker Desktop</div>
+        <div class="step-desc">Docker Desktop runs the agent in a container — no Python installation needed.</div>
       </div>
     </div>
     <div class="step-body">
       <ol>
-        <li>Go to <a href="https://python.org/downloads" target="_blank" rel="noopener">python.org/downloads</a></li>
-        <li>Click <strong>Download Python 3.11.x</strong> (or any 3.9+ release)</li>
-        <li>Run the installer</li>
-        <li>✅ <strong>Check "Add Python to PATH"</strong> on the first screen — do not skip this</li>
-        <li>Click <strong>Install Now</strong></li>
+        <li>Go to <a href="https://www.docker.com/products/docker-desktop" target="_blank" rel="noopener">docker.com/products/docker-desktop</a> and download the installer</li>
+        <li>Run the installer and follow the prompts — defaults are fine</li>
+        <li>Launch <strong>Docker Desktop</strong> from the Start menu and wait for it to finish starting (the whale icon in the system tray turns solid)</li>
       </ol>
-      <p style="margin-top:0.75rem;">Verify in Command Prompt:</p>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>python --version
-pip --version</code></pre>
-      </div>
-      <div class="callout warn">
-        <span class="callout-icon">⚠</span>
-        <div class="callout-text">Both commands must succeed. If <code style="font-family:var(--mono);font-size:0.85em;">python</code> is not recognized, re-run the installer and ensure "Add to PATH" is checked.</div>
+      <div class="callout tip" style="margin-top:0.75rem;">
+        <span class="callout-icon">ℹ</span>
+        <div class="callout-text">Docker Desktop may prompt you to enable WSL 2 — click <strong>Install</strong> and restart if asked. This is normal and required on Windows 10.</div>
       </div>
     </div>
   </div>
@@ -239,243 +217,46 @@ pip --version</code></pre>
     <div class="step-head">
       <div class="step-badge">02</div>
       <div class="step-info">
-        <div class="step-title">Open PowerShell</div>
-        <div class="step-desc">The download script runs in PowerShell — open it before Step 3.</div>
+        <div class="step-title">Run the Setup Wizard</div>
+        <div class="step-desc">Open PowerShell as Administrator and paste two lines — the wizard does the rest.</div>
       </div>
     </div>
     <div class="step-body">
-      <p>Press <strong>Win + X</strong> and choose <strong>Windows PowerShell</strong> (or <strong>Terminal</strong> on Windows 11). You do not need to run it as Administrator for this step.</p>
-      <div class="callout tip">
-        <span class="callout-icon">ℹ</span>
-        <div class="callout-text">Steps 3 uses PowerShell. Steps 4 onwards use the regular <strong>Command Prompt</strong> — open a new cmd window after the download finishes.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 3 -->
-  <div class="guide-step" id="step-3">
-    <div class="step-head">
-      <div class="step-badge">03</div>
-      <div class="step-info">
-        <div class="step-title">Download the Agent</div>
-        <div class="step-desc">Run one command in PowerShell to download the agent files.</div>
-      </div>
-    </div>
-    <div class="step-body">
+      <p>Press <strong>Win + X</strong> → <strong>Windows PowerShell (Admin)</strong> or <strong>Terminal (Admin)</strong>, then paste:</p>
       <div class="code-block">
-        <div class="code-bar"><span class="code-lang">powershell</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>irm https://spangate-site.vercel.app/netmonitor/agent-install.ps1 | iex
-cd "$env:USERPROFILE\Documents\spangate-agent\netmonitor-agent"</code></pre>
+        <div class="code-bar"><span class="code-lang">powershell (admin)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>$env:SPNG_API_KEY = "your_spng_key_here"
+irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex</code></pre>
       </div>
       <div class="callout tip">
         <span class="callout-icon">✓</span>
-        <div class="callout-text">The script downloads only the agent files to <code style="font-family:var(--mono);font-size:0.85em;">Documents\spangate-agent\netmonitor-agent</code>. To update later, re-run the same <code style="font-family:var(--mono);font-size:0.85em;">irm ... | iex</code> command.</div>
+        <div class="callout-text">Replace <code style="font-family:var(--mono);font-size:0.85em;">your_spng_key_here</code> with your actual API key from <a href="/netmonitor/settings">Settings</a>. The wizard asks for your site name and ping interval, then pulls the agent image and starts it automatically.</div>
       </div>
-    </div>
-  </div>
-
-  <!-- STEP 4 -->
-  <div class="guide-step" id="step-4">
-    <div class="step-head">
-      <div class="step-badge">04</div>
-      <div class="step-info">
-        <div class="step-title">Create Virtual Environment &amp; Install Dependencies</div>
-        <div class="step-desc">Isolate the agent's packages from your system Python.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>python -m venv venv
-venv\Scripts\activate
-pip install --upgrade pip
-pip install -r requirements.txt</code></pre>
-      </div>
-      <div class="callout tip">
-        <span class="callout-icon">✓</span>
-        <div class="callout-text">You should see <code style="font-family:var(--mono);font-size:0.85em;">(venv)</code> at the start of your prompt when the virtual environment is active. Installation takes 2–5 minutes.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 5 -->
-  <div class="guide-step" id="step-5">
-    <div class="step-head">
-      <div class="step-badge">05</div>
-      <div class="step-info">
-        <div class="step-title">Configure the Agent</div>
-        <div class="step-desc">Set your API key, site name, and add your devices.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <ol>
-        <li>In File Explorer, navigate to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">Documents\spangate-agent\netmonitor-agent</code></li>
-        <li>Copy <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">config.yaml</code> and rename the copy to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">my-config.yaml</code></li>
-        <li>Open <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">my-config.yaml</code> in Notepad or VS Code</li>
-        <li>Edit the following fields:</li>
-      </ol>
-      <div class="code-block" style="margin-top:0.75rem;">
-        <div class="code-bar"><span class="code-lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code><span class="yaml-key">agent</span>:
-  <span class="yaml-key">site_name</span>: <span class="yaml-str">"Main Office"</span>             <span class="yaml-cmt"># ← your site name</span>
-  <span class="yaml-key">api_url</span>:   <span class="yaml-str">"https://spangate-site-r81b.vercel.app"</span>
-  <span class="yaml-key">api_key</span>:   <span class="yaml-str">"spng_paste_your_key_here"</span>  <span class="yaml-cmt"># ← your SpanGate API key</span>
-  <span class="yaml-key">ping_interval</span>:        <span class="yaml-val">60</span>
-  <span class="yaml-key">config_pull_interval</span>: <span class="yaml-val">604800</span>
-
-<span class="yaml-key">devices</span>:
-  - <span class="yaml-key">hostname</span>:     <span class="yaml-val">core-sw-01</span>
-    <span class="yaml-key">ip</span>:          <span class="yaml-val">10.1.1.1</span>              <span class="yaml-cmt"># ← your device IP</span>
-    <span class="yaml-key">vendor</span>:      <span class="yaml-val">cisco</span>
-    <span class="yaml-key">device_type</span>: <span class="yaml-val">cisco_ios</span>
-    <span class="yaml-key">ssh_username</span>: <span class="yaml-val">admin</span>
-    <span class="yaml-key">ssh_password</span>: <span class="yaml-str">"your-switch-password"</span>   <span class="yaml-cmt"># ← SSH credentials</span>
-    <span class="yaml-key">ssh_port</span>:    <span class="yaml-val">22</span></code></pre>
-      </div>
-      <p>Add one entry under <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">devices:</code> for each switch or router. Save the file.</p>
-    </div>
-  </div>
-
-  <!-- STEP 6 -->
-  <div class="guide-step" id="step-6">
-    <div class="step-head">
-      <div class="step-badge">06</div>
-      <div class="step-info">
-        <div class="step-title">Test the Agent Manually</div>
-        <div class="step-desc">Run once to confirm it connects to the API and reaches your devices.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <p>Make sure the virtual environment is active (<code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">(venv)</code> in prompt), then:</p>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>python agent.py --config my-config.yaml</code></pre>
-      </div>
-      <p>Expected output:</p>
+      <p>Expected output when complete:</p>
       <div class="output-block">
-        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">SpanGate Network Monitor Agent v1.0.0 — Main Office — 3 device(s)</span><br>
-        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[PING] Loop started — 3 device(s), interval 60s</span><br>
-        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[SSH]  Pull loop started — interval 604800s (168.0 hours)</span><br>
-        <span class="oi">2026-05-25 14:32:01  INFO  </span><span class="ol">[HB]   Heartbeat loop started — interval 300s</span><br>
-        <span class="oi">2026-05-25 14:32:02  INFO  </span><span class="ol">[PING] core-sw-01 (10.1.1.1) initial state: up</span>
+        <span class="oi">[OK]    </span><span class="ol">Docker is ready.</span><br>
+        <span class="oi">[OK]    </span><span class="ol">API key accepted.</span><br>
+        <span class="oi">[INFO]  </span><span class="ol">Pulling latest agent image from Docker Hub...</span><br>
+        <span class="oi">[INFO]  </span><span class="ol">Starting SpanGate agent...</span><br>
+        <span class="oi">[OK]    </span><span class="ol">Agent is running — you're all set!</span>
       </div>
-      <p>Stop with <strong>Ctrl+C</strong> once confirmed working.</p>
-    </div>
-  </div>
-
-  <!-- STEP 7 -->
-  <div class="guide-step" id="step-7">
-    <div class="step-head">
-      <div class="step-badge">07</div>
-      <div class="step-info">
-        <div class="step-title">Run as a Windows Service with NSSM</div>
-        <div class="step-desc">NSSM keeps the agent alive across reboots without needing a logged-in user.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <p><strong>Install NSSM:</strong></p>
-      <ol>
-        <li>Go to <a href="https://nssm.cc/download" target="_blank" rel="noopener">nssm.cc/download</a></li>
-        <li>Download the latest release ZIP</li>
-        <li>Extract it and copy <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">nssm.exe</code> from the <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">win64</code> folder to <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">C:\Windows\System32\</code></li>
-      </ol>
-      <p style="margin-top:0.85rem;"><strong>Install the service — open Command Prompt as Administrator:</strong></p>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">cmd (admin)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>nssm install SpangateNetMonitor</code></pre>
-      </div>
-      <p>Fill in the NSSM GUI as follows — use your actual username (check with <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">echo %USERNAME%</code>):</p>
-      <table class="nssm-table">
-        <thead><tr><th>Field</th><th>Value</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>Tab</td>
-            <td><strong>Application</strong></td>
-          </tr>
-          <tr>
-            <td>Path</td>
-            <td><code>C:\Users\YourName\Documents\spangate-agent\netmonitor-agent\venv\Scripts\python.exe</code></td>
-          </tr>
-          <tr>
-            <td>Startup directory</td>
-            <td><code>C:\Users\YourName\Documents\spangate-agent\netmonitor-agent</code></td>
-          </tr>
-          <tr>
-            <td>Arguments</td>
-            <td><code>agent.py --config my-config.yaml</code></td>
-          </tr>
-          <tr>
-            <td>Tab</td>
-            <td><strong>Details</strong></td>
-          </tr>
-          <tr>
-            <td>Display name</td>
-            <td>SpanGate Network Monitor</td>
-          </tr>
-          <tr>
-            <td>Description</td>
-            <td>SpanGate Technology — Network Monitor Agent</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="callout warn">
-        <span class="callout-icon">⚠</span>
-        <div class="callout-text">Always use <strong>absolute paths</strong> in NSSM. The Path must point to <code style="font-family:var(--mono);font-size:0.85em;">venv\Scripts\python.exe</code> — not the system Python.</div>
-      </div>
-      <p>Click <strong>Install service</strong>, then start it:</p>
-      <div class="code-block">
-        <div class="code-bar"><span class="code-lang">cmd (admin)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-        <pre><code>nssm start SpangateNetMonitor</code></pre>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 8 -->
-  <div class="guide-step" id="step-8">
-    <div class="step-head">
-      <div class="step-badge">08</div>
-      <div class="step-info">
-        <div class="step-title">Verify the Service</div>
-        <div class="step-desc">Confirm the agent is running and reporting to your dashboard.</div>
-      </div>
-    </div>
-    <div class="step-body">
-      <p>Open <strong>Services</strong> — press <strong>Win+R</strong>, type <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">services.msc</code>, press Enter. Find <strong>SpanGate Network Monitor</strong> — status should be <strong>Running</strong>.</p>
-      <div class="callout tip">
-        <span class="callout-icon">●</span>
-        <div class="callout-text">Your SpanGate dashboard should show <strong>● Agent reporting</strong> within a few minutes of the service starting.</div>
-      </div>
+      <p>The agent container is named <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">spangate-agent</code> and restarts automatically whenever your PC reboots.</p>
     </div>
   </div>
 
   <hr class="guide-divider">
 
-  <!-- UPDATING -->
+  <!-- USEFUL COMMANDS -->
   <div style="margin-bottom:2.5rem;">
-    <h2 class="section-head">Updating the Agent</h2>
-    <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem;">Run the first command in <strong>PowerShell</strong>, the second in an <strong>Admin Command Prompt</strong>:</p>
+    <h2 class="section-head">Useful Commands</h2>
+    <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem;">Run these in any PowerShell window (no admin needed):</p>
     <div class="code-block">
       <div class="code-bar"><span class="code-lang">powershell</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-      <pre><code>irm https://spangate-site.vercel.app/netmonitor/agent-install.ps1 | iex</code></pre>
+      <pre><code>docker logs -f spangate-agent                      # view live agent logs
+cd "$env:USERPROFILE\spangate-agent"; docker compose down   # stop the agent
+cd "$env:USERPROFILE\spangate-agent"; docker compose up -d  # start the agent
+docker pull spangate/netmonitor-agent:latest        # update to latest version</code></pre>
     </div>
-    <div class="code-block">
-      <div class="code-bar"><span class="code-lang">cmd (admin)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-      <pre><code>nssm restart SpangateNetMonitor</code></pre>
-    </div>
-  </div>
-
-  <!-- WINDOWS FIREWALL NOTE -->
-  <div style="margin-bottom:2.5rem;">
-    <h2 class="section-head">Windows Firewall Note</h2>
-    <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.65;margin-bottom:1rem;">The agent uses ICMP (ping) for device status checks. Windows Firewall may block outbound ICMP on some configurations. If devices show as DOWN even though they're reachable:</p>
-    <ol style="padding-left:1.25rem;display:flex;flex-direction:column;gap:6px;">
-      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Open <strong style="color:var(--text);">Windows Defender Firewall with Advanced Security</strong></li>
-      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Go to <strong style="color:var(--text);">Outbound Rules → New Rule</strong></li>
-      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Rule type: <strong style="color:var(--text);">Custom</strong></li>
-      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Protocol: <strong style="color:var(--text);">ICMPv4</strong></li>
-      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Action: <strong style="color:var(--text);">Allow the connection</strong></li>
-      <li style="font-size:0.85rem;color:var(--text-muted);line-height:1.55;">Apply to all profiles, name it <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">SpanGate ICMP Out</code>, click <strong style="color:var(--text);">Finish</strong></li>
-    </ol>
   </div>
 
   <!-- TROUBLESHOOTING -->
@@ -487,40 +268,32 @@ pip install -r requirements.txt</code></pre>
       </thead>
       <tbody>
         <tr>
-          <td><code>python</code> not recognized</td>
-          <td>Re-run the installer and check "Add Python to PATH"</td>
+          <td>Docker Desktop not running</td>
+          <td>Open Docker Desktop from the Start menu and wait for the whale icon to go solid before re-running the script</td>
         </tr>
         <tr>
-          <td><code>pip install</code> fails on netmiko</td>
-          <td>Run <code>pip install --upgrade pip</code> first, then retry</td>
-        </tr>
-        <tr>
-          <td>ICMP ping shows all devices DOWN</td>
-          <td>Allow outbound ICMPv4 in Windows Defender Firewall (see above)</td>
-        </tr>
-        <tr>
-          <td>SSH connection refused to device</td>
-          <td>Verify SSH is enabled on the switch and port 22 is open</td>
-        </tr>
-        <tr>
-          <td>Service won't start</td>
-          <td>Use absolute paths in NSSM — not relative paths</td>
-        </tr>
-        <tr>
-          <td>Agent runs manually but not as service</td>
-          <td>The Path must point to <code>venv\Scripts\python.exe</code>, not the system Python</td>
-        </tr>
-        <tr>
-          <td>Config pull fails</td>
-          <td>Ensure the Windows machine has a route to the device management IP</td>
+          <td>WSL 2 install prompt</td>
+          <td>Click Install, restart, then re-open Docker Desktop — this is a one-time setup</td>
         </tr>
         <tr>
           <td>API key rejected (401)</td>
-          <td>Copy the key from the dashboard exactly — no extra spaces</td>
+          <td>Copy the key from the dashboard exactly — no extra spaces. Key must start with <code>spng_</code></td>
         </tr>
         <tr>
-          <td><code>nssm</code> not found</td>
-          <td>Verify <code>nssm.exe</code> is in <code>C:\Windows\System32\</code> and re-open Command Prompt</td>
+          <td>Device shows DOWN but is reachable</td>
+          <td>Docker Desktop on Windows routes ICMP through its VM — confirm devices are reachable from this PC: <code>ping 10.1.1.1</code></td>
+        </tr>
+        <tr>
+          <td>Container starts then stops</td>
+          <td>Run <code>docker logs spangate-agent</code> to read the error message</td>
+        </tr>
+        <tr>
+          <td>Script says "execution policy" error</td>
+          <td>Run: <code>Set-ExecutionPolicy RemoteSigned -Scope CurrentUser</code> then re-run the script</td>
+        </tr>
+        <tr>
+          <td>Agent stopped after reboot</td>
+          <td>Ensure Docker Desktop is set to start on login (Settings → General → Start Docker Desktop when you sign in)</td>
         </tr>
       </tbody>
     </table>

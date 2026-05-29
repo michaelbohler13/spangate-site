@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth import AuthContext
 from database import get_db
-from models import Config, Device
+from models import Config, ConfigDiff, Device
 from schemas import ConfigBackup, ConfigDetail, ConfigMeta
 
 logger = logging.getLogger(__name__)
@@ -193,6 +193,66 @@ async def list_configs(
         ConfigMeta(id=r.id, config_hash=r.config_hash, pulled_at=r.pulled_at)
         for r in rows
     ]
+
+
+# ── GET /configs/{hostname}/{config_id}/diff ─────────────────────────────────
+
+@router.get("/configs/{hostname}/{config_id}/diff")
+async def get_config_diff(
+    hostname:  str,
+    config_id: int,
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Return the unified diff for a specific config backup versus its predecessor.
+
+    Looks up the ConfigDiff row whose new_hash matches this backup's config_hash.
+    If no diff exists (first backup, or config was unchanged), returns
+    ``{"diff_text": null}``.
+
+    Args:
+        hostname: Device hostname (verifies site ownership).
+        config_id: Primary key of the Config row.
+        ctx: Auth context with site_id.
+        db: Async database session.
+
+    Returns:
+        ``{"diff_text": "<unified diff>", "old_hash": "...", "new_hash": "..."}``
+        or ``{"diff_text": null}`` when no diff is on record.
+
+    Raises:
+        HTTPException 404: If the config record is not found.
+    """
+    site_id = ctx["site_id"]
+    device  = await _get_device_or_404(db, site_id, hostname)
+
+    # Verify the config record belongs to this device
+    config_result = await db.execute(
+        select(Config.config_hash)
+        .where(Config.id == config_id, Config.device_id == device.id)
+    )
+    config_hash = config_result.scalar_one_or_none()
+    if config_hash is None:
+        raise HTTPException(status_code=404, detail="Config backup not found")
+
+    # Look up the diff whose new_hash matches this backup
+    diff_result = await db.execute(
+        select(ConfigDiff)
+        .where(ConfigDiff.device_id == device.id, ConfigDiff.new_hash == config_hash)
+        .order_by(ConfigDiff.detected_at.desc())
+        .limit(1)
+    )
+    diff = diff_result.scalar_one_or_none()
+
+    if diff is None:
+        return {"diff_text": None}
+
+    return {
+        "diff_text": diff.diff_text,
+        "old_hash":  diff.old_hash,
+        "new_hash":  diff.new_hash,
+    }
 
 
 # ── GET /configs/{hostname}/{config_id} ───────────────────────────────────────

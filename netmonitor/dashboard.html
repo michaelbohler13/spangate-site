@@ -47,6 +47,17 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 /* ── PAGE WRAP ────────────────────────────────────────────────────────────── */
 .page-wrap{padding-top:84px;min-height:100vh;}
 
+/* ── LOADING OVERLAY ─────────────────────────────────────────────────────── */
+#loadingOverlay{position:fixed;inset:0;z-index:9999;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1.25rem;transition:opacity 0.35s ease;}
+#loadingOverlay.hidden{opacity:0;pointer-events:none;}
+.ld-spinner{width:38px;height:38px;border:2.5px solid rgba(0,212,184,0.18);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:ldSpin 0.75s linear infinite;}
+@keyframes ldSpin{to{transform:rotate(360deg);}}
+.ld-msg{font-size:0.82rem;color:var(--text-dim);letter-spacing:-0.01em;}
+
 /* ── MOCK BANNER ──────────────────────────────────────────────────────────── */
 #mockBanner{display:flex;align-items:center;gap:10px;padding:9px 2rem;
   background:var(--surface2);border-left:3px solid var(--accent);
@@ -366,6 +377,10 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   border-color:rgba(0,212,184,0.4);}
 .dm-switch input:checked+.dm-slider::before{transform:translateX(16px);background:var(--accent);}
 .dm-error{color:#ff5f57;font-size:0.79rem;min-height:1.2em;margin-bottom:0.5rem;}
+.dm-group-opt{padding:8px 12px;font-family:var(--mono);font-size:0.79rem;color:var(--text-muted);
+  cursor:pointer;transition:background 0.1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dm-group-opt:hover{background:rgba(0,212,184,0.07);color:var(--text);}
+.backup-toast{font-family:var(--mono);font-size:0.68rem;margin-left:8px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -396,6 +411,12 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 </nav>
 
 <div class="page-wrap">
+
+<!-- ── LOADING OVERLAY ───────────────────────────────────────────────────────── -->
+<div id="loadingOverlay">
+  <div class="ld-spinner"></div>
+  <div class="ld-msg">Connecting to SpanGate…</div>
+</div>
 
 <!-- ── MOCK BANNER ──────────────────────────────────────────────────────────── -->
 <div id="mockBanner" style="display:none;">
@@ -435,180 +456,92 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   <!-- ── STEP 2 — Install ──────────────────────────────────────────────────── -->
   <div id="step2" class="ob-body" style="display:none;">
     <div class="ob-title">Install the Agent</div>
-    <div class="ob-desc">Choose your platform and follow the steps below. The agent runs silently in the background on your local network.</div>
+    <div class="ob-desc">Pick your platform — the setup wizard handles everything automatically. Your API key is already filled in below.</div>
 
     <div class="os-tabs">
-      <button class="os-tab active" id="tabPi" onclick="switchOs('pi')">Raspberry Pi</button>
-      <button class="os-tab" id="tabWin" onclick="switchOs('win')">Windows</button>
+      <button class="os-tab active" id="tabPi"  onclick="switchOs('pi')">🫐 Raspberry Pi</button>
+      <button class="os-tab"        id="tabWin" onclick="switchOs('win')">🪟 Windows</button>
+      <button class="os-tab"        id="tabMac" onclick="switchOs('mac')">🍎 Mac</button>
     </div>
 
-    <!-- Pi steps -->
+    <!-- ── Pi ── -->
     <div class="os-pane active" id="panePi">
       <div class="sub-steps">
         <div class="sub-step">
           <div class="sub-step-num">1</div>
           <div class="sub-step-body">
-            <div class="sub-step-title">Flash Raspberry Pi OS</div>
-            <div class="sub-step-text">Download Raspberry Pi Imager from raspberrypi.com/software. Flash Raspberry Pi OS Lite (64-bit). In Imager settings (⚙️): enable SSH, set a username and password, configure WiFi if needed.</div>
+            <div class="sub-step-title">Flash Raspberry Pi OS Lite</div>
+            <div class="sub-step-text">Download <strong>Raspberry Pi Imager</strong> from <a href="https://raspberrypi.com/software" target="_blank" style="color:var(--accent);">raspberrypi.com/software</a>. Flash <strong>Raspberry Pi OS Lite (64-bit)</strong>. In the ⚙️ settings before flashing: enable SSH, set a username/password, and configure Wi-Fi if needed.</div>
           </div>
         </div>
         <div class="sub-step">
           <div class="sub-step-num">2</div>
           <div class="sub-step-body">
-            <div class="sub-step-title">Connect and update</div>
+            <div class="sub-step-title">SSH into your Pi and run this one command</div>
+            <div class="sub-step-text">This installs Docker, pulls the agent image, and starts it automatically. Your API key is already included.</div>
             <div class="code-block">
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>sudo apt update && sudo apt upgrade -y
-sudo apt install -y python3 python3-pip python3-venv git
-python3 --version</pre>
+              <pre>export SPNG_API_KEY="<span class="inject-api-key">YOUR_API_KEY</span>"
+curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash</pre>
             </div>
-            <div class="sub-step-note">Python 3.9 or higher required</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">3</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Clone and install</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>git clone https://github.com/michaelbohler13/spangate-site.git
-cd spangate-site/netmonitor-agent
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt</pre>
-            </div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">4</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Configure</div>
-            <div class="sub-step-text">Create your config file with your API key and device list:</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre id="piConfigBlock">agent:
-  site_name: "My Network"
-  api_url: "https://spangate-site-r81b.vercel.app"
-  api_key: "sg_live_mock_key_abc123xyz"
-devices:
-  - hostname: "core-sw-01"
-    ip: "192.168.1.1"
-    vendor: "cisco"
-    ssh_username: "admin"
-    ssh_password: "your_password"</pre>
-            </div>
-            <div class="sub-step-note">Supported vendors: cisco · aruba_cx · juniper</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">5</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Run the agent</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>python3 agent.py --config /etc/spangate/netmonitor/config.yaml</pre>
-            </div>
-            <div class="sub-step-note">You should see: [INFO] SpanGate Network Monitor Agent v1.0.0 — connected</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">6</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Install as system service</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>sudo systemctl enable spangate-netmonitor
-sudo systemctl start spangate-netmonitor
-sudo systemctl status spangate-netmonitor</pre>
-            </div>
+            <div class="sub-step-note">The wizard will ask for your site name, then the agent starts automatically and restarts on reboot.</div>
           </div>
         </div>
       </div>
     </div><!-- /panePi -->
 
-    <!-- Windows steps -->
+    <!-- ── Windows ── -->
     <div class="os-pane" id="paneWin">
       <div class="sub-steps">
         <div class="sub-step">
           <div class="sub-step-num">1</div>
           <div class="sub-step-body">
-            <div class="sub-step-title">Install Python</div>
-            <div class="sub-step-text">Download Python 3.11 from python.org/downloads. Run the installer — check "Add Python to PATH" before clicking Install.</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>python --version</pre>
-            </div>
+            <div class="sub-step-title">Install Docker Desktop</div>
+            <div class="sub-step-text">Download from <a href="https://www.docker.com/products/docker-desktop" target="_blank" style="color:var(--accent);">docker.com/products/docker-desktop</a>, install it, then start it. You'll see the Docker whale icon in your taskbar when it's ready.</div>
           </div>
         </div>
         <div class="sub-step">
           <div class="sub-step-num">2</div>
           <div class="sub-step-body">
-            <div class="sub-step-title">Clone the repo</div>
+            <div class="sub-step-title">Open PowerShell as Administrator and run</div>
+            <div class="sub-step-text">Right-click the Start menu → <strong>Terminal (Admin)</strong> or <strong>Windows PowerShell (Admin)</strong>, then paste:</div>
             <div class="code-block">
               <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>cd %USERPROFILE%\Documents
-git clone https://github.com/michaelbohler13/spangate-site.git
-cd spangate-site\netmonitor-agent</pre>
+              <pre>$env:SPNG_API_KEY = "<span class="inject-api-key">YOUR_API_KEY</span>"
+irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex</pre>
             </div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">3</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Install dependencies</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt</pre>
-            </div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">4</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Configure</div>
-            <div class="sub-step-text">Create your config file with your API key and device list:</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre id="winConfigBlock">agent:
-  site_name: "My Network"
-  api_url: "https://spangate-site-r81b.vercel.app"
-  api_key: "sg_live_mock_key_abc123xyz"
-devices:
-  - hostname: "core-sw-01"
-    ip: "192.168.1.1"
-    vendor: "cisco"
-    ssh_username: "admin"
-    ssh_password: "your_password"</pre>
-            </div>
-            <div class="sub-step-note">Supported vendors: cisco · aruba_cx · juniper</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">5</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Test the agent</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>python agent.py --config my-config.yaml</pre>
-            </div>
-            <div class="sub-step-note">You should see: [INFO] SpanGate Network Monitor Agent v1.0.0 — connected</div>
-          </div>
-        </div>
-        <div class="sub-step">
-          <div class="sub-step-num">6</div>
-          <div class="sub-step-body">
-            <div class="sub-step-title">Install as Windows service</div>
-            <div class="sub-step-text">Download NSSM from nssm.cc/download. Copy nssm.exe to C:\Windows\System32\ then run as Administrator:</div>
-            <div class="code-block">
-              <button class="code-copy" onclick="cpCode(this)">Copy</button>
-              <pre>nssm install SpangateNetMonitor</pre>
-            </div>
-            <div class="sub-step-text" style="margin-top:0.5rem;">In the NSSM GUI set:<br>· Path: full path to venv\Scripts\python.exe<br>· Startup directory: full path to netmonitor-agent\<br>· Arguments: agent.py --config my-config.yaml<br><br>Then: <code style="font-family:var(--mono);font-size:0.79rem;color:var(--accent);">nssm start SpangateNetMonitor</code></div>
+            <div class="sub-step-note">The wizard will ask for your site name, then the agent starts as a Docker container that restarts automatically.</div>
           </div>
         </div>
       </div>
     </div><!-- /paneWin -->
+
+    <!-- ── Mac ── -->
+    <div class="os-pane" id="paneMac">
+      <div class="sub-steps">
+        <div class="sub-step">
+          <div class="sub-step-num">1</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Install Docker Desktop</div>
+            <div class="sub-step-text">Download from <a href="https://www.docker.com/products/docker-desktop" target="_blank" style="color:var(--accent);">docker.com/products/docker-desktop</a> — choose the version for your chip (Apple Silicon or Intel). Install it and start it from your Applications folder.</div>
+          </div>
+        </div>
+        <div class="sub-step">
+          <div class="sub-step-num">2</div>
+          <div class="sub-step-body">
+            <div class="sub-step-title">Open Terminal and run</div>
+            <div class="sub-step-text">Press <strong>⌘ Space</strong>, type <strong>Terminal</strong>, press Enter, then paste:</div>
+            <div class="code-block">
+              <button class="code-copy" onclick="cpCode(this)">Copy</button>
+              <pre>export SPNG_API_KEY="<span class="inject-api-key">YOUR_API_KEY</span>"
+curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash</pre>
+            </div>
+            <div class="sub-step-note">The wizard will ask for your site name, then the agent starts as a Docker container that restarts automatically.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /paneMac -->
+
   </div><!-- /step2 body -->
   <div class="ob-footer" id="foot2" style="display:none;">
     <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
@@ -799,7 +732,13 @@ devices:
       </div>
       <div class="dm-field" style="grid-column:1/-1;margin-bottom:0.85rem;">
         <label class="dm-label" for="dmGroup">Group / Folder <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
-        <input id="dmGroup" class="dm-input" type="text" placeholder="Building A, Core, Floor 2…" autocomplete="off" />
+        <div style="position:relative;">
+          <input id="dmGroup" class="dm-input" type="text" placeholder="Building A, Core, Floor 2…" autocomplete="off"
+                 onfocus="showGroupDropdown()" oninput="filterGroupDropdown()" />
+          <div id="dmGroupDropdown" style="display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;z-index:300;
+               background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:8px;
+               max-height:160px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.45);"></div>
+        </div>
       </div>
       <div class="dm-toggles">
         <div class="dm-toggle-row">
@@ -968,26 +907,53 @@ async function initApp() {
 }
 
 async function determineState() {
-  // Fire all 4 requests simultaneously — one cold-start round instead of two.
+  // Show the dashboard immediately — the user has a valid API key.
+  // Backend data loads in the background; failures show a banner, not onboarding.
+  showDashboard(false, null);
+  startLiveRefresh();
+
+  const headers = { 'Authorization': `Bearer ${apiKey}` };
+
+  // Fetch core endpoints — a failure here shows a banner but keeps the dashboard visible.
+  let dashRes, devRes, alertRes;
   try {
-    const headers = { 'Authorization': `Bearer ${apiKey}` };
-    const [dashRes, devRes, alertRes, dcRes] = await Promise.all([
-      fetch(`${API_BASE}/api/v1/dashboard`,       { headers }),
-      fetch(`${API_BASE}/api/v1/devices`,         { headers }),
-      fetch(`${API_BASE}/api/v1/alerts`,          { headers }),
-      fetch(`${API_BASE}/api/v1/device-configs`,  { headers }),
+    [dashRes, devRes, alertRes] = await Promise.all([
+      fetch(`${API_BASE}/api/v1/dashboard`, { headers }),
+      fetch(`${API_BASE}/api/v1/devices`,   { headers }),
+      fetch(`${API_BASE}/api/v1/alerts`,    { headers }),
     ]);
-    if (!dashRes.ok) { showOnboarding(); return; }
-    const data = await dashRes.json();
-    if (data.last_heartbeat) {
-      await _applyDataResponses(devRes, alertRes, dcRes);
-      showDashboard();
-      startLiveRefresh();
-    } else {
-      showOnboarding();
-    }
   } catch(e) {
-    showOnboarding();
+    showBackendBanner('Could not reach backend — check your connection');
+    return;
+  }
+
+  if (!dashRes.ok) {
+    showBackendBanner(`Backend returned ${dashRes.status} — data may be stale`);
+    return;
+  }
+
+  const data = await dashRes.json();
+  updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
+
+  // Fetch device-configs separately so a failure doesn't block devices/alerts.
+  let dcRes = null;
+  try {
+    dcRes = await fetch(`${API_BASE}/api/v1/device-configs`, { headers });
+  } catch(e) { /* device configs unavailable — Settings tab will show empty */ }
+
+  await _applyDataResponses(devRes, alertRes, dcRes);
+
+  renderDevices();
+  renderAlerts();
+  updateAlertCounts();
+}
+
+function showBackendBanner(msg) {
+  const b = document.getElementById('mockBanner');
+  if (b) {
+    b.innerHTML = `<span>⚠ ${msg}</span>
+      <button onclick="this.parentElement.style.display='none'">×</button>`;
+    b.style.display = 'flex';
   }
 }
 
@@ -1014,7 +980,21 @@ async function _applyDataResponses(devRes, alertRes, dcRes) {
                                .map(a => ({ id: a.id, type: a.alert_type, hostname: a.hostname,
                                             ts: new Date(a.created_at).toLocaleString(), msg: a.message }));
   }
-  if (dcRes.ok) deviceConfigs = await dcRes.json();
+  if (dcRes && dcRes.ok) deviceConfigs = await dcRes.json();
+
+  // Populate configs device dropdown — only SSH-enabled devices can have backups.
+  // Must run after deviceConfigs is set above.
+  const sel = document.getElementById('cfgDeviceSelect');
+  if (sel) {
+    const sshDevices = deviceConfigs.filter(c => c.ssh_enabled);
+    if (sshDevices.length) {
+      sel.innerHTML = '<option value="">Select device…</option>' +
+        sshDevices.map(c => `<option value="${esc(c.hostname)}">${esc(c.hostname)}</option>`).join('');
+    } else {
+      sel.innerHTML = '<option value="">No SSH-enabled devices</option>';
+    }
+  }
+
   lastRefreshedAt = new Date();
   _updateRefreshStamp();
 
@@ -1053,7 +1033,15 @@ function startLiveRefresh() {
   liveRefreshTimer = setInterval(async () => {
     if (!apiKey) return;
     try {
-      await loadLiveData();
+      const headers = { 'Authorization': `Bearer ${apiKey}` };
+      const [dashRes] = await Promise.all([
+        fetch(`${API_BASE}/api/v1/dashboard`, { headers }),
+        loadLiveData(),
+      ]);
+      if (dashRes.ok) {
+        const data = await dashRes.json();
+        updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
+      }
       renderDevices();
       renderAlerts();
       updateAlertCounts();
@@ -1092,7 +1080,15 @@ function signOut() {
 // ─────────────────────────────────────────────────────────────────────────────
 // ONBOARDING
 // ─────────────────────────────────────────────────────────────────────────────
+function hideLoader() {
+  const ol = document.getElementById('loadingOverlay');
+  if (!ol || ol.classList.contains('hidden')) return;
+  ol.classList.add('hidden');
+  setTimeout(() => ol.remove(), 400);
+}
+
 function showOnboarding() {
+  hideLoader();
   stopLiveRefresh();
   document.getElementById('onboarding').style.display = 'flex';
   document.getElementById('dashboard').style.display  = 'none';
@@ -1135,22 +1131,18 @@ function goStep(n) {
 }
 
 function switchOs(os) {
-  document.getElementById('tabPi').className  = 'os-tab' + (os === 'pi' ? ' active' : '');
-  document.getElementById('tabWin').className = 'os-tab' + (os === 'win' ? ' active' : '');
-  document.getElementById('panePi').className  = 'os-pane' + (os === 'pi' ? ' active' : '');
-  document.getElementById('paneWin').className = 'os-pane' + (os === 'win' ? ' active' : '');
+  ['pi','win','mac'].forEach(p => {
+    document.getElementById('tab' + p.charAt(0).toUpperCase() + p.slice(1)).className =
+      'os-tab' + (os === p ? ' active' : '');
+    document.getElementById('pane' + p.charAt(0).toUpperCase() + p.slice(1)).className =
+      'os-pane' + (os === p ? ' active' : '');
+  });
 }
 
 function injectApiKey(key) {
-  const blocks = ['piConfigBlock','winConfigBlock'];
-  blocks.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = el.textContent.replace(/api_key:.*/, `api_key: "${key}"`);
-  });
   const disp = document.getElementById('apiKeyDisplay');
   if (disp) disp.textContent = key;
-  // Also update any standalone api_key display spans
+  // Inject into all spans with class inject-api-key (command blocks + API key display)
   document.querySelectorAll('.inject-api-key').forEach(el => {
     el.textContent = key;
   });
@@ -1161,7 +1153,7 @@ function simulateConnect() {
   const simBtn = document.getElementById('mockSimBtn');
   if (flash) { flash.style.display = 'block'; }
   if (simBtn) simBtn.style.display = 'none';
-  setTimeout(showDashboard, 900);
+  setTimeout(() => showDashboard(true, new Date().toISOString()), 900);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1208,15 +1200,33 @@ async function manualRefresh() {
 // ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
-function showDashboard() {
+function showDashboard(agentOnline, lastHeartbeat) {
+  hideLoader();
   stopPolling();
   document.getElementById('onboarding').style.display  = 'none';
   const dash = document.getElementById('dashboard');
   dash.style.display = 'block';
   dash.classList.add('fade-in');
+  updateAgentStatus(agentOnline, lastHeartbeat);
   renderDevices();
   renderAlerts();
   updateAlertCounts();
+}
+
+function updateAgentStatus(online, lastHeartbeat) {
+  const dot = document.querySelector('.pulse-dot');
+  const txt = document.querySelector('.agent-txt');
+  const lst = document.getElementById('lastSeenTxt');
+  if (dot) {
+    dot.style.background   = online ? 'var(--accent)' : '#6e6e73';
+    dot.style.animation    = online ? '' : 'none';
+  }
+  if (txt) txt.textContent = online ? 'Agent connected' : 'Agent offline';
+  if (lst && lastHeartbeat) {
+    lst.textContent = 'Last seen: ' + new Date(lastHeartbeat).toLocaleString();
+  } else if (lst && !online) {
+    lst.textContent = 'Agent not connected';
+  }
 }
 
 function navToTab(tab) {
@@ -1340,7 +1350,7 @@ function renderDevices() {
     const actionCell = cfg
       ? `<button class="dev-action-btn dev-edit-btn" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
         ><button class="dev-action-btn dev-del-btn" onclick="deleteDevice(${cfg.id},'${esc(hostname)}',event)" title="Remove device">✕</button>`
-      : `<span style="font-size:0.62rem;color:var(--text-dim);font-family:var(--mono);">config.yaml</span>`;
+      : `<button class="dev-action-btn dev-del-btn" onclick="deleteLiveDevice('${esc(hostname)}',event)" title="Remove device">✕</button>`;
 
     // SSH error badge — only for ssh_enabled devices that have an error
     const sshErrTip  = d.last_ssh_error ? esc(d.last_ssh_error) : '';
@@ -1529,7 +1539,9 @@ async function onCfgDeviceChange(hostname) {
     if (!res.ok) throw new Error('not found');
     const backups = await res.json();
     if (!backups.length) {
-      el.innerHTML = `<div class="empty-st">No config backups yet for ${esc(hostname)}</div>`;
+      el.innerHTML = `<div class="empty-st">No config backups yet for <strong>${esc(hostname)}</strong>.<br>
+        <span style="font-size:0.78rem;color:var(--text-dim);">The agent pulls configs on startup and every 7 days.<br>
+        To trigger an immediate backup, click <strong>⬆ Backup Now</strong> on the Devices tab.</span></div>`;
       return;
     }
     let html = `<table class="bk-table"><thead><tr>
@@ -1545,7 +1557,9 @@ async function onCfgDeviceChange(hostname) {
     html += '</tbody></table>';
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = `<div class="empty-st">No config backups yet for ${esc(hostname)}</div>`;
+    el.innerHTML = `<div class="empty-st">No config backups yet for <strong>${esc(hostname)}</strong>.<br>
+      <span style="font-size:0.78rem;color:var(--text-dim);">The agent pulls configs on startup and every 7 days.<br>
+      To trigger an immediate backup, click <strong>⬆ Backup Now</strong> on the Devices tab.</span></div>`;
   }
 }
 
@@ -1609,6 +1623,33 @@ function handleModalKey(e) {
 // DEVICE MANAGEMENT  (Add / Edit / Delete via /api/v1/device-configs)
 // ─────────────────────────────────────────────────────────────────────────────
 
+let _groupOptions = [];
+
+function populateGroupDropdown() {
+  _groupOptions = [...new Set(deviceConfigs.map(c => c.group_name).filter(Boolean))].sort();
+}
+
+function showGroupDropdown() {
+  filterGroupDropdown();
+}
+
+function filterGroupDropdown() {
+  const dd = document.getElementById('dmGroupDropdown');
+  if (!dd || !_groupOptions.length) return;
+  const q = (document.getElementById('dmGroup').value || '').toLowerCase();
+  const matches = q ? _groupOptions.filter(g => g.toLowerCase().includes(q)) : _groupOptions;
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = matches.map(g =>
+    `<div class="dm-group-opt" onmousedown="selectGroup(${JSON.stringify(g)})">${esc(g)}</div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function selectGroup(name) {
+  document.getElementById('dmGroup').value = name;
+  document.getElementById('dmGroupDropdown').style.display = 'none';
+}
+
 function dmVendorChange() {
   const isInternet = document.getElementById('dmVendor').value === 'internet';
   const hide = isInternet ? 'none' : '';
@@ -1636,6 +1677,7 @@ function openAddDevice() {
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Add Device';
   dmVendorChange();
+  populateGroupDropdown();
   document.getElementById('deviceModal').classList.add('open');
   document.addEventListener('keydown', _dmKey);
   setTimeout(() => document.getElementById('dmHostname').focus(), 60);
@@ -1661,6 +1703,7 @@ function openEditDevice(id, event) {
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Save Changes';
   dmVendorChange();
+  populateGroupDropdown();
   document.getElementById('deviceModal').classList.add('open');
   document.addEventListener('keydown', _dmKey);
   setTimeout(() => document.getElementById('dmIp').focus(), 60);
@@ -1668,6 +1711,7 @@ function openEditDevice(id, event) {
 
 function closeDeviceModal() {
   document.getElementById('deviceModal').classList.remove('open');
+  document.getElementById('dmGroupDropdown').style.display = 'none';
   document.removeEventListener('keydown', _dmKey);
 }
 
@@ -1738,6 +1782,7 @@ async function saveDevice() {
   }
 }
 
+
 async function deleteDevice(id, hostname, event) {
   if (event) event.stopPropagation();
   if (!confirm(`Remove "${hostname}" from monitoring?\n\nThe agent will stop monitoring this device within 5 minutes. Live status history is kept.`)) return;
@@ -1758,6 +1803,26 @@ async function deleteDevice(id, hostname, event) {
   }
 }
 
+async function deleteLiveDevice(hostname, event) {
+  if (event) event.stopPropagation();
+  if (!confirm(`Remove "${hostname}" from the dashboard?\n\nThis removes the live status record. If your agent still has this device in config.yaml it will reappear on the next ping cycle.`)) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/devices/${encodeURIComponent(hostname)}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (res.ok || res.status === 204) {
+      liveDevices = liveDevices.filter(d => d.hostname !== hostname);
+      renderDevices();
+    } else {
+      alert('Could not remove device — please try again.');
+    }
+  } catch(e) {
+    alert('Network error — could not remove device.');
+  }
+}
+
 async function _reloadDeviceConfigs() {
   try {
     const res = await fetch(`${API_BASE}/api/v1/device-configs`, {
@@ -1770,6 +1835,14 @@ async function _reloadDeviceConfigs() {
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('dmGroupDropdown');
+  const input = document.getElementById('dmGroup');
+  if (dd && input && !input.contains(e.target) && !dd.contains(e.target)) {
+    dd.style.display = 'none';
+  }
+});
+
 document.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
