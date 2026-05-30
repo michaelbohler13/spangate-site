@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 resend.api_key = os.environ.get("RESEND_API_KEY", "")
 
-FROM_ALERTS  = "SpanGate Alerts <alerts@send.spangate.com>"
-FROM_NOREPLY = "SpanGate <noreply@send.spangate.com>"
+FROM_ALERTS  = "SpanGate Alerts <alerts@spangate.com>"
+FROM_NOREPLY = "SpanGate <noreply@spangate.com>"
 ADMIN_EMAIL  = os.environ.get("ADMIN_EMAIL", "")
 DASHBOARD_URL = "https://spangate-site.vercel.app/netmonitor/dashboard"
 
