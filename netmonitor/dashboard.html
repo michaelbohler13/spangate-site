@@ -1003,8 +1003,9 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
     </div>
     <div class="modal-sec">
       <div style="display:flex;gap:10px;justify-content:flex-end;">
-        <button class="btn btn-ghost" onclick="closeCsvModal()">Cancel</button>
+        <button class="btn btn-ghost" id="csvCancelBtn" onclick="closeCsvModal()">Cancel</button>
         <button class="btn btn-primary" id="csvImportBtn" onclick="runCsvImport()" disabled>Import Devices</button>
+        <button class="btn btn-primary" id="csvDoneBtn" onclick="closeCsvModal()" style="display:none;">✓ Done</button>
       </div>
     </div>
   </div>
@@ -2597,6 +2598,9 @@ function openImportModal() {
   document.getElementById('csvProgress').style.display = 'none';
   document.getElementById('csvResult').style.display   = 'none';
   document.getElementById('csvImportBtn').disabled     = true;
+  document.getElementById('csvImportBtn').style.display = '';
+  document.getElementById('csvCancelBtn').style.display = '';
+  document.getElementById('csvDoneBtn').style.display   = 'none';
   document.getElementById('csvFileInput').value        = '';
   document.getElementById('csvModal').classList.add('open');
   document.addEventListener('keydown', _csvKey);
@@ -2827,7 +2831,12 @@ async function runCsvImport() {
     resultEl.textContent = parts.join(' · ');
   }
 
-  // Schedule close BEFORE the potentially heavy reload/render so it always fires
+  // Swap buttons: hide Cancel + Import, show Done
+  document.getElementById('csvCancelBtn').style.display = 'none';
+  document.getElementById('csvImportBtn').style.display = 'none';
+  document.getElementById('csvDoneBtn').style.display   = '';
+
+  // Also auto-close: 1.8s clean, 4s with warnings
   setTimeout(() => closeCsvModal(), (failed || planLimitMsg) ? 4000 : 1800);
 
   await _reloadDeviceConfigs();
