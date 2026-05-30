@@ -313,7 +313,7 @@
         <div class="callout-text">
           In the <strong>General</strong> tab: set hostname to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate-monitor</code>, username to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate</code>, choose a strong password, and configure Wi-Fi if not using Ethernet.<br>
           In the <strong>Services</strong> tab: enable SSH and select <em>Use password authentication</em>.<br>
-          In the <strong>Remote Access</strong> tab: check <strong>Enable Raspberry Pi Connect</strong> — this lets you access a terminal from any browser without needing an IP address (recommended).<br>
+          In the <strong>Remote Access</strong> tab: check <strong>Enable Raspberry Pi Connect</strong> — <em>do this now</em> so you can open a terminal from any browser in Step 2 without needing an IP address.<br>
           Click <strong>Save</strong>, then <strong>Yes</strong> to apply.
         </div>
       </div>
@@ -339,15 +339,15 @@
       <p><strong>Option A — Raspberry Pi Connect</strong> <span style="font-size:0.72rem;background:rgba(0,212,184,0.1);color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);border-radius:4px;padding:1px 7px;font-weight:600;letter-spacing:0.03em;vertical-align:middle;">RECOMMENDED</span><br>
       Browser-based terminal — no SSH client, no IP address, works from anywhere.</p>
       <ol>
-        <li>If you checked <strong>Enable Raspberry Pi Connect</strong> in Imager (Step 1), your Pi is already set up. If not, SSH in first and run:<br>
-          <div class="code-block" style="margin-top:0.5rem;">
+        <li>Open <a href="https://connect.raspberrypi.com/devices" target="_blank" rel="noopener"><strong>connect.raspberrypi.com/devices</strong></a> — sign in with your free Raspberry Pi account (or create one)</li>
+        <li>If your Pi appears as <strong>spangate-monitor</strong> → click it, choose <strong>Remote Shell</strong>, and you're in. <a href="#step-3" style="color:var(--accent);font-weight:600;">Skip to Step 3 →</a></li>
+        <li>If your Pi doesn't appear, Pi Connect wasn't enabled during Imager setup. SSH into the Pi using one of the options below, then run:<br>
+          <div class="code-block" style="margin-top:0.5rem;margin-bottom:0.5rem;">
             <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
             <pre><code>sudo apt install -y rpi-connect && rpi-connect signin</code></pre>
           </div>
+          Follow the sign-in link it prints, then return to <a href="https://connect.raspberrypi.com/devices" target="_blank" rel="noopener">connect.raspberrypi.com/devices</a> — your Pi will appear.
         </li>
-        <li>Visit <a href="https://connect.raspberrypi.com/" target="_blank" rel="noopener"><strong>connect.raspberrypi.com</strong></a> — sign in with your free Raspberry Pi account (or create one)</li>
-        <li>Your Pi will appear as <strong>spangate-monitor</strong> — click it then choose <strong>Remote Shell</strong></li>
-        <li>A terminal opens in your browser — you're in. <a href="#step-3" style="color:var(--accent);font-weight:600;">Skip to Step 3 →</a></li>
       </ol>
 
       <hr style="border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;">
