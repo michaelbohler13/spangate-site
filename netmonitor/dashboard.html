@@ -585,7 +585,7 @@ body.view-mode #navUser{display:none!important;}
 </div>
 
 <!-- ── VIEW-ONLY BANNER (shown when visiting via share link) ──────────────── -->
-<div id="viewBanner">👁 Read Only — you are viewing a shared dashboard</div>
+<div id="viewBanner">👁 View Link — read-only access &nbsp;·&nbsp; no login required</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!-- STATE A — ONBOARDING                                                       -->
@@ -872,19 +872,19 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   <div class="tab-pane" id="pane-settings">
     <div class="settings-pane">
 
-      <!-- Share Dashboard -->
+      <!-- View Link -->
       <div class="settings-section">
-        <div class="settings-heading">Share Dashboard</div>
+        <div class="settings-heading">View Link</div>
         <div class="settings-desc">
-          Generate a read-only link you can share with employees or colleagues.
-          Visitors can see live device status and alerts but cannot add, edit, or
-          delete anything. SSH passwords are never exposed.
+          Share a read-only link with your helpdesk team, manager, or client — no login required.
+          Visitors see live device status and alerts but cannot add, edit, or delete anything.
+          SSH passwords are never exposed.
         </div>
 
         <!-- No token yet -->
         <div id="shareNoToken">
           <button class="btn btn-outline" onclick="generateShareToken()" style="font-size:0.82rem;">
-            Generate Share Link
+            Generate View Link
           </button>
         </div>
 
