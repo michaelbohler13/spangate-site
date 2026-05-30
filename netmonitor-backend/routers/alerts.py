@@ -15,19 +15,21 @@ GET  /api/v1/alerts
     Optional query params: hostname, alert_type
 """
 
+import asyncio
 import difflib
 import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from auth import AuthContext
+from auth import AuthContext, _get_supabase
 from database import get_db
-from models import Alert, Config, ConfigDiff, Device
+from email_service import send_ping_down_alert
+from models import AgentHeartbeat, Alert, Config, ConfigDiff, Device
 from schemas import AlertResponse, ConfigChange, PingAlert
 from state import update_device_status
 
@@ -36,6 +38,34 @@ router = APIRouter(tags=["Alerts"])
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+async def _get_user_email(user_id: str) -> str | None:
+    """
+    Retrieve the registered email address for a user from Supabase auth.
+
+    Used to send alert emails.  Returns None on any error so the alert
+    endpoint never fails because of an email lookup problem.
+    """
+    try:
+        client = _get_supabase()
+        response = await asyncio.to_thread(client.auth.admin.get_user_by_id, user_id)
+        return response.user.email if response and response.user else None
+    except Exception as exc:
+        logger.warning("[EMAIL] Could not fetch user email for %s: %s", user_id, exc)
+        return None
+
+
+async def _get_site_name(db: AsyncSession, site_id: str) -> str:
+    """Return site_name from the latest heartbeat row, falling back to site_id."""
+    try:
+        result = await db.execute(
+            select(AgentHeartbeat.site_name).where(AgentHeartbeat.site_id == site_id)
+        )
+        name = result.scalar_one_or_none()
+        return name or site_id
+    except Exception:
+        return site_id
+
 
 async def _get_or_create_device(
     db: AsyncSession,
@@ -98,6 +128,7 @@ def _compute_diff(old_text: str, new_text: str, hostname: str) -> str:
 async def ping_alert(
     body: PingAlert,
     ctx: AuthContext,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -156,6 +187,25 @@ async def ping_alert(
         "[PING] %s/%s (%s) → %s",
         site_id, body.hostname, body.ip, body.status.upper(),
     )
+
+    # ── Fire alert email in background (ping_down only) ───────────────────────
+    if body.status == "down":
+        user_id = ctx["user_id"]
+
+        async def _email_task() -> None:
+            to_email  = await _get_user_email(user_id)
+            site_name = await _get_site_name(db, site_id)
+            await send_ping_down_alert(
+                to_email=to_email or "",
+                site_name=site_name,
+                site_id=site_id,
+                hostname=body.hostname,
+                ip=body.ip,
+                timestamp=body.timestamp,
+            )
+
+        background_tasks.add_task(_email_task)
+
     return {"ok": True, "alert_id": alert.id}
 
 
