@@ -21,7 +21,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -128,7 +128,6 @@ def _compute_diff(old_text: str, new_text: str, hostname: str) -> str:
 async def ping_alert(
     body: PingAlert,
     ctx: AuthContext,
-    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -188,23 +187,18 @@ async def ping_alert(
         site_id, body.hostname, body.ip, body.status.upper(),
     )
 
-    # ── Fire alert email in background (ping_down only) ───────────────────────
+    # ── Send alert email inline (ping_down only) ─────────────────────────────
     if body.status == "down":
-        user_id = ctx["user_id"]
-
-        async def _email_task() -> None:
-            to_email  = await _get_user_email(user_id)
-            site_name = await _get_site_name(db, site_id)
-            await send_ping_down_alert(
-                to_email=to_email or "",
-                site_name=site_name,
-                site_id=site_id,
-                hostname=body.hostname,
-                ip=body.ip,
-                timestamp=body.timestamp,
-            )
-
-        background_tasks.add_task(_email_task)
+        to_email  = await _get_user_email(ctx["user_id"])
+        site_name = await _get_site_name(db, site_id)
+        await send_ping_down_alert(
+            to_email=to_email or "",
+            site_name=site_name,
+            site_id=site_id,
+            hostname=body.hostname,
+            ip=body.ip,
+            timestamp=body.timestamp,
+        )
 
     return {"ok": True, "alert_id": alert.id}
 

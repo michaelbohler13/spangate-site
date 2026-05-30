@@ -19,7 +19,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -147,7 +147,6 @@ def _client_ip(request: Request) -> str:
 async def submit_feedback(
     payload: FeedbackIn,
     request: Request,
-    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -203,9 +202,8 @@ async def submit_feedback(
         payload.subject,
     )
 
-    # Notify admin via email (fires after response is sent)
-    background_tasks.add_task(
-        send_feedback_notification,
+    # Notify admin via email (inline — Vercel serverless safe)
+    await send_feedback_notification(
         name=payload.name,
         email=payload.email,
         subject=payload.subject,
