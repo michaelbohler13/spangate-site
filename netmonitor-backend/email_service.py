@@ -1,17 +1,13 @@
 """
 email_service.py — SpanGate Network Monitor Backend
-Transactional email helpers supporting two delivery providers:
+Transactional email helpers using SMTP relay for delivery.
 
-  1. Resend (default)  — API-based, sends from alerts@spangate.com
-  2. SMTP relay        — user-supplied server (Gmail, Google Workspace,
-                         Microsoft 365, district mail server, etc.)
+All alert emails (ping-down, ping-up, test) are sent via the user's
+configured SMTP relay stored in nm_profiles.
 
-Provider selection is per-user, stored in nm_profiles.email_provider.
-When email_provider == 'smtp' and smtp_host is set, all alert emails
-are routed through the user's SMTP config instead of Resend.
-
-Feedback notification emails always use Resend (they go to ADMIN_EMAIL,
-not a user-configured address).
+Admin feedback notifications are sent via a separate admin SMTP account
+configured through environment variables (ADMIN_SMTP_*).  This keeps
+user-facing delivery and admin delivery completely independent.
 
 Cooldown:
   Ping-down alerts are rate-limited to one email per (site_id, hostname)
@@ -29,20 +25,21 @@ from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-import resend  # pip install resend
-
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-resend.api_key = os.environ.get("RESEND_API_KEY", "")
-
-FROM_ALERTS  = "SpanGate Alerts <alerts@spangate.com>"
-FROM_NOREPLY = "SpanGate <noreply@spangate.com>"
-ADMIN_EMAIL  = os.environ.get("ADMIN_EMAIL", "")
 DASHBOARD_URL = "https://spangate-site.vercel.app/netmonitor/dashboard"
 
 COOLDOWN_MINUTES = 60   # minimum gap between repeat DOWN emails for same device
+
+# Admin SMTP — used only for feedback notifications (SpanGate admin inbox).
+# Set these in Vercel environment variables.
+ADMIN_EMAIL         = os.environ.get("ADMIN_EMAIL", "")
+ADMIN_SMTP_HOST     = os.environ.get("ADMIN_SMTP_HOST", "")
+ADMIN_SMTP_PORT     = int(os.environ.get("ADMIN_SMTP_PORT", "587"))
+ADMIN_SMTP_USER     = os.environ.get("ADMIN_SMTP_USER", "")
+ADMIN_SMTP_PASSWORD = os.environ.get("ADMIN_SMTP_PASSWORD", "")
 
 
 # ── SMTP config dataclass ─────────────────────────────────────────────────────
@@ -96,7 +93,7 @@ def _format_downtime(seconds: float) -> str:
     return f"~{hours} hour{'s' if hours != 1.0 else ''}"
 
 
-# ── SMTP dispatcher ───────────────────────────────────────────────────────────
+# ── SMTP send ─────────────────────────────────────────────────────────────────
 
 def _smtp_send_sync(
     to_email: str,
@@ -134,29 +131,14 @@ def _smtp_send_sync(
             server.sendmail(from_addr, [to_email], msg.as_string())
 
 
-async def _dispatch_alert_email(
-    to_email:    str,
-    subject:     str,
-    html:        str,
-    smtp_config: SmtpConfig | None,
+async def _send_email(
+    to_email: str,
+    subject:  str,
+    html:     str,
+    cfg:      SmtpConfig,
 ) -> None:
-    """
-    Route an alert email through SMTP relay or Resend.
-
-    Raises on delivery failure so callers can log the error.
-    """
-    if smtp_config:
-        await asyncio.to_thread(_smtp_send_sync, to_email, subject, html, smtp_config)
-    else:
-        if not resend.api_key:
-            raise RuntimeError("RESEND_API_KEY not configured and no SMTP relay set")
-        params: resend.Emails.SendParams = {
-            "from":    FROM_ALERTS,
-            "to":      [to_email],
-            "subject": subject,
-            "html":    html,
-        }
-        await asyncio.to_thread(resend.Emails.send, params)
+    """Async wrapper around _smtp_send_sync."""
+    await asyncio.to_thread(_smtp_send_sync, to_email, subject, html, cfg)
 
 
 # ── HTML templates ────────────────────────────────────────────────────────────
@@ -373,15 +355,15 @@ async def send_ping_down_alert(
     smtp_config: SmtpConfig | None = None,
 ) -> None:
     """
-    Send a device-down alert email via Resend or SMTP relay.
+    Send a device-down alert email via the user's SMTP relay.
 
     Silently no-ops when:
-    - No delivery method is configured (no RESEND_API_KEY, no smtp_config)
+    - smtp_config is None (user hasn't configured SMTP yet)
     - to_email is empty
     - A down-alert for this device was already sent within COOLDOWN_MINUTES
     """
-    if not smtp_config and not resend.api_key:
-        logger.debug("[EMAIL] No delivery method — skipping DOWN alert for %s/%s", site_id, hostname)
+    if not smtp_config:
+        logger.debug("[EMAIL] No SMTP config — skipping DOWN alert for %s/%s", site_id, hostname)
         return
     if not to_email:
         logger.debug("[EMAIL] No recipient — skipping DOWN alert for %s/%s", site_id, hostname)
@@ -395,7 +377,7 @@ async def send_ping_down_alert(
     html    = _ping_down_html(site_name, hostname, ip, ts)
 
     try:
-        await _dispatch_alert_email(to_email, subject, html, smtp_config)
+        await _send_email(to_email, subject, html, smtp_config)
         _mark_alert_sent(site_id, hostname)
         logger.info("[EMAIL] DOWN alert sent to %s for %s/%s", to_email, site_id, hostname)
     except Exception as exc:
@@ -414,13 +396,13 @@ async def send_ping_up_alert(
     smtp_config:  SmtpConfig | None = None,
 ) -> None:
     """
-    Send a device-back-online alert email via Resend or SMTP relay.
+    Send a device-back-online alert email via the user's SMTP relay.
 
     Only fires when a DOWN alert was previously sent for this device.
     After sending, the cooldown entry is cleared so the next DOWN fires fresh.
     """
-    if not smtp_config and not resend.api_key:
-        logger.debug("[EMAIL] No delivery method — skipping UP alert for %s/%s", site_id, hostname)
+    if not smtp_config:
+        logger.debug("[EMAIL] No SMTP config — skipping UP alert for %s/%s", site_id, hostname)
         return
     if not to_email:
         logger.debug("[EMAIL] No recipient — skipping UP alert for %s/%s", site_id, hostname)
@@ -440,7 +422,7 @@ async def send_ping_up_alert(
     html    = _ping_up_html(site_name, hostname, ip, ts, downtime)
 
     try:
-        await _dispatch_alert_email(to_email, subject, html, smtp_config)
+        await _send_email(to_email, subject, html, smtp_config)
         _clear_down_alert(site_id, hostname)
         logger.info("[EMAIL] UP alert sent to %s for %s/%s (down %s)", to_email, site_id, hostname, downtime)
     except Exception as exc:
@@ -457,7 +439,9 @@ async def send_test_alert_email(
 
     Raises on failure so the caller can return a meaningful error to the UI.
     """
-    await _dispatch_alert_email(
+    if not smtp_config:
+        raise ValueError("No SMTP configuration provided")
+    await _send_email(
         to_email,
         "✅ SpanGate Alert — Test Email",
         _test_email_html(),
@@ -475,21 +459,30 @@ async def send_feedback_notification(
 ) -> None:
     """
     Send an admin notification when a user submits feedback.
-    Always uses Resend — not user-configurable.
+
+    Uses the admin SMTP config from environment variables (ADMIN_SMTP_*).
+    Silently no-ops when admin SMTP is not configured.
+    The destination address is intentionally not exposed to the submitter.
     """
-    if not resend.api_key or not ADMIN_EMAIL:
-        logger.warning("[EMAIL] Feedback notification skipped — RESEND_API_KEY or ADMIN_EMAIL not set")
+    if not ADMIN_SMTP_HOST or not ADMIN_EMAIL:
+        logger.warning("[EMAIL] Admin SMTP not configured — feedback notification skipped")
         return
 
-    params: resend.Emails.SendParams = {
-        "from":     FROM_NOREPLY,
-        "to":       [ADMIN_EMAIL],
-        "reply_to": email,
-        "subject":  f"[SpanGate Feedback] {subject} — {name}",
-        "html":     _feedback_notify_html(name, email, subject, message),
-    }
+    admin_cfg = SmtpConfig(
+        host=ADMIN_SMTP_HOST,
+        port=ADMIN_SMTP_PORT,
+        user=ADMIN_SMTP_USER,
+        password=ADMIN_SMTP_PASSWORD,
+        from_addr=ADMIN_SMTP_USER,
+    )
+
     try:
-        await asyncio.to_thread(resend.Emails.send, params)
+        await _send_email(
+            ADMIN_EMAIL,
+            f"[SpanGate Feedback] {subject} — {name}",
+            _feedback_notify_html(name, email, subject, message),
+            admin_cfg,
+        )
         logger.info("[EMAIL] Feedback notification sent for %r <%s>", name, email)
     except Exception as exc:
         logger.error("[EMAIL] Failed to send feedback notification: %s", exc)

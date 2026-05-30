@@ -39,7 +39,7 @@ router = APIRouter(tags=["Settings"])
 
 _supabase: Client | None = None
 
-VALID_PROVIDERS = {"resend", "smtp"}
+VALID_PROVIDERS = {"smtp"}
 
 
 def _get_supabase() -> Client:
@@ -136,7 +136,7 @@ async def get_settings(ctx: AuthContext) -> dict:
 
     return {
         "alert_email":       data.get("alert_email") or "",
-        "email_provider":    data.get("email_provider") or "resend",
+        "email_provider":    data.get("email_provider") or "smtp",
         "smtp_host":         data.get("smtp_host") or "",
         "smtp_port":         data.get("smtp_port") or 587,
         "smtp_user":         data.get("smtp_user") or "",
