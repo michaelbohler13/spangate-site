@@ -644,17 +644,21 @@ body.view-mode #navUser{display:none!important;}
       <input id="wizSmtpFrom" class="dm-input" type="text" placeholder="monitoring@yourschool.org" autocomplete="off" />
     </div>
 
-    <div style="font-size:0.72rem;color:var(--text-dim);line-height:1.6;
+    <div style="font-size:0.72rem;color:var(--text-dim);line-height:1.7;
                 background:var(--surface);border:0.5px solid var(--border);
                 border-radius:8px;padding:10px 12px;margin-bottom:0.75rem;">
-      💡 <strong style="color:var(--text-muted);">Gmail:</strong>
-      Use an <strong style="color:var(--text-muted);">App Password</strong>, not your regular password.
-      Go to <a href="https://myaccount.google.com/apppasswords" target="_blank"
-        style="color:var(--accent);text-decoration:none;">myaccount.google.com/apppasswords</a>
-      — or search <strong style="color:var(--text-muted);">"App Passwords"</strong> at
-      <a href="https://myaccount.google.com" target="_blank"
-        style="color:var(--accent);text-decoration:none;">myaccount.google.com</a>
-      (requires 2-Step Verification). Port 587 (STARTTLS) or 465 (SSL).
+      💡 <strong style="color:var(--text-muted);">Gmail / Google Workspace:</strong>
+      You must use an <strong style="color:var(--text-muted);">App Password</strong> — not your regular Gmail password.<br>
+      <strong style="color:var(--text-muted);">Step 1 —</strong>
+      Enable 2-Step Verification:
+      <a href="https://support.google.com/accounts/answer/185839" target="_blank"
+        style="color:var(--accent);text-decoration:none;">Google 2-Step Verification setup guide ↗</a><br>
+      <strong style="color:var(--text-muted);">Step 2 —</strong>
+      Create an App Password:
+      <a href="https://myaccount.google.com/apppasswords" target="_blank"
+        style="color:var(--accent);text-decoration:none;">myaccount.google.com/apppasswords ↗</a>
+      — or search <strong style="color:var(--text-muted);">"App Passwords"</strong> at myaccount.google.com.<br>
+      Port 587 (STARTTLS) or 465 (SSL).
     </div>
 
     <div id="wizEmailMsg" style="font-size:0.78rem;line-height:1.55;display:none;margin-bottom:0.5rem;"></div>
@@ -964,17 +968,20 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
             <input id="smtpFrom" class="dm-input" type="text"
                    placeholder="monitoring@yourschool.org" autocomplete="off" />
           </div>
-          <div style="font-size:0.72rem;color:var(--text-dim);line-height:1.6;
+          <div style="font-size:0.72rem;color:var(--text-dim);line-height:1.7;
                       background:var(--surface);border:0.5px solid var(--border);
                       border-radius:8px;padding:10px 12px;margin-bottom:1rem;">
             💡 <strong style="color:var(--text-muted);">Gmail / Google Workspace:</strong>
-            Use an <strong style="color:var(--text-muted);">App Password</strong>, not your regular password.
-            Go to <a href="https://myaccount.google.com/apppasswords" target="_blank"
-              style="color:var(--accent);text-decoration:none;">myaccount.google.com/apppasswords</a>
-            — or search <strong style="color:var(--text-muted);">"App Passwords"</strong> at
-            <a href="https://myaccount.google.com" target="_blank"
-              style="color:var(--accent);text-decoration:none;">myaccount.google.com</a>
-            (requires 2-Step Verification to be enabled first).
+            You must use an <strong style="color:var(--text-muted);">App Password</strong> — not your regular Gmail password.<br>
+            <strong style="color:var(--text-muted);">Step 1 —</strong>
+            Enable 2-Step Verification:
+            <a href="https://support.google.com/accounts/answer/185839" target="_blank"
+              style="color:var(--accent);text-decoration:none;">Google 2-Step Verification setup guide ↗</a><br>
+            <strong style="color:var(--text-muted);">Step 2 —</strong>
+            Create an App Password:
+            <a href="https://myaccount.google.com/apppasswords" target="_blank"
+              style="color:var(--accent);text-decoration:none;">myaccount.google.com/apppasswords ↗</a>
+            — or search <strong style="color:var(--text-muted);">"App Passwords"</strong> at myaccount.google.com.<br>
             Port 587 (STARTTLS) or 465 (SSL).
           </div>
         </div>
