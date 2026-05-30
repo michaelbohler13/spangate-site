@@ -236,6 +236,20 @@
     <a href="/netmonitor/install-mac"><span class="plat-icon">⌘</span> macOS</a>
   </div>
 
+  <!-- 64-BIT OS REQUIREMENT -->
+  <div class="callout warn" style="margin-bottom:1.25rem;">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-text">
+      <strong>64-bit Raspberry Pi OS required.</strong>
+      The SpanGate agent only runs on a 64-bit OS (<code style="font-family:var(--mono);font-size:0.82em;">arm64</code>).
+      32-bit installations will fail at the Docker pull step with a manifest error.
+      When flashing in Raspberry Pi Imager, always choose
+      <strong>Raspberry Pi OS Lite (64-bit)</strong>.
+      To check an existing Pi: run <code style="font-family:var(--mono);font-size:0.82em;">uname -m</code> — it must return <code style="font-family:var(--mono);font-size:0.82em;">aarch64</code>.
+      If it returns <code style="font-family:var(--mono);font-size:0.82em;">armv7l</code>, re-flash before continuing.
+    </div>
+  </div>
+
   <!-- AUTHORIZED USE NOTICE -->
   <div class="callout legal" style="margin-bottom:1.75rem;">
     <span class="callout-icon">⚠️</span>
@@ -253,7 +267,7 @@
     <div class="req-title">Requirements</div>
     <ul class="req-list">
       <li>Raspberry Pi — Zero 2W, Pi 4, or Pi 5 (Pi 4 4 GB recommended)</li>
-      <li>Raspberry Pi OS Lite, 64-bit (Bullseye or Bookworm)</li>
+      <li><strong style="color:var(--accent);">Raspberry Pi OS Lite — 64-bit only</strong> (Bookworm recommended) — run <code style="font-family:var(--mono);font-size:0.82em;">uname -m</code> on an existing Pi to confirm it returns <code style="font-family:var(--mono);font-size:0.82em;">aarch64</code></li>
       <li>Python 3.9 or higher — pre-installed on Bullseye and later</li>
       <li>Network access to your managed devices — same VLAN or routed</li>
       <li>SSH enabled on all target switches and routers</li>
@@ -304,7 +318,7 @@
         <li>Download <strong>Raspberry Pi Imager</strong> from <a href="https://raspberrypi.com/software" target="_blank" rel="noopener">raspberrypi.com/software</a></li>
         <li>Insert a microSD card — 8 GB minimum, 16 GB recommended</li>
         <li><strong>Choose Device</strong> → select your Pi model</li>
-        <li><strong>Choose OS</strong> → Raspberry Pi OS Lite (64-bit)</li>
+        <li><strong>Choose OS</strong> → <strong style="color:var(--accent);">Raspberry Pi OS Lite (64-bit)</strong> — do not use the 32-bit version</li>
         <li><strong>Choose Storage</strong> → select your microSD card</li>
         <li>Click <strong>Next</strong> — when prompted <em>"Would you like to apply OS customisation settings?"</em> click <strong>Edit Settings</strong></li>
       </ol>
