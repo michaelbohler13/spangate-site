@@ -443,6 +443,12 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .dm-input:focus{border-color:var(--accent);}
 .dm-input::placeholder{color:var(--text-dim);}
 .dm-input:disabled{opacity:0.45;cursor:not-allowed;}
+.pw-wrap{position:relative;}
+.pw-wrap .dm-input{padding-right:36px;}
+.pw-eye{position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:var(--text-dim);padding:3px;
+  line-height:0;transition:color 0.15s;flex-shrink:0;}
+.pw-eye:hover{color:var(--text-muted);}
 .dm-select{width:100%;}
 .dm-toggles{display:flex;flex-direction:column;padding-top:0.75rem;
   border-top:0.5px solid var(--border);}
@@ -655,7 +661,10 @@ body.view-mode #navUser{display:none!important;}
     </div>
     <div style="margin-bottom:10px;">
       <label class="dm-label" for="wizSmtpPassword">App Password</label>
-      <input id="wizSmtpPassword" class="dm-input" type="password" placeholder="16-character App Password" autocomplete="new-password" />
+      <div class="pw-wrap">
+        <input id="wizSmtpPassword" class="dm-input" type="password" placeholder="16-character App Password" autocomplete="new-password" />
+        <button type="button" class="pw-eye" onclick="togglePwEye('wizSmtpPassword',this)" tabindex="-1" aria-label="Show password"><!--eye--></button>
+      </div>
     </div>
     <div style="margin-bottom:1rem;">
       <label class="dm-label" for="wizSmtpFrom">From Address <span style="font-weight:400;color:var(--text-dim);">(optional — defaults to username)</span></label>
@@ -984,9 +993,12 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
           </div>
           <div style="margin-bottom:10px;">
             <label class="dm-label" for="smtpPassword">Password / App Password</label>
-            <input id="smtpPassword" class="dm-input" type="password"
-                   placeholder="Leave blank to keep current password"
-                   autocomplete="new-password" />
+            <div class="pw-wrap">
+              <input id="smtpPassword" class="dm-input" type="password"
+                     placeholder="Leave blank to keep current password"
+                     autocomplete="new-password" />
+              <button type="button" class="pw-eye" onclick="togglePwEye('smtpPassword',this)" tabindex="-1" aria-label="Show password"><!--eye--></button>
+            </div>
           </div>
           <div style="margin-bottom:1rem;">
             <label class="dm-label" for="smtpFrom">
@@ -1068,9 +1080,12 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div>
         <div style="margin-bottom:1rem;">
           <label class="dm-label" for="defaultSshPassword">Default SSH Password</label>
-          <input id="defaultSshPassword" class="dm-input" type="password"
-                 placeholder="Leave blank to keep current password"
-                 autocomplete="new-password" />
+          <div class="pw-wrap">
+            <input id="defaultSshPassword" class="dm-input" type="password"
+                   placeholder="Leave blank to keep current password"
+                   autocomplete="new-password" />
+            <button type="button" class="pw-eye" onclick="togglePwEye('defaultSshPassword',this)" tabindex="-1" aria-label="Show password"><!--eye--></button>
+          </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <button class="btn btn-outline" onclick="saveDefaultSshCreds()"
@@ -1235,7 +1250,10 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div>
         <div class="dm-field" id="dmSshPasswordField">
           <label class="dm-label" for="dmSshPassword">SSH Password</label>
-          <input id="dmSshPassword" class="dm-input" type="password" placeholder="optional" autocomplete="new-password" />
+          <div class="pw-wrap">
+            <input id="dmSshPassword" class="dm-input" type="password" placeholder="optional" autocomplete="new-password" />
+            <button type="button" class="pw-eye" onclick="togglePwEye('dmSshPassword',this)" tabindex="-1" aria-label="Show password"><!--eye--></button>
+          </div>
         </div>
       </div>
       <div class="dm-field" style="grid-column:1/-1;margin-bottom:0.85rem;">
@@ -3453,6 +3471,26 @@ function _showSettingsKeyMsg(msg, ok, ms = 6000) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SETTINGS — ACCORDION
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PASSWORD VISIBILITY TOGGLE
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _EYE_OPEN = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const _EYE_OFF  = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+// Initialise all .pw-eye buttons with the open-eye icon on page load
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.pw-eye').forEach(btn => { btn.innerHTML = _EYE_OPEN; });
+});
+
+function togglePwEye(id, btn) {
+  const inp    = document.getElementById(id);
+  const showing = inp.type === 'text';
+  inp.type     = showing ? 'password' : 'text';
+  btn.innerHTML = showing ? _EYE_OPEN : _EYE_OFF;
+  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+}
 
 const _ACC_IDS = [
   'acc-email-delivery',
