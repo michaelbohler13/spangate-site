@@ -498,10 +498,12 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .csv-row-err .csv-st{color:#ff5f57;}
 .csv-row-err td{color:rgba(255,95,87,0.8);}
 .csv-err-note{font-size:0.7rem;color:#ff5f57;margin-top:0.5rem;padding:0 2px;}
-.csv-progress{margin-top:0.85rem;display:none;}
-.csv-progress-bar{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:0.4rem;}
-.csv-progress-fill{height:100%;background:var(--accent);transition:width 0.25s;width:0%;border-radius:2px;}
-.csv-progress-lbl{font-size:0.72rem;color:var(--text-muted);font-family:var(--mono);}
+.csv-progress{margin-top:1rem;display:none;}
+.csv-progress-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;}
+.csv-progress-lbl{font-size:0.78rem;color:var(--text-muted);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:75%;}
+.csv-progress-pct{font-size:0.78rem;font-weight:600;color:var(--accent);font-family:var(--mono);flex-shrink:0;}
+.csv-progress-bar{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;}
+.csv-progress-fill{height:100%;background:var(--accent);transition:width 0.2s ease;width:0%;border-radius:4px;}
 .csv-result{margin-top:0.75rem;padding:9px 14px;border-radius:8px;font-size:0.79rem;
   display:none;font-family:var(--mono);}
 .csv-result.ok  {background:rgba(0,212,184,0.08);border:0.5px solid rgba(0,212,184,0.25);color:var(--accent);}
@@ -996,8 +998,11 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         <div class="csv-err-note" id="csvErrNote" style="display:none;"></div>
       </div>
       <div class="csv-progress" id="csvProgress">
+        <div class="csv-progress-header">
+          <div class="csv-progress-lbl" id="csvProgressLbl">Preparing…</div>
+          <div class="csv-progress-pct" id="csvProgressPct">0%</div>
+        </div>
         <div class="csv-progress-bar"><div class="csv-progress-fill" id="csvProgressFill"></div></div>
-        <div class="csv-progress-lbl" id="csvProgressLbl"></div>
       </div>
       <div class="csv-result" id="csvResult"></div>
     </div>
@@ -2769,13 +2774,16 @@ async function runCsvImport() {
   document.getElementById('csvProgress').style.display = '';
   const fill = document.getElementById('csvProgressFill');
   const lbl  = document.getElementById('csvProgressLbl');
+  const pct  = document.getElementById('csvProgressPct');
 
   let added = 0, skipped = 0, failed = 0, planLimitMsg = null;
 
   try {
     for (let i = 0; i < valid.length; i++) {
       const r = valid[i];
-      fill.style.width = Math.round((i / valid.length) * 100) + '%';
+      const progress = Math.round((i / valid.length) * 100);
+      fill.style.width = progress + '%';
+      pct.textContent  = progress + '%';
       lbl.textContent  = `Adding ${i + 1} of ${valid.length} — ${r.hostname}`;
 
       const plan = (planInfo && planInfo.plan) ? planInfo.plan : 'free';
@@ -2814,7 +2822,8 @@ async function runCsvImport() {
     }
 
     fill.style.width = '100%';
-    lbl.textContent  = 'Done';
+    pct.textContent  = '100%';
+    lbl.textContent  = `Done — ${added} added, ${skipped} skipped${failed ? ', ' + failed + ' failed' : ''}`;
 
     const parts = [`${added} device${added !== 1 ? 's' : ''} added`];
     if (skipped)      parts.push(`${skipped} already existed`);
