@@ -227,7 +227,6 @@
       <li><a href="/netmonitor/install-windows">Windows</a></li>
       <li><a href="/netmonitor/install-mac">macOS</a></li>
       <li><a href="/netmonitor/upgrade" class="active">Updates</a></li>
-      <li><a href="/netmonitor/settings">Settings</a></li>
     </ul>
     <div class="nav-spacer"></div>
     <div class="nav-right">
@@ -444,7 +443,7 @@ docker compose up -d</code></pre>
                 <div class="wiz-row">
                   <label class="wiz-label" for="upgWzKey">API Key</label>
                   <input class="wiz-input" id="upgWzKey" type="text" placeholder="spng_…" autocomplete="off" spellcheck="false" oninput="upgWzUpdate()">
-                  <div class="wiz-hint">Use your <strong style="color:var(--accent);">existing</strong> key — copy from <a href="/netmonitor/settings">Settings → API Key</a></div>
+                  <div class="wiz-hint">Use your <strong style="color:var(--accent);">existing</strong> key — copy from <a href="/netmonitor/dashboard">Dashboard → ⚙ Settings → Agent API Key</a></div>
                 </div>
                 <div class="wiz-row">
                   <label class="wiz-label" for="upgWzSite">Site Name</label>
@@ -553,7 +552,7 @@ docker compose up -d</code></pre>
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">I lost my API key — how do I find it?</div>
-      <div class="faq-a">Go to <a href="/netmonitor/settings">Network Monitor → Settings</a>. Your API key is shown there and can be copied or regenerated. If you regenerate it, update the config on your agent device before restarting.</div>
+      <div class="faq-a">Go to <a href="/netmonitor/dashboard">Dashboard → ⚙ Settings → Agent API Key</a>. Your key is shown there and can be copied or regenerated. If you regenerate it, update config.yaml on your agent device before restarting.</div>
     </div>
   </div>
 

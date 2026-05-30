@@ -39,19 +39,41 @@ router = APIRouter(tags=["Alerts"])
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-async def _get_user_email(user_id: str) -> str | None:
+async def _get_alert_email(user_id: str) -> str | None:
     """
-    Retrieve the registered email address for a user from Supabase auth.
+    Return the email address that should receive ping-down alert emails.
 
-    Used to send alert emails.  Returns None on any error so the alert
-    endpoint never fails because of an email lookup problem.
+    Priority:
+      1. nm_profiles.alert_email  — user-configured alert address (Settings tab)
+      2. Supabase auth email       — account email (fallback)
+
+    Returns None on any error so the alert endpoint never fails because of
+    an email lookup problem.
     """
+    # ── 1. Check for a custom alert email in nm_profiles ─────────────────────
+    try:
+        client = _get_supabase()
+        result = await asyncio.to_thread(
+            lambda: client.table("nm_profiles")
+                          .select("alert_email")
+                          .eq("id", user_id)
+                          .single()
+                          .execute()
+        )
+        alert_email = result.data.get("alert_email") if result.data else None
+        if alert_email:
+            logger.debug("[EMAIL] Using custom alert_email for %s: %s", user_id, alert_email)
+            return alert_email
+    except Exception as exc:
+        logger.warning("[EMAIL] Could not fetch alert_email for %s: %s", user_id, exc)
+
+    # ── 2. Fall back to Supabase auth email ───────────────────────────────────
     try:
         client = _get_supabase()
         response = await asyncio.to_thread(client.auth.admin.get_user_by_id, user_id)
         return response.user.email if response and response.user else None
     except Exception as exc:
-        logger.warning("[EMAIL] Could not fetch user email for %s: %s", user_id, exc)
+        logger.warning("[EMAIL] Could not fetch auth email for %s: %s", user_id, exc)
         return None
 
 
@@ -189,7 +211,7 @@ async def ping_alert(
 
     # ── Send alert email inline (ping_down only) ─────────────────────────────
     if body.status == "down":
-        to_email  = await _get_user_email(ctx["user_id"])
+        to_email  = await _get_alert_email(ctx["user_id"])
         site_name = await _get_site_name(db, site_id)
         await send_ping_down_alert(
             to_email=to_email or "",

@@ -559,7 +559,6 @@ body.view-mode #navUser{display:none!important;}
       <li><a onclick="navToTab('alerts')">Alerts</a></li>
       <li><a onclick="navToTab('configs')">Configs</a></li>
       <li><a href="/netmonitor/install-pi">Pi/Windows/Mac Guide</a></li>
-      <li><a href="/netmonitor/settings">Settings</a></li>
       <li><a href="/netmonitor/upgrade">Updates</a></li>
     </ul>
     <div class="nav-spacer"></div>
@@ -872,6 +871,67 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   <div class="tab-pane" id="pane-settings">
     <div class="settings-pane">
 
+      <!-- Agent API Key -->
+      <div class="settings-section">
+        <div class="settings-heading">Agent API Key</div>
+        <div class="settings-desc">
+          Your monitoring agent uses this key to authenticate with SpanGate.
+          Paste it into <code style="font-family:var(--mono);color:var(--accent);font-size:0.8rem;">config.yaml</code> on your Pi, Mac, or Windows machine.
+          The full key is only shown immediately after generation — copy it before navigating away.
+        </div>
+
+        <!-- Key row -->
+        <div style="display:flex;align-items:center;gap:10px;background:var(--surface);
+                    border:0.5px solid var(--border-bright);border-radius:10px;
+                    padding:0.65rem 1rem;margin-bottom:1rem;">
+          <span id="settingsKeyDisplay" style="font-family:var(--mono);font-size:0.88rem;
+                color:var(--accent);flex:1;overflow:hidden;text-overflow:ellipsis;
+                white-space:nowrap;">—</span>
+          <button id="settingsCopyKeyBtn" class="btn btn-ghost"
+                  onclick="settingsCopyKey(this)"
+                  style="font-size:0.75rem;padding:5px 14px;border-radius:6px;
+                         flex-shrink:0;display:none;">Copy</button>
+        </div>
+
+        <!-- No key yet -->
+        <div id="settingsNoKey" style="display:none;">
+          <button class="btn btn-outline" onclick="settingsGenerateKey()"
+                  style="font-size:0.82rem;">Generate API Key</button>
+        </div>
+
+        <!-- Key exists -->
+        <div id="settingsHasKey" style="display:none;">
+          <button class="btn btn-ghost" onclick="settingsConfirmRegen()"
+                  style="font-size:0.8rem;padding:7px 16px;color:#f87171;
+                         border-color:rgba(248,113,113,0.3);">↻ Regenerate Key</button>
+          <div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-dim);line-height:1.5;">
+            Regenerating immediately invalidates the old key. Update <code style="font-family:var(--mono);">config.yaml</code> on your agent device before restarting.
+          </div>
+        </div>
+
+        <div id="settingsKeyMsg" style="margin-top:0.75rem;font-size:0.78rem;
+             line-height:1.55;display:none;"></div>
+      </div>
+
+      <!-- Alert Notifications -->
+      <div class="settings-section">
+        <div class="settings-heading">Alert Notifications</div>
+        <div class="settings-desc">
+          When a device goes offline, an alert email is sent to this address.
+          Leave blank to use your account email
+          (<span id="settingsAcctEmail" style="font-family:var(--mono);font-size:0.78rem;color:var(--text-muted);"></span>).
+        </div>
+        <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;flex-wrap:wrap;">
+          <input id="alertEmailInput" type="email" class="dm-input"
+                 placeholder="helpdesk@yourschool.org"
+                 style="flex:1;min-width:200px;max-width:340px;" />
+          <button class="btn btn-outline" onclick="saveAlertEmail()" style="font-size:0.82rem;padding:9px 18px;white-space:nowrap;">
+            Save
+          </button>
+        </div>
+        <div id="alertEmailMsg" style="margin-top:0.6rem;font-size:0.78rem;display:none;"></div>
+      </div>
+
       <!-- View Link -->
       <div class="settings-section">
         <div class="settings-heading">View Link</div>
@@ -1143,6 +1203,8 @@ let deviceConfigs  = [];
 let expandedDevice = null;
 let editingDeviceId = null;
 let apiKey         = null;
+let accountEmail   = '';
+let accountUserId  = null;
 let currentStep    = 1;
 let activeTab      = 'devices';
 let alertSubTab    = 'active';
@@ -1210,10 +1272,14 @@ async function initApp() {
   if (!user) return;
 
   // Show user email + sign-out in nav
+  accountEmail  = user.email || '';
+  accountUserId = user.id    || null;
   const nu = document.getElementById('navUser');
   const ns = document.getElementById('navSignOut');
   if (nu) nu.textContent = user.email;
   if (ns) ns.style.display = '';
+  const sae = document.getElementById('settingsAcctEmail');
+  if (sae) sae.textContent = accountEmail;
 
   // Load API key from Supabase profiles table
   if (db) {
@@ -1243,6 +1309,12 @@ async function determineState() {
   // Backend data loads in the background; failures show a banner, not onboarding.
   showDashboard(false, null);
   startLiveRefresh();
+
+  // If arriving via redirect from old /netmonitor/settings page, open Settings tab
+  if (window.location.hash === '#settings') {
+    switchTab('settings');
+    history.replaceState(null, '', window.location.pathname);
+  }
 
   const headers = { 'Authorization': `Bearer ${apiKey}` };
 
@@ -1297,8 +1369,8 @@ function showNoKeyBanner() {
   const b = document.getElementById('mockBanner');
   if (b) {
     b.innerHTML = `<span>No API key found.</span>
-      <a href="/netmonitor/settings" style="color:var(--accent);text-decoration:none;margin-left:8px;">
-        Go to Settings to generate one →
+      <a onclick="showDashboard(false,null);switchTab('settings');" style="color:var(--accent);text-decoration:none;margin-left:8px;cursor:pointer;">
+        Open Settings to generate one →
       </a>`;
     b.style.display = 'flex';
   }
@@ -1672,7 +1744,11 @@ function switchTab(tab) {
     if (pane) pane.className = 'tab-pane' + (t === tab ? ' active' : '');
     if (btn)  btn.className  = 'main-tab'  + (t === tab ? ' active' : '');
   });
-  if (tab === 'settings') loadShareTokenStatus();
+  if (tab === 'settings') {
+    _renderSettingsKey(apiKey);
+    loadShareTokenStatus();
+    loadAlertEmailSetting();
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3026,6 +3102,150 @@ async function _fetchShareData(token) {
     showBackendBanner('Could not load share data — check your connection');
     return false;
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS — API KEY
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _generateApiKeyVal() {
+  const arr = new Uint8Array(20);
+  crypto.getRandomValues(arr);
+  return 'spng_' + Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function _renderSettingsKey(key) {
+  const display  = document.getElementById('settingsKeyDisplay');
+  const copyBtn  = document.getElementById('settingsCopyKeyBtn');
+  const noKey    = document.getElementById('settingsNoKey');
+  const hasKey   = document.getElementById('settingsHasKey');
+  if (!display) return;
+
+  if (key) {
+    display.textContent  = key.length > 12 ? key.substring(0, 12) + '••••••••••••' : key;
+    display.style.color  = 'var(--accent)';
+    copyBtn.style.display = '';
+    noKey.style.display   = 'none';
+    hasKey.style.display  = '';
+  } else {
+    display.textContent  = 'No key generated yet';
+    display.style.color  = 'var(--text-dim)';
+    copyBtn.style.display = 'none';
+    noKey.style.display   = '';
+    hasKey.style.display  = 'none';
+  }
+}
+
+function settingsCopyKey(btn) {
+  if (!apiKey) return;
+  navigator.clipboard.writeText(apiKey).catch(() => {});
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+
+function settingsConfirmRegen() {
+  if (!confirm(
+    'Regenerate your API key?\n\n' +
+    'This immediately invalidates the current key. ' +
+    'Your agent will stop reporting until you update config.yaml with the new key and restart the service.'
+  )) return;
+  settingsGenerateKey();
+}
+
+async function settingsGenerateKey() {
+  if (!db || !accountUserId) return;
+
+  const newKey = _generateApiKeyVal();
+
+  const { error } = await db
+    .from('nm_profiles')
+    .upsert({ id: accountUserId, api_key: newKey }, { onConflict: 'id' });
+
+  if (error) {
+    _showSettingsKeyMsg('Failed to save key: ' + error.message, false);
+    return;
+  }
+
+  // Update in-memory key and all display elements
+  apiKey = newKey;
+  injectApiKey(apiKey);
+
+  // Show full key temporarily (auto-copy to clipboard)
+  const display = document.getElementById('settingsKeyDisplay');
+  if (display) {
+    display.textContent = newKey;
+    display.style.color = 'var(--accent)';
+  }
+  document.getElementById('settingsCopyKeyBtn').style.display = '';
+  document.getElementById('settingsNoKey').style.display  = 'none';
+  document.getElementById('settingsHasKey').style.display = '';
+
+  navigator.clipboard.writeText(newKey).catch(() => {});
+  _showSettingsKeyMsg(
+    '✓ New key generated and copied to clipboard. Paste it into config.yaml on your agent device, then restart the agent service.',
+    true,
+    12000
+  );
+}
+
+function _showSettingsKeyMsg(msg, ok, ms = 6000) {
+  const el = document.getElementById('settingsKeyMsg');
+  if (!el) return;
+  el.textContent  = msg;
+  el.style.color  = ok ? 'var(--accent)' : '#f87171';
+  el.style.display = 'block';
+  if (ok) setTimeout(() => { el.style.display = 'none'; }, ms);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS — ALERT EMAIL
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadAlertEmailSetting() {
+  if (!apiKey) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/settings`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const input = document.getElementById('alertEmailInput');
+    if (input) input.value = data.alert_email || '';
+  } catch(e) { /* silent — input stays blank */ }
+}
+
+async function saveAlertEmail() {
+  if (!apiKey) return;
+  const input = document.getElementById('alertEmailInput');
+  const msg   = document.getElementById('alertEmailMsg');
+  if (!input || !msg) return;
+
+  const email = input.value.trim();
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/settings`, {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ alert_email: email }),
+    });
+
+    if (res.ok) {
+      msg.textContent  = email
+        ? `✓ Alerts will be sent to ${email}`
+        : `✓ Using account email (${accountEmail}) for alerts`;
+      msg.style.color  = 'var(--accent)';
+    } else {
+      const err        = await res.json().catch(() => ({}));
+      msg.textContent  = err.detail || 'Failed to save — check email format.';
+      msg.style.color  = '#f87171';
+    }
+  } catch(e) {
+    msg.textContent = 'Network error — try again.';
+    msg.style.color = '#f87171';
+  }
+
+  msg.style.display = 'block';
+  setTimeout(() => { msg.style.display = 'none'; }, 5000);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
