@@ -28,7 +28,7 @@ from sqlalchemy.orm import selectinload
 
 from auth import AuthContext, _get_supabase
 from database import get_db
-from email_service import send_ping_down_alert
+from email_service import send_ping_down_alert, send_ping_up_alert
 from models import AgentHeartbeat, Alert, Config, ConfigDiff, Device
 from schemas import AlertResponse, ConfigChange, PingAlert
 from state import update_device_status
@@ -178,6 +178,10 @@ async def ping_alert(
             )
             return {"ok": True, "alert_id": None, "suppressed": True}
 
+        # Capture the DOWN timestamp before update_device_status overwrites it.
+        # Used to calculate downtime for the UP recovery email.
+        went_down_at = device.last_status_change if body.status == "up" else None
+
         # Persist live status to DB so it survives serverless restarts
         await update_device_status(
             db=db,
@@ -209,10 +213,11 @@ async def ping_alert(
         site_id, body.hostname, body.ip, body.status.upper(),
     )
 
-    # ── Send alert email inline (ping_down only) ─────────────────────────────
+    # ── Send alert emails ────────────────────────────────────────────────────
+    to_email  = await _get_alert_email(ctx["user_id"])
+    site_name = await _get_site_name(db, site_id)
+
     if body.status == "down":
-        to_email  = await _get_alert_email(ctx["user_id"])
-        site_name = await _get_site_name(db, site_id)
         await send_ping_down_alert(
             to_email=to_email or "",
             site_name=site_name,
@@ -220,6 +225,16 @@ async def ping_alert(
             hostname=body.hostname,
             ip=body.ip,
             timestamp=body.timestamp,
+        )
+    elif body.status == "up":
+        await send_ping_up_alert(
+            to_email=to_email or "",
+            site_name=site_name,
+            site_id=site_id,
+            hostname=body.hostname,
+            ip=body.ip,
+            timestamp=body.timestamp,
+            went_down_at=went_down_at,
         )
 
     return {"ok": True, "alert_id": alert.id}

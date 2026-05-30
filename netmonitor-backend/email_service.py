@@ -44,7 +44,7 @@ _last_alert_email: dict[tuple[str, str], datetime] = {}
 
 
 def _should_send_alert(site_id: str, hostname: str) -> bool:
-    """Return True if enough time has passed since the last alert email."""
+    """Return True if enough time has passed since the last DOWN alert email."""
     key = (site_id, hostname)
     last = _last_alert_email.get(key)
     if last is None:
@@ -54,6 +54,27 @@ def _should_send_alert(site_id: str, hostname: str) -> bool:
 
 def _mark_alert_sent(site_id: str, hostname: str) -> None:
     _last_alert_email[(site_id, hostname)] = datetime.now(timezone.utc)
+
+
+def _has_down_alert(site_id: str, hostname: str) -> bool:
+    """Return True if a DOWN alert was sent for this device (UP email is warranted)."""
+    return (site_id, hostname) in _last_alert_email
+
+
+def _clear_down_alert(site_id: str, hostname: str) -> None:
+    """Remove the cooldown entry after sending a UP alert so the next DOWN fires fresh."""
+    _last_alert_email.pop((site_id, hostname), None)
+
+
+def _format_downtime(seconds: float) -> str:
+    """Human-readable downtime duration, e.g. '~14 minutes' or '~2 hours'."""
+    if seconds < 90:
+        return "less than a minute"
+    minutes = int(seconds / 60)
+    if minutes < 90:
+        return f"~{minutes} minute{'s' if minutes != 1 else ''}"
+    hours = round(minutes / 60, 1)
+    return f"~{hours} hour{'s' if hours != 1.0 else ''}"
 
 
 # ── HTML templates ────────────────────────────────────────────────────────────
@@ -85,6 +106,58 @@ def _ping_down_html(site_name: str, hostname: str, ip: str, ts: str) -> str:
             <tr>
               <td style="padding:10px 14px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;">Time</td>
               <td style="padding:10px 14px;font-size:13px;color:#e5e7eb;text-align:right;font-family:monospace;">{ts}</td>
+            </tr>
+          </table>
+
+          <a href="{DASHBOARD_URL}" style="display:inline-block;background:#00d4b8;color:#000000;font-size:13px;font-weight:600;text-decoration:none;padding:10px 20px;border-radius:7px;letter-spacing:-0.01em;">View Dashboard &#8594;</a>
+        </td></tr>
+
+        <!-- FOOTER -->
+        <tr><td style="padding:14px 28px;border-top:1px solid #1f2937;">
+          <p style="margin:0;font-size:11px;color:#4b5563;line-height:1.5;">
+            SpanGate Network Monitor &nbsp;·&nbsp;
+            <a href="{DASHBOARD_URL}" style="color:#4b5563;text-decoration:underline;">Dashboard</a>
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+
+def _ping_up_html(site_name: str, hostname: str, ip: str, ts: str, downtime: str) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0d1117;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#0d1117;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="540" cellpadding="0" cellspacing="0" role="presentation" style="max-width:540px;width:100%;background:#111827;border-radius:12px;overflow:hidden;border:1px solid #1f2937;">
+
+        <!-- STATUS BAR -->
+        <tr><td style="background:#14532d;padding:16px 28px;">
+          <span style="font-size:12px;font-weight:700;color:#86efac;letter-spacing:0.08em;text-transform:uppercase;">&#11044; Device Online</span>
+        </td></tr>
+
+        <!-- BODY -->
+        <tr><td style="padding:28px 28px 24px;">
+          <p style="margin:0 0 6px 0;font-size:20px;font-weight:700;color:#f9fafb;letter-spacing:-0.02em;">{hostname}</p>
+          <p style="margin:0 0 24px 0;font-size:13px;color:#6b7280;font-family:'JetBrains Mono',Consolas,monospace;">{ip}</p>
+
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-radius:8px;overflow:hidden;border:1px solid #1f2937;margin-bottom:24px;">
+            <tr style="border-bottom:1px solid #1f2937;">
+              <td style="padding:10px 14px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;width:90px;">Site</td>
+              <td style="padding:10px 14px;font-size:13px;color:#e5e7eb;text-align:right;">{site_name}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #1f2937;">
+              <td style="padding:10px 14px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;">Recovered</td>
+              <td style="padding:10px 14px;font-size:13px;color:#e5e7eb;text-align:right;font-family:monospace;">{ts}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;">Was down</td>
+              <td style="padding:10px 14px;font-size:13px;color:#86efac;text-align:right;">{downtime}</td>
             </tr>
           </table>
 
@@ -207,6 +280,64 @@ async def send_ping_down_alert(
         logger.info("[EMAIL] Ping-down alert sent to %s for %s/%s", to_email, site_id, hostname)
     except Exception as exc:
         logger.error("[EMAIL] Failed to send ping-down alert for %s/%s: %s", site_id, hostname, exc)
+
+
+async def send_ping_up_alert(
+    *,
+    to_email:   str,
+    site_name:  str,
+    site_id:    str,
+    hostname:   str,
+    ip:         str,
+    timestamp:  datetime,
+    went_down_at: datetime | None = None,
+) -> None:
+    """
+    Send a device-back-online alert email.
+
+    Only fires when a DOWN alert was previously sent for this device
+    (tracked via the in-process cooldown dict).  After sending, the
+    cooldown entry is cleared so the next DOWN event triggers fresh.
+
+    Args:
+        to_email:     Recipient address.
+        site_name:    Human-readable site label shown in the email.
+        site_id:      Used for cooldown key.
+        hostname:     Device hostname that came back online.
+        ip:           Device IP address.
+        timestamp:    Time the device came back up.
+        went_down_at: Time the device went down (for downtime calculation).
+    """
+    if not resend.api_key:
+        logger.debug("[EMAIL] RESEND_API_KEY not set — skipping UP alert for %s/%s", site_id, hostname)
+        return
+    if not to_email:
+        logger.debug("[EMAIL] No recipient email — skipping UP alert for %s/%s", site_id, hostname)
+        return
+    if not _has_down_alert(site_id, hostname):
+        logger.debug("[EMAIL] No prior DOWN alert for %s/%s — skipping UP email", site_id, hostname)
+        return
+
+    # Calculate downtime
+    if went_down_at and went_down_at.tzinfo is not None:
+        seconds  = (timestamp - went_down_at).total_seconds()
+        downtime = _format_downtime(max(seconds, 0))
+    else:
+        downtime = "unknown"
+
+    ts = timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
+    params: resend.Emails.SendParams = {
+        "from":    FROM_ALERTS,
+        "to":      [to_email],
+        "subject": f"✅ UP: {hostname} ({ip})",
+        "html":    _ping_up_html(site_name, hostname, ip, ts, downtime),
+    }
+    try:
+        await asyncio.to_thread(resend.Emails.send, params)
+        _clear_down_alert(site_id, hostname)   # pair fulfilled — reset for next DOWN
+        logger.info("[EMAIL] Ping-up alert sent to %s for %s/%s (down %s)", to_email, site_id, hostname, downtime)
+    except Exception as exc:
+        logger.error("[EMAIL] Failed to send ping-up alert for %s/%s: %s", site_id, hostname, exc)
 
 
 async def send_feedback_notification(
