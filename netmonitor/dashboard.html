@@ -2596,8 +2596,9 @@ function openImportModal() {
   document.getElementById('csvPreview').style.display  = 'none';
   document.getElementById('csvProgress').style.display = 'none';
   document.getElementById('csvResult').style.display   = 'none';
-  document.getElementById('csvImportBtn').disabled     = true;
-  document.getElementById('csvCancelBtn').textContent  = 'Cancel';
+  document.getElementById('csvImportBtn').disabled      = true;
+  document.getElementById('csvImportBtn').style.display = '';
+  document.getElementById('csvCancelBtn').textContent   = 'Cancel';
   document.getElementById('csvFileInput').value        = '';
   document.getElementById('csvModal').classList.add('open');
   document.addEventListener('keydown', _csvKey);
@@ -2763,78 +2764,77 @@ async function runCsvImport() {
   if (!valid.length) return;
 
   document.getElementById('csvImportBtn').disabled     = true;
+  document.getElementById('csvImportBtn').style.display = 'none';
   document.getElementById('csvProgress').style.display = '';
   const fill = document.getElementById('csvProgressFill');
   const lbl  = document.getElementById('csvProgressLbl');
 
   let added = 0, skipped = 0, failed = 0, planLimitMsg = null;
 
-  for (let i = 0; i < valid.length; i++) {
-    const r = valid[i];
-    fill.style.width = Math.round((i / valid.length) * 100) + '%';
-    lbl.textContent  = `Adding ${i + 1} of ${valid.length} — ${r.hostname}`;
+  try {
+    for (let i = 0; i < valid.length; i++) {
+      const r = valid[i];
+      fill.style.width = Math.round((i / valid.length) * 100) + '%';
+      lbl.textContent  = `Adding ${i + 1} of ${valid.length} — ${r.hostname}`;
 
-    const body = {
-      hostname:     r.hostname,
-      ip:           r.ip,
-      vendor:       r.vendor,
-      ssh_port:     r.ssh_port,
-      ping_enabled: r.ping_enabled,
-      // SSH backup is paid-only — silently strip it on free plan
-      ssh_enabled:  planInfo.plan === 'free' ? false : r.ssh_enabled,
-    };
-    if (r.ssh_username) body.ssh_username = r.ssh_username;
-    if (r.ssh_password) body.ssh_password = r.ssh_password;
-    if (r.group_name)   body.group_name   = r.group_name;
+      const plan = (planInfo && planInfo.plan) ? planInfo.plan : 'free';
+      const body = {
+        hostname:     r.hostname,
+        ip:           r.ip,
+        vendor:       r.vendor,
+        ssh_port:     r.ssh_port,
+        ping_enabled: r.ping_enabled,
+        ssh_enabled:  plan === 'free' ? false : r.ssh_enabled,
+      };
+      if (r.ssh_username) body.ssh_username = r.ssh_username;
+      if (r.ssh_password) body.ssh_password = r.ssh_password;
+      if (r.group_name)   body.group_name   = r.group_name;
 
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/device-configs`, {
-        method:  'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      });
-      if (res.status === 201) {
-        added++; r.status = 'imported';
-      } else if (res.status === 409) {
-        skipped++; r.status = 'skip';
-      } else if (res.status === 403) {
-        // Plan limit hit — all remaining rows will also fail; stop now
-        const errData = await res.json().catch(() => ({}));
-        planLimitMsg = errData.detail || 'Plan device limit reached.';
-        r.status = 'fail'; failed++;
-        for (let j = i + 1; j < valid.length; j++) { valid[j].status = 'fail'; failed++; }
-        break;
-      } else {
-        failed++; r.status = 'fail';
-      }
-    } catch(e) { failed++; r.status = 'fail'; }
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/device-configs`, {
+          method:  'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        });
+        if (res.status === 201) {
+          added++; r.status = 'imported';
+        } else if (res.status === 409) {
+          skipped++; r.status = 'skip';
+        } else if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          planLimitMsg = errData.detail || 'Plan device limit reached.';
+          r.status = 'fail'; failed++;
+          for (let j = i + 1; j < valid.length; j++) { valid[j].status = 'fail'; failed++; }
+          break;
+        } else {
+          failed++; r.status = 'fail';
+        }
+      } catch(e) { failed++; r.status = 'fail'; }
+    }
+
+    fill.style.width = '100%';
+    lbl.textContent  = 'Done';
+
+    const parts = [`${added} device${added !== 1 ? 's' : ''} added`];
+    if (skipped)      parts.push(`${skipped} already existed`);
+    if (failed && !planLimitMsg) parts.push(`${failed} failed`);
+    if (planLimitMsg) parts.push(`${failed} skipped — plan limit reached`);
+
+    const resultEl = document.getElementById('csvResult');
+    resultEl.className     = 'csv-result ' + (planLimitMsg || failed ? 'warn' : 'ok');
+    resultEl.style.display = '';
+    resultEl[planLimitMsg ? 'innerHTML' : 'textContent'] = planLimitMsg
+      ? `${esc(parts.join(' · '))}<br><span style="font-size:0.72rem;opacity:0.85;">${esc(planLimitMsg)}</span>`
+      : parts.join(' · ');
+
+  } finally {
+    // Always show Close and schedule auto-close regardless of what happened above
+    document.getElementById('csvCancelBtn').textContent = '✓ Close';
+    setTimeout(() => closeCsvModal(), 2500);
   }
-
-  fill.style.width = '100%';
-  lbl.textContent  = 'Done';
-
-  const parts = [`${added} device${added !== 1 ? 's' : ''} added`];
-  if (skipped)       parts.push(`${skipped} already existed`);
-  if (failed && !planLimitMsg) parts.push(`${failed} failed`);
-  if (planLimitMsg)  parts.push(`${failed} skipped — plan limit reached`);
-
-  const resultEl = document.getElementById('csvResult');
-  resultEl.className    = 'csv-result ' + (planLimitMsg ? 'warn' : failed ? 'warn' : 'ok');
-  resultEl.style.display = '';
-
-  if (planLimitMsg) {
-    resultEl.innerHTML = `${esc(parts.join(' · '))}<br><span style="font-size:0.72rem;opacity:0.85;">${esc(planLimitMsg)}</span>`;
-  } else {
-    resultEl.textContent = parts.join(' · ');
-  }
-
-  // Change Cancel → Close so user can always dismiss, and auto-close after a moment
-  document.getElementById('csvCancelBtn').textContent  = '✓ Close';
-  document.getElementById('csvImportBtn').style.display = 'none';
-  setTimeout(() => closeCsvModal(), (failed || planLimitMsg) ? 4000 : 1800);
 
   await _reloadDeviceConfigs();
-  try { renderDevices(); } catch(e) { /* don't block close on render error */ }
+  try { renderDevices(); } catch(e) {}
   _refreshPlanInfo();
 }
 </script>
