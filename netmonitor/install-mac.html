@@ -287,7 +287,7 @@
           </div>
           <code id="wzCmd">export SPNG_API_KEY="<span class="wp">paste key above</span>"
 export SPNG_SITE_NAME="<span class="wp">enter site name above</span>"
-curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash</code>
+curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash</code>
         </div>
       </div>
       <div class="callout tip">
@@ -408,7 +408,7 @@ function wzUpdate() {
   cmd.innerHTML =
     `export SPNG_API_KEY="${kHtml}"\n` +
     `export SPNG_SITE_NAME="${sHtml}"\n` +
-    `curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash`;
+    `curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash`;
 }
 function wzAuthToggle() {
   const checked = document.getElementById('wzAuthCheck').checked;
@@ -423,7 +423,7 @@ function wzCopy(btn) {
   if (!document.getElementById('wzAuthCheck').checked) return;
   const key  = document.getElementById('wzKey').value.trim()  || 'YOUR_API_KEY';
   const site = document.getElementById('wzSite').value.trim() || 'My Site';
-  const text = `export SPNG_API_KEY="${key}"\nexport SPNG_SITE_NAME="${site}"\ncurl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bash`;
+  const text = `export SPNG_API_KEY="${key}"\nexport SPNG_SITE_NAME="${site}"\ncurl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash`;
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = 'Copied!'; btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
