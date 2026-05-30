@@ -2827,12 +2827,12 @@ async function runCsvImport() {
     resultEl.textContent = parts.join(' · ');
   }
 
-  await _reloadDeviceConfigs();
-  renderDevices();
-  _refreshPlanInfo();
-
-  // Auto-close after import: 1.8s on a clean run, 4s if there are warnings/errors
+  // Schedule close BEFORE the potentially heavy reload/render so it always fires
   setTimeout(() => closeCsvModal(), (failed || planLimitMsg) ? 4000 : 1800);
+
+  await _reloadDeviceConfigs();
+  try { renderDevices(); } catch(e) { /* don't block close on render error */ }
+  _refreshPlanInfo();
 }
 </script>
 </body>
