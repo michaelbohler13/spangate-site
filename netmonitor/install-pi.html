@@ -459,10 +459,10 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</co
     <h2 class="section-head">Useful Commands</h2>
     <div class="code-block">
       <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-      <pre><code>docker logs -f spangate-agent          # view live agent logs
-cd ~/spangate-agent && docker compose down    # stop the agent
-cd ~/spangate-agent && docker compose up -d  # start the agent
-docker pull spangate/netmonitor-agent:latest  # update to latest version</code></pre>
+      <pre><code>docker logs -f spangate-agent                                          # view live agent logs
+cd ~/spangate-agent && docker compose down                             # stop the agent
+cd ~/spangate-agent && docker compose up -d                            # start the agent
+cd ~/spangate-agent && docker compose pull && docker compose up -d    # update to latest version</code></pre>
     </div>
   </div>
 
