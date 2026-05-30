@@ -20,7 +20,9 @@ from api_client import APIClient
 from pinger import PingLoop
 from ssh_puller import SSHPuller
 
-AGENT_VERSION = "1.0.0"
+# Read version from VERSION file (single source of truth — also used by Docker image tag)
+_version_file = Path(__file__).parent / "VERSION"
+AGENT_VERSION = _version_file.read_text(encoding="utf-8").strip() if _version_file.exists() else "1.0.0"
 HEARTBEAT_INTERVAL   = 300   # 5 minutes
 DEVICE_POLL_INTERVAL = 60    # 1 minute — how often to refresh devices from dashboard
 DEFAULT_CONFIG_PATH  = Path(__file__).parent / "config.yaml"

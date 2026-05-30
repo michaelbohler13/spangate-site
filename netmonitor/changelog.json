@@ -1,0 +1,25 @@
+{
+  "latest": "1.0.0",
+  "releases": [
+    {
+      "version": "1.0.0",
+      "date": "2026-05-30",
+      "label": "Initial Release",
+      "changes": {
+        "added": [
+          "ICMP ping monitoring for all configured devices — up/down status updates every 60 seconds",
+          "SSH config backup for Cisco IOS, Aruba, and generic SSH-capable devices",
+          "Agent heartbeat with CPU, RAM, and temperature metrics (Raspberry Pi temperature supported)",
+          "Automatic device list sync — agent fetches devices from the cloud, no manual re-entry needed after migration",
+          "Multi-group device organisation with CSV bulk import (up to 500 devices)",
+          "Alert history stored in the cloud — survives agent restarts and hardware changes",
+          "Docker image published to Docker Hub for Raspberry Pi arm64 and x86 amd64 platforms",
+          "Automated Docker image builds via GitHub Actions on every agent code change",
+          "Read-only share link — generate a view-only URL for teammates without a dashboard login"
+        ],
+        "fixed": [],
+        "changed": []
+      }
+    }
+  ]
+}

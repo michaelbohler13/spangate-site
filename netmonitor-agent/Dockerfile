@@ -30,7 +30,7 @@ RUN apt-get purge -y --auto-remove \
     gcc libssl-dev libffi-dev python3-dev cargo pkg-config \
     && rm -rf /var/lib/apt/lists/* /root/.cargo
 
-COPY agent.py agent_metrics.py api_client.py pinger.py ssh_puller.py ./
+COPY agent.py agent_metrics.py api_client.py pinger.py ssh_puller.py VERSION ./
 
 # config.yaml is bind-mounted at /config/config.yaml at runtime
 CMD ["python", "agent.py", "--config", "/config/config.yaml"]

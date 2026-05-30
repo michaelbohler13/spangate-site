@@ -144,6 +144,46 @@
   .faq-a.open{display:block;}
   .faq-a a{color:var(--accent);text-decoration:none;}
   .faq-a a:hover{text-decoration:underline;}
+
+  /* ── VERSION STATUS CARD ── */
+  .version-status{background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:14px;padding:1.5rem;margin-bottom:2rem;}
+  .version-status-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;}
+  .version-status-title{font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);font-family:var(--mono);}
+  .version-badge{font-size:0.72rem;font-weight:600;font-family:var(--mono);padding:3px 10px;border-radius:980px;border:0.5px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text-dim);}
+  .version-badge.up-to-date{background:rgba(0,212,184,0.12);color:var(--accent);border-color:rgba(0,212,184,0.3);}
+  .version-badge.update-available{background:rgba(255,189,46,0.12);color:#ffc107;border-color:rgba(255,189,46,0.3);}
+  .version-row{display:flex;align-items:center;gap:1rem;padding:0.5rem 0;border-bottom:0.5px solid var(--border);}
+  .version-row:last-child{border-bottom:none;}
+  .version-row-label{font-size:0.78rem;color:var(--text-muted);min-width:130px;flex-shrink:0;}
+  .version-row-val{font-size:0.85rem;font-family:var(--mono);color:var(--text);display:flex;align-items:center;gap:8px;}
+  .version-row-val a{color:var(--accent);text-decoration:none;font-family:var(--sans);font-size:0.78rem;}
+  .version-row-val a:hover{text-decoration:underline;}
+  .version-tag{font-size:0.75rem;font-weight:600;font-family:var(--mono);padding:2px 8px;border-radius:5px;background:rgba(0,212,184,0.08);color:var(--accent);border:0.5px solid rgba(0,212,184,0.22);}
+  .version-update-cmd{background:var(--bg2);border:0.5px solid rgba(255,189,46,0.25);border-radius:10px;overflow:hidden;margin-top:1rem;}
+  .version-update-cmd-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(255,189,46,0.04);border-bottom:0.5px solid rgba(255,189,46,0.15);}
+  .version-update-cmd-label{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#a07830;font-family:var(--mono);}
+  .version-update-cmd pre{padding:0.9rem 1.1rem;overflow-x:auto;margin:0;}
+  .version-update-cmd code{font-size:0.78rem;line-height:1.6;color:#cdd9e5;font-family:var(--mono);}
+
+  /* ── CHANGELOG ── */
+  .changelog-entry{margin-bottom:0.75rem;border:0.5px solid var(--border);border-radius:12px;overflow:hidden;}
+  .changelog-entry-head{display:flex;align-items:center;gap:10px;padding:0.85rem 1.1rem;background:var(--surface2);cursor:pointer;user-select:none;transition:background 0.15s;}
+  .changelog-entry-head:hover{background:var(--surface3);}
+  .changelog-ver{font-family:var(--mono);font-size:0.88rem;font-weight:600;color:var(--accent);}
+  .changelog-label{font-size:0.8rem;font-weight:500;color:var(--text);}
+  .changelog-date{font-size:0.72rem;font-family:var(--mono);color:var(--text-dim);margin-left:auto;}
+  .changelog-chevron{color:var(--text-dim);font-size:1rem;flex-shrink:0;transition:transform 0.2s;margin-left:6px;}
+  .changelog-chevron.open{transform:rotate(90deg);}
+  .changelog-entry-body{display:none;padding:1.1rem;border-top:0.5px solid var(--border);}
+  .changelog-entry-body.open{display:block;}
+  .changelog-section-title{font-size:0.62rem;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-dim);font-family:var(--mono);margin:0.85rem 0 0.45rem;}
+  .changelog-section-title:first-child{margin-top:0;}
+  .changelog-list{list-style:none;padding:0;display:flex;flex-direction:column;gap:5px;margin:0;}
+  .changelog-list li{font-size:0.82rem;color:var(--text-muted);line-height:1.55;padding-left:1.1rem;position:relative;}
+  .changelog-list li::before{content:'';position:absolute;left:0;top:0.55em;width:5px;height:5px;border-radius:50%;}
+  .changelog-list.cl-added li::before{background:var(--accent);}
+  .changelog-list.cl-fixed li::before{background:#ffc107;}
+  .changelog-list.cl-changed li::before{background:#8b949e;}
 </style>
 </head>
 <body>
@@ -188,6 +228,36 @@
     </div>
     <h1 class="guide-title">Upgrade &amp; Migration<br><span style="color:var(--accent);">Guide</span></h1>
     <p class="guide-subtitle">Moving to a bigger Pi, switching to Windows, or replacing a failed device? Select your platforms below and get step-by-step instructions — all on this page.</p>
+  </div>
+
+  <!-- VERSION STATUS -->
+  <div class="version-status">
+    <div class="version-status-header">
+      <span class="version-status-title">Agent Version</span>
+      <span class="version-badge" id="versionBadge">Checking…</span>
+    </div>
+    <div class="version-row">
+      <span class="version-row-label">Latest release</span>
+      <span class="version-row-val" id="vLatest"><span style="color:var(--text-dim);">—</span></span>
+    </div>
+    <div class="version-row">
+      <span class="version-row-label">Released</span>
+      <span class="version-row-val" style="font-family:var(--sans);font-size:0.82rem;color:var(--text-muted);" id="vDate">—</span>
+    </div>
+    <div class="version-row">
+      <span class="version-row-label">Your agent</span>
+      <span class="version-row-val" id="vCurrent"><a href="../login.html">Sign in to check</a></span>
+    </div>
+    <!-- shown only when an update is available -->
+    <div id="vUpdateCmd" style="display:none;">
+      <div class="version-update-cmd">
+        <div class="version-update-cmd-bar">
+          <span class="version-update-cmd-label">⚡ Update command — run on your Pi / agent device</span>
+          <button class="copy-btn" onclick="copyUpdateCmd(this)">Copy</button>
+        </div>
+        <pre class="version-update-cmd"><code>cd ~/spangate-agent && docker compose pull && docker compose up -d</code></pre>
+      </div>
+    </div>
   </div>
 
   <!-- KEY CALLOUT -->
@@ -395,6 +465,12 @@
       <div class="faq-q" onclick="toggleFaq(this)">I lost my API key — how do I find it?</div>
       <div class="faq-a">Go to <a href="/netmonitor/settings">Network Monitor → Settings</a>. Your API key is shown there and can be copied or regenerated. If you regenerate it, update the key on both old and new agents before stopping the old one.</div>
     </div>
+  </div>
+
+  <!-- CHANGELOG -->
+  <div id="changelogSection" style="display:none;margin-bottom:3rem;">
+    <h2 class="section-head">What's New</h2>
+    <div id="changelogList"></div>
   </div>
 
 </div><!-- /guide-page -->
@@ -621,6 +697,144 @@ function toggleFaq(el) {
     }
   } catch(e) {}
 })();
+</script>
+<script>
+/* ── Version status + changelog ── */
+
+const BACKEND = 'https://spangate-site-r81b.vercel.app';
+
+function _getApiKey() {
+  try { return localStorage.getItem('spangate_api_key') || null; } catch(e) { return null; }
+}
+
+function _fmtDate(iso) {
+  try {
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  } catch(e) { return iso; }
+}
+
+function _esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function loadVersionInfo() {
+  const badge    = document.getElementById('versionBadge');
+  const vLatest  = document.getElementById('vLatest');
+  const vDate    = document.getElementById('vDate');
+  const vCurrent = document.getElementById('vCurrent');
+
+  // ── 1. Fetch changelog.json (always, no auth needed) ──
+  let latestVersion = null;
+  let releases = [];
+  try {
+    const cl = await fetch('/netmonitor/changelog.json');
+    if (cl.ok) {
+      const data = await cl.json();
+      latestVersion = data.latest || null;
+      releases = data.releases || [];
+    }
+  } catch(e) {}
+
+  if (latestVersion) {
+    vLatest.innerHTML = `<span class="version-tag">v${_esc(latestVersion)}</span>`;
+    const rel = releases.find(r => r.version === latestVersion);
+    if (rel?.date) vDate.textContent = _fmtDate(rel.date);
+  } else {
+    vLatest.innerHTML = '<span style="color:var(--text-dim)">Unable to load</span>';
+  }
+
+  if (releases.length) renderChangelog(releases);
+
+  // ── 2. Check running agent version (requires API key) ──
+  const apiKey = _getApiKey();
+  if (!apiKey) {
+    badge.textContent = 'Sign in to check';
+    return; // leave badge as default, vCurrent shows sign-in link
+  }
+
+  try {
+    const res = await fetch(`${BACKEND}/api/v1/dashboard`, {
+      headers: { Authorization: `Bearer ${apiKey}` }
+    });
+    if (!res.ok) throw new Error(res.status);
+    const dash = await res.json();
+    const agentVer = dash.agent_version || null;
+
+    if (agentVer) {
+      vCurrent.innerHTML = `<span class="version-tag">v${_esc(agentVer)}</span>`;
+      if (latestVersion) {
+        if (agentVer === latestVersion) {
+          badge.textContent = '✓ Up to date';
+          badge.className   = 'version-badge up-to-date';
+        } else {
+          badge.textContent = '⚠ Update available';
+          badge.className   = 'version-badge update-available';
+          document.getElementById('vUpdateCmd').style.display = '';
+        }
+      } else {
+        badge.textContent = `v${_esc(agentVer)}`;
+      }
+    } else {
+      // Agent connected but never reported a version (pre-1.0 install)
+      vCurrent.innerHTML = '<span style="color:#ffc107;">Not reported — agent may be outdated</span>';
+      badge.textContent  = '⚠ Update recommended';
+      badge.className    = 'version-badge update-available';
+      document.getElementById('vUpdateCmd').style.display = '';
+    }
+  } catch(e) {
+    badge.textContent = 'Could not fetch';
+  }
+}
+
+function renderChangelog(releases) {
+  const section = document.getElementById('changelogSection');
+  const list    = document.getElementById('changelogList');
+  if (!section || !list) return;
+
+  list.innerHTML = releases.map((r, i) => {
+    const added   = r.changes?.added   || [];
+    const fixed   = r.changes?.fixed   || [];
+    const changed = r.changes?.changed || [];
+
+    const body = [
+      added.length   ? `<div class="changelog-section-title">Added</div><ul class="changelog-list cl-added">${added.map(x=>`<li>${_esc(x)}</li>`).join('')}</ul>`     : '',
+      fixed.length   ? `<div class="changelog-section-title">Fixed</div><ul class="changelog-list cl-fixed">${fixed.map(x=>`<li>${_esc(x)}</li>`).join('')}</ul>`     : '',
+      changed.length ? `<div class="changelog-section-title">Changed</div><ul class="changelog-list cl-changed">${changed.map(x=>`<li>${_esc(x)}</li>`).join('')}</ul>` : '',
+    ].join('');
+
+    const isFirst   = i === 0;
+    return `
+      <div class="changelog-entry">
+        <div class="changelog-entry-head" onclick="toggleChangelog(this)">
+          <span class="changelog-ver">v${_esc(r.version)}</span>
+          <span class="changelog-label">${_esc(r.label || '')}</span>
+          <span class="changelog-date">${_fmtDate(r.date)}</span>
+          <span class="changelog-chevron${isFirst ? ' open' : ''}">›</span>
+        </div>
+        <div class="changelog-entry-body${isFirst ? ' open' : ''}">${body}</div>
+      </div>`;
+  }).join('');
+
+  section.style.display = '';
+}
+
+function toggleChangelog(head) {
+  const body    = head.nextElementSibling;
+  const chevron = head.querySelector('.changelog-chevron');
+  const isOpen  = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (chevron) chevron.classList.toggle('open', !isOpen);
+}
+
+function copyUpdateCmd(btn) {
+  const cmd = 'cd ~/spangate-agent && docker compose pull && docker compose up -d';
+  navigator.clipboard.writeText(cmd).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => { btn.textContent = 'Failed'; setTimeout(() => btn.textContent = 'Copy', 2000); });
+}
+
+loadVersionInfo();
 </script>
 </body>
 </html>
