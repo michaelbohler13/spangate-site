@@ -871,6 +871,92 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   <div class="tab-pane" id="pane-settings">
     <div class="settings-pane">
 
+      <!-- Email Delivery -->
+      <div class="settings-section">
+        <div class="settings-heading">Email Delivery</div>
+        <div class="settings-desc">
+          Choose how ping-down and recovery alert emails are sent.
+        </div>
+
+        <!-- Provider radio buttons -->
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:1.25rem;">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+            <input type="radio" name="emailProvider" id="providerResend" value="resend"
+                   onchange="emailProviderChanged()"
+                   style="margin-top:3px;accent-color:var(--accent);flex-shrink:0;">
+            <div>
+              <div style="font-size:0.85rem;font-weight:500;color:var(--text);">SpanGate Mail</div>
+              <div style="font-size:0.75rem;color:var(--text-dim);margin-top:2px;line-height:1.5;">
+                Zero configuration — alerts send from alerts@spangate.com
+              </div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+            <input type="radio" name="emailProvider" id="providerSmtp" value="smtp"
+                   onchange="emailProviderChanged()"
+                   style="margin-top:3px;accent-color:var(--accent);flex-shrink:0;">
+            <div>
+              <div style="font-size:0.85rem;font-weight:500;color:var(--text);">Custom SMTP Relay</div>
+              <div style="font-size:0.75rem;color:var(--text-dim);margin-top:2px;line-height:1.5;">
+                Use your own mail server, Gmail, or Google Workspace
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <!-- SMTP fields — shown only when Custom SMTP is selected -->
+        <div id="smtpFields" style="display:none;border-top:0.5px solid var(--border);padding-top:1.25rem;margin-bottom:1rem;">
+          <div style="display:grid;grid-template-columns:1fr 90px;gap:10px;margin-bottom:10px;">
+            <div>
+              <label class="dm-label" for="smtpHost">SMTP Host</label>
+              <input id="smtpHost" class="dm-input" type="text"
+                     placeholder="smtp.gmail.com" autocomplete="off" />
+            </div>
+            <div>
+              <label class="dm-label" for="smtpPort">Port</label>
+              <input id="smtpPort" class="dm-input" type="number"
+                     value="587" min="1" max="65535" />
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label class="dm-label" for="smtpUser">Username</label>
+            <input id="smtpUser" class="dm-input" type="text"
+                   placeholder="you@gmail.com or you@yourschool.org" autocomplete="off" />
+          </div>
+          <div style="margin-bottom:10px;">
+            <label class="dm-label" for="smtpPassword">Password / App Password</label>
+            <input id="smtpPassword" class="dm-input" type="password"
+                   placeholder="Leave blank to keep current password"
+                   autocomplete="new-password" />
+          </div>
+          <div style="margin-bottom:1rem;">
+            <label class="dm-label" for="smtpFrom">
+              From Address
+              <span style="font-weight:400;color:var(--text-dim);">(optional — defaults to username)</span>
+            </label>
+            <input id="smtpFrom" class="dm-input" type="text"
+                   placeholder="monitoring@yourschool.org" autocomplete="off" />
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-dim);line-height:1.6;
+                      background:var(--surface);border:0.5px solid var(--border);
+                      border-radius:8px;padding:10px 12px;margin-bottom:1rem;">
+            💡 <strong style="color:var(--text-muted);">Gmail / Google Workspace:</strong>
+            Use an <strong style="color:var(--text-muted);">App Password</strong>, not your regular password —
+            Google Account → Security → 2-Step Verification → App Passwords.
+            Port 587 (STARTTLS) or 465 (SSL).
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-outline" onclick="saveEmailDelivery()"
+                  style="font-size:0.82rem;padding:9px 18px;">Save</button>
+          <button class="btn btn-ghost" id="testEmailBtn" onclick="sendTestEmail()"
+                  style="font-size:0.82rem;padding:9px 18px;">Send Test Email</button>
+        </div>
+        <div id="emailDeliveryMsg" style="margin-top:0.6rem;font-size:0.78rem;
+             line-height:1.55;display:none;"></div>
+      </div>
+
       <!-- Alert Notifications -->
       <div class="settings-section">
         <div class="settings-heading">Alert Notifications</div>
@@ -1748,6 +1834,7 @@ function switchTab(tab) {
     _renderSettingsKey(apiKey);
     loadShareTokenStatus();
     loadAlertEmailSetting();
+    loadEmailDelivery();
   }
 }
 
@@ -3195,6 +3282,121 @@ function _showSettingsKeyMsg(msg, ok, ms = 6000) {
   el.style.color  = ok ? 'var(--accent)' : '#f87171';
   el.style.display = 'block';
   if (ok) setTimeout(() => { el.style.display = 'none'; }, ms);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS — EMAIL DELIVERY (Resend vs SMTP relay)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadEmailDelivery() {
+  if (!apiKey) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/settings`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    // Set provider radio
+    const provider = d.email_provider || 'resend';
+    const radio = document.getElementById(provider === 'smtp' ? 'providerSmtp' : 'providerResend');
+    if (radio) radio.checked = true;
+
+    // Populate SMTP fields
+    if (d.smtp_host) document.getElementById('smtpHost').value = d.smtp_host;
+    if (d.smtp_port) document.getElementById('smtpPort').value = d.smtp_port;
+    if (d.smtp_user) document.getElementById('smtpUser').value = d.smtp_user;
+    if (d.smtp_from) document.getElementById('smtpFrom').value = d.smtp_from;
+    if (d.smtp_password_set) {
+      document.getElementById('smtpPassword').placeholder =
+        '•••••••••••••••• (saved — enter new to change)';
+    }
+
+    emailProviderChanged();
+  } catch(e) { /* silent */ }
+}
+
+function emailProviderChanged() {
+  const isSmtp = document.getElementById('providerSmtp')?.checked;
+  const fields  = document.getElementById('smtpFields');
+  if (fields) fields.style.display = isSmtp ? '' : 'none';
+}
+
+async function saveEmailDelivery() {
+  if (!apiKey) return;
+  const isSmtp = document.getElementById('providerSmtp')?.checked;
+  const msg    = document.getElementById('emailDeliveryMsg');
+
+  const body = { email_provider: isSmtp ? 'smtp' : 'resend' };
+
+  if (isSmtp) {
+    body.smtp_host = document.getElementById('smtpHost').value.trim();
+    body.smtp_port = parseInt(document.getElementById('smtpPort').value) || 587;
+    body.smtp_user = document.getElementById('smtpUser').value.trim();
+    body.smtp_from = document.getElementById('smtpFrom').value.trim();
+    const pw = document.getElementById('smtpPassword').value;
+    if (pw) body.smtp_password = pw;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/settings`, {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    if (res.ok) {
+      msg.textContent = '✓ Email delivery settings saved.';
+      msg.style.color = 'var(--accent)';
+      // Clear password field and update placeholder after save
+      const pw = document.getElementById('smtpPassword');
+      if (pw.value) {
+        pw.value = '';
+        pw.placeholder = '•••••••••••••••• (saved — enter new to change)';
+      }
+    } else {
+      const err = await res.json().catch(() => ({}));
+      msg.textContent = err.detail || 'Failed to save settings.';
+      msg.style.color = '#f87171';
+    }
+  } catch(e) {
+    msg.textContent = 'Network error — try again.';
+    msg.style.color = '#f87171';
+  }
+  msg.style.display = 'block';
+  setTimeout(() => { msg.style.display = 'none'; }, 5000);
+}
+
+async function sendTestEmail() {
+  if (!apiKey) return;
+  const btn = document.getElementById('testEmailBtn');
+  const msg = document.getElementById('emailDeliveryMsg');
+  if (!btn || !msg) return;
+
+  btn.textContent = 'Sending…';
+  btn.disabled    = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/settings/test-email`, {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      msg.textContent = `✓ Test email sent to ${data.sent_to}. Check your inbox.`;
+      msg.style.color = 'var(--accent)';
+    } else {
+      msg.textContent = data.detail || 'Failed to send test email.';
+      msg.style.color = '#f87171';
+    }
+  } catch(e) {
+    msg.textContent = 'Network error — try again.';
+    msg.style.color = '#f87171';
+  }
+
+  btn.textContent = 'Send Test Email';
+  btn.disabled    = false;
+  msg.style.display = 'block';
+  setTimeout(() => { msg.style.display = 'none'; }, 10000);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

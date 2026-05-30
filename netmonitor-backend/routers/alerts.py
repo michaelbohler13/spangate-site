@@ -28,7 +28,7 @@ from sqlalchemy.orm import selectinload
 
 from auth import AuthContext, _get_supabase
 from database import get_db
-from email_service import send_ping_down_alert, send_ping_up_alert
+from email_service import SmtpConfig, send_ping_down_alert, send_ping_up_alert
 from models import AgentHeartbeat, Alert, Config, ConfigDiff, Device
 from schemas import AlertResponse, ConfigChange, PingAlert
 from state import update_device_status
@@ -39,42 +39,60 @@ router = APIRouter(tags=["Alerts"])
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-async def _get_alert_email(user_id: str) -> str | None:
+async def _get_alert_config(user_id: str) -> tuple[str | None, SmtpConfig | None]:
     """
-    Return the email address that should receive ping-down alert emails.
+    Return (to_email, smtp_config) for alert sending in one Supabase query.
 
-    Priority:
-      1. nm_profiles.alert_email  — user-configured alert address (Settings tab)
+    to_email priority:
+      1. nm_profiles.alert_email  — user-configured alert address
       2. Supabase auth email       — account email (fallback)
 
-    Returns None on any error so the alert endpoint never fails because of
-    an email lookup problem.
+    smtp_config:
+      SmtpConfig when email_provider == 'smtp' and smtp_host is set,
+      else None (use Resend).
+
+    Returns (None, None) on unrecoverable error — alert endpoint stays up.
     """
-    # ── 1. Check for a custom alert email in nm_profiles ─────────────────────
+    client = _get_supabase()
+    data: dict = {}
+
+    # ── One query: get alert_email + SMTP fields together ────────────────────
     try:
-        client = _get_supabase()
         result = await asyncio.to_thread(
             lambda: client.table("nm_profiles")
-                          .select("alert_email")
+                          .select(
+                              "alert_email,email_provider,"
+                              "smtp_host,smtp_port,smtp_user,smtp_password,smtp_from"
+                          )
                           .eq("id", user_id)
                           .single()
                           .execute()
         )
-        alert_email = result.data.get("alert_email") if result.data else None
-        if alert_email:
-            logger.debug("[EMAIL] Using custom alert_email for %s: %s", user_id, alert_email)
-            return alert_email
+        data = result.data or {}
     except Exception as exc:
-        logger.warning("[EMAIL] Could not fetch alert_email for %s: %s", user_id, exc)
+        logger.warning("[EMAIL] Could not fetch alert config for %s: %s", user_id, exc)
 
-    # ── 2. Fall back to Supabase auth email ───────────────────────────────────
-    try:
-        client = _get_supabase()
-        response = await asyncio.to_thread(client.auth.admin.get_user_by_id, user_id)
-        return response.user.email if response and response.user else None
-    except Exception as exc:
-        logger.warning("[EMAIL] Could not fetch auth email for %s: %s", user_id, exc)
-        return None
+    # ── Build SMTP config if applicable ───────────────────────────────────────
+    smtp_config: SmtpConfig | None = None
+    if data.get("email_provider") == "smtp" and data.get("smtp_host"):
+        smtp_config = SmtpConfig(
+            host=data["smtp_host"],
+            port=int(data.get("smtp_port") or 587),
+            user=data.get("smtp_user") or "",
+            password=data.get("smtp_password") or "",
+            from_addr=data.get("smtp_from") or data.get("smtp_user") or "",
+        )
+
+    # ── Resolve recipient address ─────────────────────────────────────────────
+    to_email: str | None = data.get("alert_email") or None
+    if not to_email:
+        try:
+            response = await asyncio.to_thread(client.auth.admin.get_user_by_id, user_id)
+            to_email = response.user.email if response and response.user else None
+        except Exception as exc:
+            logger.warning("[EMAIL] Could not fetch auth email for %s: %s", user_id, exc)
+
+    return to_email, smtp_config
 
 
 async def _get_site_name(db: AsyncSession, site_id: str) -> str:
@@ -214,8 +232,10 @@ async def ping_alert(
     )
 
     # ── Send alert emails ────────────────────────────────────────────────────
-    to_email  = await _get_alert_email(ctx["user_id"])
-    site_name = await _get_site_name(db, site_id)
+    (to_email, smtp_config), site_name = await asyncio.gather(
+        _get_alert_config(ctx["user_id"]),
+        _get_site_name(db, site_id),
+    )
 
     if body.status == "down":
         await send_ping_down_alert(
@@ -225,6 +245,7 @@ async def ping_alert(
             hostname=body.hostname,
             ip=body.ip,
             timestamp=body.timestamp,
+            smtp_config=smtp_config,
         )
     elif body.status == "up":
         await send_ping_up_alert(
@@ -235,6 +256,7 @@ async def ping_alert(
             ip=body.ip,
             timestamp=body.timestamp,
             went_down_at=went_down_at,
+            smtp_config=smtp_config,
         )
 
     return {"ok": True, "alert_id": alert.id}
