@@ -445,6 +445,10 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .dm-input:disabled{opacity:0.45;cursor:not-allowed;}
 .pw-wrap{position:relative;}
 .pw-wrap .dm-input{padding-right:36px;}
+.btn-clear-creds{background:none;border:none;cursor:pointer;font-size:0.72rem;
+  color:var(--text-dim);padding:0;text-decoration:underline;text-underline-offset:2px;
+  transition:color 0.15s;}
+.btn-clear-creds:hover{color:#f87171;}
 .pw-eye{position:absolute;right:9px;top:50%;transform:translateY(-50%);
   background:none;border:none;cursor:pointer;color:var(--text-dim);padding:3px;
   line-height:0;transition:color 0.15s;flex-shrink:0;}
@@ -1254,6 +1258,12 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
             <input id="dmSshPassword" class="dm-input" type="password" placeholder="optional" autocomplete="new-password" />
             <button type="button" class="pw-eye" onclick="togglePwEye('dmSshPassword',this)" tabindex="-1" aria-label="Show password"><!--eye--></button>
           </div>
+        </div>
+        <!-- Edit mode only — clears per-device creds so agent falls back to site default -->
+        <div id="dmClearCredsRow" style="display:none;grid-column:1/-1;margin-top:-4px;">
+          <button type="button" class="btn-clear-creds" onclick="clearDeviceSshCreds()">
+            ✕ Clear per-device credentials and use site default
+          </button>
         </div>
       </div>
       <div class="dm-field" style="grid-column:1/-1;margin-bottom:0.85rem;">
@@ -2667,7 +2677,9 @@ function openAddDevice() {
   document.getElementById('dmPingEnabled').checked     = true;
   document.getElementById('dmSshEnabled').checked      = false;
   document.getElementById('dmError').textContent       = '';
+  document.getElementById('dmError').style.color       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Add Device';
+  document.getElementById('dmClearCredsRow').style.display = 'none';
   _resetSshTest();
   _applyDmPlanGating();
   dmVendorChange();
@@ -2695,7 +2707,10 @@ function openEditDevice(id, event) {
   document.getElementById('dmPingEnabled').checked     = cfg.ping_enabled !== false;
   document.getElementById('dmSshEnabled').checked      = cfg.ssh_enabled  === true;
   document.getElementById('dmError').textContent       = '';
+  document.getElementById('dmError').style.color       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Save Changes';
+  // Show clear-creds link only when this device has per-device credentials saved
+  document.getElementById('dmClearCredsRow').style.display = cfg.ssh_username ? '' : 'none';
   _resetSshTest();
   _applyDmPlanGating();
   dmVendorChange();
@@ -2703,6 +2718,43 @@ function openEditDevice(id, event) {
   document.getElementById('deviceModal').classList.add('open');
   document.addEventListener('keydown', _dmKey);
   setTimeout(() => document.getElementById('dmIp').focus(), 60);
+}
+
+async function clearDeviceSshCreds() {
+  if (!editingDeviceId || !apiKey) return;
+  const err = document.getElementById('dmError');
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/device-configs/${editingDeviceId}`, {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ ssh_username: null, ssh_password: null }),
+    });
+
+    if (res.ok) {
+      // Update local cache
+      const cfg = deviceConfigs.find(c => c.id === editingDeviceId);
+      if (cfg) cfg.ssh_username = null;
+
+      // Reset fields to show "using site default" state
+      document.getElementById('dmSshUsername').value       = '';
+      document.getElementById('dmSshUsername').placeholder = 'using site default';
+      document.getElementById('dmSshPassword').value       = '';
+      document.getElementById('dmSshPassword').placeholder = 'using site default';
+
+      // Hide the clear button — nothing left to clear
+      document.getElementById('dmClearCredsRow').style.display = 'none';
+
+      err.textContent  = '✓ Per-device credentials cleared — agent will use the site default.';
+      err.style.color  = 'var(--accent)';
+    } else {
+      err.textContent = 'Failed to clear credentials — try again.';
+      err.style.color = '#f87171';
+    }
+  } catch(e) {
+    err.textContent = 'Network error — try again.';
+    err.style.color = '#f87171';
+  }
 }
 
 function closeDeviceModal() {
