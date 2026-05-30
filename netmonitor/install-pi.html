@@ -313,6 +313,7 @@
         <div class="callout-text">
           In the <strong>General</strong> tab: set hostname to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate-monitor</code>, username to <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">spangate</code>, choose a strong password, and configure Wi-Fi if not using Ethernet.<br>
           In the <strong>Services</strong> tab: enable SSH and select <em>Use password authentication</em>.<br>
+          In the <strong>Remote Access</strong> tab: check <strong>Enable Raspberry Pi Connect</strong> — this lets you access a terminal from any browser without needing an IP address (recommended).<br>
           Click <strong>Save</strong>, then <strong>Yes</strong> to apply.
         </div>
       </div>
@@ -323,56 +324,61 @@
     </div>
   </div>
 
-  <!-- TIP: Raspberry Pi Connect -->
-  <div class="callout tip" style="margin:0 0 1.5rem;">
-    <span class="callout-icon">🌐</span>
-    <div class="callout-text">
-      <strong>Using Raspberry Pi Connect?</strong>
-      If you don't want to use SSH or your Pi isn't on the same network,
-      <a href="https://connect.raspberrypi.com/" target="_blank" rel="noopener" style="color:var(--accent);">Raspberry Pi Connect</a>
-      gives you remote terminal access through a browser — no IP address needed.
-      Enable it in the Imager advanced options, or install it later with
-      <code style="font-family:var(--mono);font-size:0.8em;background:rgba(0,212,184,0.08);padding:1px 5px;border-radius:4px;">sudo apt install rpi-connect</code>.
-      Once set up, use the Connect terminal anywhere instead of SSH for Step 2 onwards.
-      If you can already connect to your Pi, <a href="#step-3" style="color:var(--accent);">skip straight to Step 03</a>.
-    </div>
-  </div>
-
   <!-- STEP 2 -->
   <div class="guide-step" id="step-2">
     <div class="step-head">
       <div class="step-badge">02</div>
       <div class="step-info">
         <div class="step-title">Connect to Your Pi</div>
-        <div class="step-desc">Give the Pi 60 seconds to boot, then SSH in. Find your Pi's IP address using one of the methods below.</div>
+        <div class="step-desc">Give the Pi 60 seconds to boot. Use Raspberry Pi Connect for the easiest experience, or go old school with SSH.</div>
       </div>
     </div>
     <div class="step-body">
 
-      <p><strong>Option A — Try hostname first</strong> (works on most home networks):</p>
+      <!-- Option A: Pi Connect -->
+      <p><strong>Option A — Raspberry Pi Connect</strong> <span style="font-size:0.72rem;background:rgba(0,212,184,0.1);color:var(--accent);border:0.5px solid rgba(0,212,184,0.3);border-radius:4px;padding:1px 7px;font-weight:600;letter-spacing:0.03em;vertical-align:middle;">RECOMMENDED</span><br>
+      Browser-based terminal — no SSH client, no IP address, works from anywhere.</p>
+      <ol>
+        <li>If you checked <strong>Enable Raspberry Pi Connect</strong> in Imager (Step 1), your Pi is already set up. If not, SSH in first and run:<br>
+          <div class="code-block" style="margin-top:0.5rem;">
+            <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre><code>sudo apt install -y rpi-connect && rpi-connect signin</code></pre>
+          </div>
+        </li>
+        <li>Visit <a href="https://connect.raspberrypi.com/" target="_blank" rel="noopener"><strong>connect.raspberrypi.com</strong></a> — sign in with your free Raspberry Pi account (or create one)</li>
+        <li>Your Pi will appear as <strong>spangate-monitor</strong> — click it then choose <strong>Remote Shell</strong></li>
+        <li>A terminal opens in your browser — you're in. <a href="#step-3" style="color:var(--accent);font-weight:600;">Skip to Step 3 →</a></li>
+      </ol>
+
+      <hr style="border:none;border-top:0.5px solid var(--border);margin:1.5rem 0;">
+
+      <!-- Old school SSH -->
+      <p><strong>Prefer SSH? Pick one of the options below:</strong></p>
+
+      <p><strong>Option B — Try hostname first</strong> (works on most home networks):</p>
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code>ssh spangate@spangate-monitor.local</code></pre>
       </div>
 
-      <p><strong>Option B — Find the IP via your router</strong> (most reliable):<br>
+      <p><strong>Option C — Find the IP via your router</strong> (most reliable):<br>
       Log into your router admin page (usually <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">192.168.1.1</code> or <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">192.168.0.1</code>) and look under <strong>DHCP Clients</strong> or <strong>Connected Devices</strong> for <strong>spangate-monitor</strong>. Then SSH using the IP shown:</p>
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code>ssh spangate@192.168.1.XXX</code></pre>
       </div>
 
-      <p><strong>Option C — Scan for the Pi on Windows</strong>:<br>
+      <p><strong>Option D — Scan for the Pi on Windows</strong>:<br>
       Open <strong>Command Prompt</strong> and run:</p>
       <div class="code-block">
         <div class="code-bar"><span class="code-lang">cmd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
         <pre><code>arp -a</code></pre>
       </div>
-      <p>Look for a device with hostname <strong>spangate-monitor</strong> or a Raspberry Pi MAC address starting with <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">b8-27-eb</code>, <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">dc-a6-32</code>, or <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">e4-5f-01</code>. Alternatively, download <a href="https://www.advanced-ip-scanner.com/" target="_blank" rel="noopener" style="color:var(--accent);">Advanced IP Scanner</a> (free) — it lists every device on your network with its IP.</p>
+      <p>Look for a device with hostname <strong>spangate-monitor</strong> or a Raspberry Pi MAC address starting with <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">b8-27-eb</code>, <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">dc-a6-32</code>, or <code style="font-family:var(--mono);font-size:0.82em;background:var(--surface2);padding:1px 5px;border-radius:4px;">e4-5f-01</code>. Or download <a href="https://www.advanced-ip-scanner.com/" target="_blank" rel="noopener" style="color:var(--accent);">Advanced IP Scanner</a> (free) — it lists every device on your network.</p>
 
       <div class="callout tip">
         <span class="callout-icon">💡</span>
-        <div class="callout-text">First time connecting? Your terminal will ask <em>"Are you sure you want to continue connecting?"</em> — type <strong>yes</strong> and press Enter. This is normal and only happens once.</div>
+        <div class="callout-text">First time connecting via SSH? Your terminal will ask <em>"Are you sure you want to continue connecting?"</em> — type <strong>yes</strong> and press Enter. This is normal and only happens once.</div>
       </div>
 
     </div>
