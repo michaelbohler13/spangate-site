@@ -871,48 +871,6 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   <div class="tab-pane" id="pane-settings">
     <div class="settings-pane">
 
-      <!-- Agent API Key -->
-      <div class="settings-section">
-        <div class="settings-heading">Agent API Key</div>
-        <div class="settings-desc">
-          Your monitoring agent uses this key to authenticate with SpanGate.
-          Paste it into <code style="font-family:var(--mono);color:var(--accent);font-size:0.8rem;">config.yaml</code> on your Pi, Mac, or Windows machine.
-          The full key is only shown immediately after generation — copy it before navigating away.
-        </div>
-
-        <!-- Key row -->
-        <div style="display:flex;align-items:center;gap:10px;background:var(--surface);
-                    border:0.5px solid var(--border-bright);border-radius:10px;
-                    padding:0.65rem 1rem;margin-bottom:1rem;">
-          <span id="settingsKeyDisplay" style="font-family:var(--mono);font-size:0.88rem;
-                color:var(--accent);flex:1;overflow:hidden;text-overflow:ellipsis;
-                white-space:nowrap;">—</span>
-          <button id="settingsCopyKeyBtn" class="btn btn-ghost"
-                  onclick="settingsCopyKey(this)"
-                  style="font-size:0.75rem;padding:5px 14px;border-radius:6px;
-                         flex-shrink:0;display:none;">Copy</button>
-        </div>
-
-        <!-- No key yet -->
-        <div id="settingsNoKey" style="display:none;">
-          <button class="btn btn-outline" onclick="settingsGenerateKey()"
-                  style="font-size:0.82rem;">Generate API Key</button>
-        </div>
-
-        <!-- Key exists -->
-        <div id="settingsHasKey" style="display:none;">
-          <button class="btn btn-ghost" onclick="settingsConfirmRegen()"
-                  style="font-size:0.8rem;padding:7px 16px;color:#f87171;
-                         border-color:rgba(248,113,113,0.3);">↻ Regenerate Key</button>
-          <div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-dim);line-height:1.5;">
-            Regenerating immediately invalidates the old key. Update <code style="font-family:var(--mono);">config.yaml</code> on your agent device before restarting.
-          </div>
-        </div>
-
-        <div id="settingsKeyMsg" style="margin-top:0.75rem;font-size:0.78rem;
-             line-height:1.55;display:none;"></div>
-      </div>
-
       <!-- Alert Notifications -->
       <div class="settings-section">
         <div class="settings-heading">Alert Notifications</div>
@@ -962,6 +920,48 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
             Regenerating creates a new link and immediately invalidates the old one.
           </div>
         </div>
+      </div>
+
+      <!-- Agent API Key -->
+      <div class="settings-section">
+        <div class="settings-heading">Agent API Key</div>
+        <div class="settings-desc">
+          Your monitoring agent uses this key to authenticate with SpanGate.
+          Paste it into <code style="font-family:var(--mono);color:var(--accent);font-size:0.8rem;">config.yaml</code> on your Pi, Mac, or Windows machine.
+          The full key is only shown immediately after generation — copy it before navigating away.
+        </div>
+
+        <!-- Key row -->
+        <div style="display:flex;align-items:center;gap:10px;background:var(--surface);
+                    border:0.5px solid var(--border-bright);border-radius:10px;
+                    padding:0.65rem 1rem;margin-bottom:1rem;">
+          <span id="settingsKeyDisplay" style="font-family:var(--mono);font-size:0.88rem;
+                color:var(--accent);flex:1;overflow:hidden;text-overflow:ellipsis;
+                white-space:nowrap;">—</span>
+          <button id="settingsCopyKeyBtn" class="btn btn-ghost"
+                  onclick="settingsCopyKey(this)"
+                  style="font-size:0.75rem;padding:5px 14px;border-radius:6px;
+                         flex-shrink:0;display:none;">Copy</button>
+        </div>
+
+        <!-- No key yet -->
+        <div id="settingsNoKey" style="display:none;">
+          <button class="btn btn-outline" onclick="settingsGenerateKey()"
+                  style="font-size:0.82rem;">Generate API Key</button>
+        </div>
+
+        <!-- Key exists -->
+        <div id="settingsHasKey" style="display:none;">
+          <button class="btn btn-ghost" onclick="settingsConfirmRegen()"
+                  style="font-size:0.8rem;padding:7px 16px;color:#f87171;
+                         border-color:rgba(248,113,113,0.3);">↻ Regenerate Key</button>
+          <div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-dim);line-height:1.5;">
+            Regenerating immediately invalidates the old key. Update <code style="font-family:var(--mono);">config.yaml</code> on your agent device before restarting.
+          </div>
+        </div>
+
+        <div id="settingsKeyMsg" style="margin-top:0.75rem;font-size:0.78rem;
+             line-height:1.55;display:none;"></div>
       </div>
 
     </div>
