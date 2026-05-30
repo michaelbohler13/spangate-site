@@ -2831,10 +2831,8 @@ async function runCsvImport() {
   renderDevices();
   _refreshPlanInfo();
 
-  // Auto-close on a clean import; leave open so user can review warnings/errors
-  if (!failed && !planLimitMsg) {
-    setTimeout(() => closeCsvModal(), 1800);
-  }
+  // Auto-close after import: 1.8s on a clean run, 4s if there are warnings/errors
+  setTimeout(() => closeCsvModal(), (failed || planLimitMsg) ? 4000 : 1800);
 }
 </script>
 </body>
