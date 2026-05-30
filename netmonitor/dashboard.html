@@ -1029,6 +1029,33 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         <div id="alertEmailMsg" style="margin-top:0.6rem;font-size:0.78rem;display:none;"></div>
       </div>
 
+      <!-- Default SSH Credentials -->
+      <div class="settings-section">
+        <div class="settings-heading">Default SSH Credentials</div>
+        <div class="settings-desc">
+          Site-wide SSH fallback — used when a device has no per-device credentials set.
+          Ideal for bulk imports where every device shares the same login.
+          Per-device credentials always take priority.
+        </div>
+        <div style="margin-bottom:10px;">
+          <label class="dm-label" for="defaultSshUser">Default SSH Username</label>
+          <input id="defaultSshUser" class="dm-input" type="text"
+                 placeholder="admin" autocomplete="off" />
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label class="dm-label" for="defaultSshPassword">Default SSH Password</label>
+          <input id="defaultSshPassword" class="dm-input" type="password"
+                 placeholder="Leave blank to keep current password"
+                 autocomplete="new-password" />
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-outline" onclick="saveDefaultSshCreds()"
+                  style="font-size:0.82rem;padding:9px 18px;">Save</button>
+        </div>
+        <div id="defaultSshMsg" style="margin-top:0.6rem;font-size:0.78rem;
+             line-height:1.55;display:none;"></div>
+      </div>
+
       <!-- View Link -->
       <div class="settings-section">
         <div class="settings-heading">View Link</div>
@@ -1938,6 +1965,7 @@ function switchTab(tab) {
     loadShareTokenStatus();
     loadAlertEmailSetting();
     loadEmailDelivery();
+    loadDefaultSshCreds();
   }
 }
 
@@ -3541,6 +3569,68 @@ async function saveAlertEmail() {
     msg.style.color = '#f87171';
   }
 
+  msg.style.display = 'block';
+  setTimeout(() => { msg.style.display = 'none'; }, 5000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS — DEFAULT SSH CREDENTIALS
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadDefaultSshCreds() {
+  if (!apiKey) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/settings`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    const userEl = document.getElementById('defaultSshUser');
+    const passEl = document.getElementById('defaultSshPassword');
+    if (userEl && d.default_ssh_user) userEl.value = d.default_ssh_user;
+    if (passEl && d.default_ssh_password_set) {
+      passEl.placeholder = '•••••••••••••••• (saved — enter new to change)';
+    }
+  } catch(e) { /* silent */ }
+}
+
+async function saveDefaultSshCreds() {
+  if (!apiKey) return;
+  const msg     = document.getElementById('defaultSshMsg');
+  const userEl  = document.getElementById('defaultSshUser');
+  const passEl  = document.getElementById('defaultSshPassword');
+  if (!msg || !userEl || !passEl) return;
+
+  const body = {
+    default_ssh_user: userEl.value.trim(),
+  };
+  const pw = passEl.value;
+  if (pw) body.default_ssh_password = pw;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/settings`, {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    if (res.ok) {
+      msg.textContent = '✓ Default SSH credentials saved.';
+      msg.style.color = 'var(--accent)';
+      // Clear password and update placeholder
+      if (passEl.value) {
+        passEl.value = '';
+        passEl.placeholder = '•••••••••••••••• (saved — enter new to change)';
+      }
+    } else {
+      const err = await res.json().catch(() => ({}));
+      msg.textContent = err.detail || 'Failed to save credentials.';
+      msg.style.color = '#f87171';
+    }
+  } catch(e) {
+    msg.textContent = 'Network error — try again.';
+    msg.style.color = '#f87171';
+  }
   msg.style.display = 'block';
   setTimeout(() => { msg.style.display = 'none'; }, 5000);
 }

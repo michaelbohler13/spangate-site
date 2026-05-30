@@ -140,3 +140,19 @@ create index if not exists ix_alerts_created_at
 -- 2026-05-28: manual backup request flag
 alter table device_configs
     add column if not exists backup_requested_at timestamptz default null;
+
+-- 2026-05-30: SMTP delivery + alert email settings on nm_profiles
+alter table nm_profiles
+    add column if not exists alert_email       text,
+    add column if not exists email_provider    text    default 'smtp',
+    add column if not exists smtp_host         text,
+    add column if not exists smtp_port         integer default 587,
+    add column if not exists smtp_user         text,
+    add column if not exists smtp_password     text,
+    add column if not exists smtp_from         text,
+    add column if not exists view_token        text    unique;
+
+-- 2026-05-30: Default SSH credentials — site-wide fallback for devices without per-device creds
+alter table nm_profiles
+    add column if not exists default_ssh_user     text,
+    add column if not exists default_ssh_password text;

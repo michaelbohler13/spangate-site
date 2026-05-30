@@ -62,13 +62,15 @@ class SettingsUpdate(BaseModel):
     Omit smtp_password to keep the current stored password.
     """
 
-    alert_email:    Optional[str] = None
-    email_provider: Optional[str] = None
-    smtp_host:      Optional[str] = None
-    smtp_port:      Optional[int] = None
-    smtp_user:      Optional[str] = None
-    smtp_password:  Optional[str] = None   # omit = keep existing; "" = clear
-    smtp_from:      Optional[str] = None
+    alert_email:         Optional[str] = None
+    email_provider:      Optional[str] = None
+    smtp_host:           Optional[str] = None
+    smtp_port:           Optional[int] = None
+    smtp_user:           Optional[str] = None
+    smtp_password:       Optional[str] = None   # omit = keep existing; "" = clear
+    smtp_from:           Optional[str] = None
+    default_ssh_user:    Optional[str] = None
+    default_ssh_password: Optional[str] = None  # omit = keep existing; "" = clear
 
     @field_validator("alert_email")
     @classmethod
@@ -101,7 +103,7 @@ class SettingsUpdate(BaseModel):
             raise ValueError("smtp_port must be between 1 and 65535")
         return v
 
-    @field_validator("smtp_host", "smtp_user", "smtp_from")
+    @field_validator("smtp_host", "smtp_user", "smtp_from", "default_ssh_user")
     @classmethod
     def strip_text(cls, v: Optional[str]) -> Optional[str]:
         return v.strip() if v is not None else None
@@ -123,7 +125,8 @@ async def get_settings(ctx: AuthContext) -> dict:
             client.table("nm_profiles")
             .select(
                 "alert_email,email_provider,"
-                "smtp_host,smtp_port,smtp_user,smtp_password,smtp_from"
+                "smtp_host,smtp_port,smtp_user,smtp_password,smtp_from,"
+                "default_ssh_user,default_ssh_password"
             )
             .eq("id", ctx["user_id"])
             .single()
@@ -135,13 +138,15 @@ async def get_settings(ctx: AuthContext) -> dict:
         data = {}
 
     return {
-        "alert_email":       data.get("alert_email") or "",
-        "email_provider":    data.get("email_provider") or "smtp",
-        "smtp_host":         data.get("smtp_host") or "",
-        "smtp_port":         data.get("smtp_port") or 587,
-        "smtp_user":         data.get("smtp_user") or "",
-        "smtp_password_set": bool(data.get("smtp_password")),
-        "smtp_from":         data.get("smtp_from") or "",
+        "alert_email":            data.get("alert_email") or "",
+        "email_provider":         data.get("email_provider") or "smtp",
+        "smtp_host":              data.get("smtp_host") or "",
+        "smtp_port":              data.get("smtp_port") or 587,
+        "smtp_user":              data.get("smtp_user") or "",
+        "smtp_password_set":      bool(data.get("smtp_password")),
+        "smtp_from":              data.get("smtp_from") or "",
+        "default_ssh_user":       data.get("default_ssh_user") or "",
+        "default_ssh_password_set": bool(data.get("default_ssh_password")),
     }
 
 
@@ -179,6 +184,12 @@ async def update_settings(body: SettingsUpdate, ctx: AuthContext) -> dict:
 
     if body.smtp_from is not None:
         updates["smtp_from"] = body.smtp_from or None
+
+    if body.default_ssh_user is not None:
+        updates["default_ssh_user"] = body.default_ssh_user or None
+
+    if body.default_ssh_password is not None:
+        updates["default_ssh_password"] = body.default_ssh_password or None
 
     if not updates:
         return {"ok": True}

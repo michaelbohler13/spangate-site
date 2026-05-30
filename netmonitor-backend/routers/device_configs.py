@@ -475,6 +475,10 @@ async def agent_device_list(
     The agent polls this endpoint every few minutes and updates its in-memory
     device list, so dashboard changes take effect without a restart.
 
+    SSH credentials: per-device values are used when set; otherwise the site
+    default credentials from nm_profiles are substituted automatically so
+    devices without individual credentials still get SSH access.
+
     Returns {"devices": [...], "count": N}
 
     NOTE: force_backup is included for backwards compatibility but
@@ -484,6 +488,27 @@ async def agent_device_list(
     a race where device-list polled first and erased the flag before
     backup_request_loop could see it, silently dropping "Backup Now" requests.
     """
+    from supabase import create_client
+    import os
+
+    # Fetch site-wide default SSH credentials (one call, cached inline)
+    default_ssh_user = ""
+    default_ssh_password = ""
+    try:
+        _sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+        prof = (
+            _sb.table("nm_profiles")
+            .select("default_ssh_user,default_ssh_password")
+            .eq("id", ctx["user_id"])
+            .single()
+            .execute()
+        )
+        if prof.data:
+            default_ssh_user     = prof.data.get("default_ssh_user") or ""
+            default_ssh_password = prof.data.get("default_ssh_password") or ""
+    except Exception as exc:
+        logger.warning("[DEVICE-LIST] Could not fetch default SSH creds: %s", exc)
+
     result = await db.execute(
         select(DeviceConfig)
         .where(DeviceConfig.site_id == ctx["site_id"])
@@ -501,13 +526,17 @@ async def agent_device_list(
             r.backup_requested_at
             and (now - r.backup_requested_at) < _BACKUP_REQUEST_TTL
         )
+        # Use per-device credentials when set; fall back to site defaults
+        ssh_user = r.ssh_username or default_ssh_user
+        ssh_pass = r.ssh_password or default_ssh_password
+
         devices.append({
             "hostname":     r.hostname,
             "ip":           r.ip,
             "vendor":       r.vendor,
             "device_type":  r.device_type,
-            "ssh_username": r.ssh_username or "",
-            "ssh_password": r.ssh_password or "",
+            "ssh_username": ssh_user,
+            "ssh_password": ssh_pass,
             "ssh_port":     r.ssh_port,
             "ping_enabled": r.ping_enabled,
             "ssh_enabled":  r.ssh_enabled,
