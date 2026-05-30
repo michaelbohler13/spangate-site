@@ -287,7 +287,7 @@
           </div>
           <code id="wzCmd">$env:SPNG_API_KEY = "<span class="wp">paste key above</span>"
 $env:SPNG_SITE_NAME = "<span class="wp">enter site name above</span>"
-irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex</code>
+irm https://spangate-site.vercel.app/netmonitor-agent/setup.ps1 | iex</code>
         </div>
       </div>
       <div class="callout tip">
@@ -413,7 +413,7 @@ function wzUpdate() {
   cmd.innerHTML =
     `$env:SPNG_API_KEY = "${kHtml}"\n` +
     `$env:SPNG_SITE_NAME = "${sHtml}"\n` +
-    `irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex`;
+    `irm https://spangate-site.vercel.app/netmonitor-agent/setup.ps1 | iex`;
 }
 function wzAuthToggle() {
   const checked = document.getElementById('wzAuthCheck').checked;
@@ -428,7 +428,7 @@ function wzCopy(btn) {
   if (!document.getElementById('wzAuthCheck').checked) return;
   const key  = document.getElementById('wzKey').value.trim()  || 'YOUR_API_KEY';
   const site = document.getElementById('wzSite').value.trim() || 'My Site';
-  const text = `$env:SPNG_API_KEY = "${key}"\n$env:SPNG_SITE_NAME = "${site}"\nirm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex`;
+  const text = `$env:SPNG_API_KEY = "${key}"\n$env:SPNG_SITE_NAME = "${site}"\nirm https://spangate-site.vercel.app/netmonitor-agent/setup.ps1 | iex`;
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = 'Copied!'; btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);

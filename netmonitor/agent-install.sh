@@ -6,7 +6,7 @@
 set -euo pipefail
 
 DEST="$HOME/spangate-agent/netmonitor-agent"
-BASE="https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent"
+BASE="https://spangate-site.vercel.app/netmonitor-agent"
 FILES="agent.py api_client.py pinger.py ssh_puller.py requirements.txt config.yaml"
 
 echo ""

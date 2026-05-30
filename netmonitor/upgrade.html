@@ -500,13 +500,13 @@ function upgWzUpdate() {
     cmd.innerHTML =
       `$env:SPNG_API_KEY = "${kHtml}"\n` +
       `$env:SPNG_SITE_NAME = "${sHtml}"\n` +
-      `irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex`;
+      `irm https://spangate-site.vercel.app/netmonitor-agent/setup.ps1 | iex`;
   } else {
     // pi or mac — same bash command
     cmd.innerHTML =
       `export SPNG_API_KEY="${kHtml}"\n` +
       `export SPNG_SITE_NAME="${sHtml}"\n` +
-      `curl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash`;
+      `curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash`;
   }
 }
 
@@ -526,9 +526,9 @@ function upgWzCopy(btn) {
   const site = document.getElementById('upgWzSite').value.trim() || 'My Site';
   let text;
   if (_currentToPlatform === 'windows') {
-    text = `$env:SPNG_API_KEY = "${key}"\n$env:SPNG_SITE_NAME = "${site}"\nirm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex`;
+    text = `$env:SPNG_API_KEY = "${key}"\n$env:SPNG_SITE_NAME = "${site}"\nirm https://spangate-site.vercel.app/netmonitor-agent/setup.ps1 | iex`;
   } else {
-    text = `export SPNG_API_KEY="${key}"\nexport SPNG_SITE_NAME="${site}"\ncurl -fsSL https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.sh | bash`;
+    text = `export SPNG_API_KEY="${key}"\nexport SPNG_SITE_NAME="${site}"\ncurl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash`;
   }
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = 'Copied!'; btn.classList.add('copied');

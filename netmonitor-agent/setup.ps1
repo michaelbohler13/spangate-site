@@ -3,7 +3,7 @@
 #
 # Run this ONE command in PowerShell (as Administrator):
 #
-#   irm https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent/setup.ps1 | iex
+#   irm https://spangate-site.vercel.app/netmonitor-agent/setup.ps1 | iex
 #
 # What this does:
 #   1. Checks that Docker Desktop is installed and running

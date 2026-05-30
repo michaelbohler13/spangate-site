@@ -5,7 +5,7 @@
 $ErrorActionPreference = "Stop"
 
 $dest = "$env:USERPROFILE\Documents\spangate-agent\netmonitor-agent"
-$base = "https://raw.githubusercontent.com/michaelbohler13/spangate-site/main/netmonitor-agent"
+$base = "https://spangate-site.vercel.app/netmonitor-agent"
 $files = @("agent.py","api_client.py","pinger.py","ssh_puller.py","requirements.txt","config.yaml")
 
 Write-Host ""
