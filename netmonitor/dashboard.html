@@ -525,6 +525,14 @@ body.view-mode #mt-configs{display:none!important;}
 body.view-mode #navSignOut{display:none!important;}
 body.view-mode #navUser{display:none!important;}
 
+/* ── Email setup banner ─────────────────────────────────────────────────── */
+#emailSetupBanner{display:none;padding:9px 2rem;background:rgba(245,166,35,0.08);
+  border-bottom:0.5px solid rgba(245,166,35,0.25);
+  font-size:0.78rem;color:#f5a623;align-items:center;gap:10px;}
+#emailSetupBanner a{color:#f5a623;font-weight:600;text-decoration:underline;
+  text-underline-offset:2px;cursor:pointer;}
+#emailSetupBanner a:hover{opacity:0.8;}
+
 /* ── Settings pane ──────────────────────────────────────────────────────── */
 .settings-pane{max-width:640px;padding:2rem 1.5rem;}
 .settings-section{background:var(--surface2);border:0.5px solid var(--border);
@@ -843,6 +851,12 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Email setup banner — shown when SMTP not yet configured -->
+  <div id="emailSetupBanner">
+    ⚠ Email alerts are not configured — device down alerts won't send until you set up email delivery.
+    &nbsp;<a onclick="switchTab('settings')">Set up now in ⚙ Settings →</a>
   </div>
 
   <!-- Tab bar -->
@@ -3385,6 +3399,10 @@ async function loadEmailDelivery() {
     if (!res.ok) return;
     const d = await res.json();
 
+    // Show/hide the email setup banner
+    const banner = document.getElementById('emailSetupBanner');
+    if (banner) banner.style.display = d.smtp_host ? 'none' : 'flex';
+
     // Populate SMTP fields
     if (d.smtp_host) document.getElementById('smtpHost').value = d.smtp_host;
     if (d.smtp_port) document.getElementById('smtpPort').value = d.smtp_port;
@@ -3420,6 +3438,9 @@ async function saveEmailDelivery() {
     if (res.ok) {
       msg.textContent = '✓ Email delivery settings saved.';
       msg.style.color = 'var(--accent)';
+      // Hide the setup banner once SMTP is saved
+      const banner = document.getElementById('emailSetupBanner');
+      if (banner) banner.style.display = 'none';
       // Clear password field and update placeholder after save
       const pw = document.getElementById('smtpPassword');
       if (pw.value) {
