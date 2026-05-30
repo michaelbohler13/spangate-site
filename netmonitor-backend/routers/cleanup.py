@@ -5,10 +5,16 @@ Scheduled data-retention cleanup endpoint.
 Routes
 ------
 GET /api/v1/admin/cleanup
-    Delete records older than 30 days from alerts, configs, and config_diffs.
+    Plan-aware purge of stale rows from alerts, configs, and config_diffs.
     Called by Vercel Cron (configured in vercel.json) — not authenticated
     by site API key, but protected by the CRON_SECRET header that Vercel
     injects automatically on cron invocations.
+
+Retention policy
+----------------
+Free plan   : alerts and configs older than 30 days deleted
+Paid plans  : alerts and configs older than 365 days deleted
+All plans   : configs trimmed to at most MAX_CONFIGS_PER_DEVICE per device
 """
 
 import logging
@@ -25,8 +31,10 @@ from models import Alert, Config, ConfigDiff
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Admin"])
 
-_RETENTION_DAYS      = 30
-_MAX_CONFIGS_PER_DEVICE = 4  # Keep at most this many recent backups per device
+# ── Retention constants ───────────────────────────────────────────────────────
+_RETENTION_DAYS_FREE    = 30    # alerts / configs kept for free-plan sites
+_RETENTION_DAYS_PAID    = 365   # alerts / configs kept for paid-plan sites
+_MAX_CONFIGS_PER_DEVICE = 10    # hard cap on stored backups per device (paid only)
 
 
 def _verify_cron_secret(authorization: str | None = Header(default=None)) -> None:
@@ -39,7 +47,6 @@ def _verify_cron_secret(authorization: str | None = Header(default=None)) -> Non
     """
     expected = os.environ.get("CRON_SECRET", "")
     if not expected:
-        # If no secret is configured, only allow in local dev (no-op guard)
         logger.warning("[CLEANUP] CRON_SECRET not set — skipping auth check")
         return
 
@@ -59,40 +66,76 @@ async def run_cleanup(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
-    Purge stale rows from time-series tables.
+    Purge stale rows from time-series tables using plan-aware retention.
 
-    Two passes:
-    1. Age-based: delete rows older than 30 days from alerts, configs,
-       and config_diffs.
-    2. Count-based: delete configs beyond the 4 most recent per device,
-       so a site that takes daily manual backups doesn't accumulate unbounded rows.
+    Three passes:
+    1. Global ceiling: delete rows older than 365 days for everyone.
+    2. Free-plan cap: additionally delete rows older than 30 days for
+       sites whose nm_profiles.plan is NULL or 'free'.
+    3. Count-based trim: delete configs beyond MAX_CONFIGS_PER_DEVICE most
+       recent per device, so daily manual backups don't accumulate unbounded.
 
-    The devices and agent_heartbeat tables are NOT purged (they are reference /
-    state data, not time-series logs).
+    The devices and agent_heartbeat tables are NOT purged (reference/state data).
 
     Returns:
-        Dict with counts of deleted rows per table.
+        Dict with counts of deleted rows per table and pass.
     """
-    cutoff = datetime.now(timezone.utc) - timedelta(days=_RETENTION_DAYS)
+    now           = datetime.now(timezone.utc)
+    cutoff_paid   = now - timedelta(days=_RETENTION_DAYS_PAID)
+    cutoff_free   = now - timedelta(days=_RETENTION_DAYS_FREE)
 
-    # ── Pass 1: age-based purge ───────────────────────────────────────────────
-    result_alerts = await db.execute(
-        delete(Alert).where(Alert.created_at < cutoff)
+    # ── Pass 1: global 365-day ceiling (all plans) ───────────────────────────
+    r_alerts_paid = await db.execute(
+        delete(Alert).where(Alert.created_at < cutoff_paid)
     )
-    result_configs_age = await db.execute(
-        delete(Config).where(Config.pulled_at < cutoff)
+    r_configs_paid = await db.execute(
+        delete(Config).where(Config.pulled_at < cutoff_paid)
     )
-    result_diffs = await db.execute(
-        delete(ConfigDiff).where(ConfigDiff.detected_at < cutoff)
+    r_diffs_paid = await db.execute(
+        delete(ConfigDiff).where(ConfigDiff.detected_at < cutoff_paid)
     )
 
-    # ── Pass 2: per-device count trim (keep newest N per device) ─────────────
-    result_configs_trim = await db.execute(text("""
+    # ── Pass 2: 30-day cap for free-plan sites ───────────────────────────────
+    # nm_profiles lives in the same Supabase Postgres instance — query it
+    # via raw SQL so we don't need a separate ORM model for it.
+    r_alerts_free = await db.execute(text("""
+        DELETE FROM alerts
+        WHERE created_at < :cutoff_free
+          AND site_id IN (
+              SELECT site_id FROM nm_profiles
+              WHERE plan IS NULL OR plan = 'free'
+          )
+    """), {"cutoff_free": cutoff_free})
+
+    r_configs_free = await db.execute(text("""
+        DELETE FROM configs
+        WHERE pulled_at < :cutoff_free
+          AND device_id IN (
+              SELECT d.id FROM devices d
+              JOIN nm_profiles p ON p.site_id = d.site_id
+              WHERE p.plan IS NULL OR p.plan = 'free'
+          )
+    """), {"cutoff_free": cutoff_free})
+
+    r_diffs_free = await db.execute(text("""
+        DELETE FROM config_diffs
+        WHERE detected_at < :cutoff_free
+          AND device_id IN (
+              SELECT d.id FROM devices d
+              JOIN nm_profiles p ON p.site_id = d.site_id
+              WHERE p.plan IS NULL OR p.plan = 'free'
+          )
+    """), {"cutoff_free": cutoff_free})
+
+    # ── Pass 3: per-device count trim (paid only — free sites can't back up) ─
+    r_configs_trim = await db.execute(text("""
         DELETE FROM configs
         WHERE id NOT IN (
             SELECT id FROM (
                 SELECT id,
-                       ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY pulled_at DESC) AS rn
+                       ROW_NUMBER() OVER (
+                           PARTITION BY device_id ORDER BY pulled_at DESC
+                       ) AS rn
                 FROM configs
             ) ranked
             WHERE rn <= :max_per_device
@@ -102,17 +145,29 @@ async def run_cleanup(
     await db.commit()
 
     deleted = {
-        "alerts":             result_alerts.rowcount,
-        "configs_age":        result_configs_age.rowcount,
-        "configs_trimmed":    result_configs_trim.rowcount,
-        "config_diffs":       result_diffs.rowcount,
+        "alerts_paid_ceiling":   r_alerts_paid.rowcount,
+        "alerts_free_cap":       r_alerts_free.rowcount,
+        "configs_paid_ceiling":  r_configs_paid.rowcount,
+        "configs_free_cap":      r_configs_free.rowcount,
+        "configs_trimmed":       r_configs_trim.rowcount,
+        "config_diffs_paid":     r_diffs_paid.rowcount,
+        "config_diffs_free":     r_diffs_free.rowcount,
     }
 
     logger.info(
-        "[CLEANUP] Purged rows older than %s UTC + trimmed to %d configs/device: %s",
-        cutoff.strftime("%Y-%m-%d"),
+        "[CLEANUP] Plan-aware purge complete. Free cutoff: %s | Paid cutoff: %s | "
+        "Max configs/device: %d | Deleted: %s",
+        cutoff_free.strftime("%Y-%m-%d"),
+        cutoff_paid.strftime("%Y-%m-%d"),
         _MAX_CONFIGS_PER_DEVICE,
         deleted,
     )
 
-    return {"ok": True, "deleted": deleted, "cutoff": cutoff.isoformat()}
+    return {
+        "ok":      True,
+        "deleted": deleted,
+        "cutoff":  {
+            "free": cutoff_free.isoformat(),
+            "paid": cutoff_paid.isoformat(),
+        },
+    }

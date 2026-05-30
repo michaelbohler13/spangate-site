@@ -189,6 +189,13 @@ async def add_device_config(
             ),
         )
 
+    # ── SSH backup plan gate ─────────────────────────────────────────────────
+    if payload.ssh_enabled and plan == "free":
+        raise HTTPException(
+            status_code=403,
+            detail="SSH config backup is a paid feature. Upgrade your plan to enable SSH monitoring.",
+        )
+
     device_type = payload.device_type or VENDOR_DEFAULT_TYPE.get(payload.vendor, "cisco_ios")
 
     row = DeviceConfig(
@@ -240,6 +247,14 @@ async def update_device_config(
         raise HTTPException(status_code=404, detail="Device not found")
 
     updates = payload.model_dump(exclude_unset=True)
+
+    # ── SSH backup plan gate ─────────────────────────────────────────────────
+    if updates.get("ssh_enabled") is True and ctx.get("plan", "free") == "free":
+        raise HTTPException(
+            status_code=403,
+            detail="SSH config backup is a paid feature. Upgrade your plan to enable SSH monitoring.",
+        )
+
     for field, value in updates.items():
         setattr(row, field, value)
 
@@ -347,6 +362,11 @@ async def request_backup(
         raise HTTPException(status_code=404, detail="Device not found")
     if not row.ssh_enabled:
         raise HTTPException(status_code=400, detail="SSH is not enabled for this device")
+    if ctx.get("plan", "free") == "free":
+        raise HTTPException(
+            status_code=403,
+            detail="Config backups are a paid feature. Upgrade your plan to use SSH monitoring.",
+        )
 
     row.backup_requested_at = datetime.now(timezone.utc)
     await db.commit()

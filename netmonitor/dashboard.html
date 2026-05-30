@@ -923,10 +923,12 @@ curl -fsSL https://spangate-site-r81b.vercel.app/netmonitor-agent/setup.sh | bas
         </div>
         <div class="dm-toggle-row" id="dmSshToggleRow">
           <div>
-            <div class="dm-toggle-label">SSH Config Pull</div>
-            <div class="dm-toggle-desc">Pull running config via SSH (weekly)</div>
+            <div class="dm-toggle-label">SSH Config Pull
+              <span id="dmSshPaidBadge" style="display:none;margin-left:6px;font-size:0.65rem;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.12);border:0.5px solid rgba(245,158,11,0.3);border-radius:4px;padding:1px 6px;letter-spacing:0.04em;vertical-align:middle;">PAID</span>
+            </div>
+            <div class="dm-toggle-desc" id="dmSshToggleDesc">Pull running config via SSH (weekly)</div>
           </div>
-          <label class="dm-switch">
+          <label class="dm-switch" id="dmSshSwitchLabel">
             <input type="checkbox" id="dmSshEnabled" onchange="dmSshToggleChange()">
             <span class="dm-slider"></span>
           </label>
@@ -2182,6 +2184,34 @@ async function autoLookupHostname() {
   } catch (e) { /* no PTR record or DNS timed out — silently ignore */ }
 }
 
+/* Apply SSH toggle gating based on current plan */
+function _applyDmPlanGating() {
+  const isFree  = planInfo.plan === 'free';
+  const cb      = document.getElementById('dmSshEnabled');
+  const badge   = document.getElementById('dmSshPaidBadge');
+  const desc    = document.getElementById('dmSshToggleDesc');
+  const lbl     = document.getElementById('dmSshSwitchLabel');
+  if (isFree) {
+    cb.disabled        = true;
+    cb.checked         = false;
+    badge.style.display = 'inline';
+    desc.textContent   = 'SSH backup is available on paid plans — upgrade to enable';
+    desc.style.color   = 'var(--text-dim)';
+    lbl.style.opacity  = '0.35';
+    lbl.style.cursor   = 'not-allowed';
+    lbl.title          = 'Upgrade to a paid plan to enable SSH config backup';
+    document.getElementById('dmSshTestSection').style.display = 'none';
+  } else {
+    cb.disabled        = false;
+    badge.style.display = 'none';
+    desc.textContent   = 'Pull running config via SSH (weekly)';
+    desc.style.color   = '';
+    lbl.style.opacity  = '';
+    lbl.style.cursor   = '';
+    lbl.title          = '';
+  }
+}
+
 function openAddDevice() {
   editingDeviceId = null;
   document.getElementById('dmTitle').textContent      = 'Add Device';
@@ -2199,6 +2229,7 @@ function openAddDevice() {
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Add Device';
   _resetSshTest();
+  _applyDmPlanGating();
   dmVendorChange();
   populateGroupDropdown();
   document.getElementById('deviceModal').classList.add('open');
@@ -2226,6 +2257,7 @@ function openEditDevice(id, event) {
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Save Changes';
   _resetSshTest();
+  _applyDmPlanGating();
   dmVendorChange();
   populateGroupDropdown();
   document.getElementById('deviceModal').classList.add('open');
@@ -2747,7 +2779,8 @@ async function runCsvImport() {
       vendor:       r.vendor,
       ssh_port:     r.ssh_port,
       ping_enabled: r.ping_enabled,
-      ssh_enabled:  r.ssh_enabled,
+      // SSH backup is paid-only — silently strip it on free plan
+      ssh_enabled:  planInfo.plan === 'free' ? false : r.ssh_enabled,
     };
     if (r.ssh_username) body.ssh_username = r.ssh_username;
     if (r.ssh_password) body.ssh_password = r.ssh_password;
