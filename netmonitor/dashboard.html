@@ -510,8 +510,8 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .csv-result.warn{background:rgba(255,193,7,0.07);border:0.5px solid rgba(255,193,7,0.3);color:#ffc107;}
 
 /* ── View-only mode ─────────────────────────────────────────────────────── */
-#viewBanner{display:none;position:fixed;top:0;left:0;right:0;z-index:200;
-  background:rgba(0,212,184,0.12);border-bottom:1px solid rgba(0,212,184,0.25);
+#viewBanner{display:none;background:rgba(0,212,184,0.10);
+  border-bottom:1px solid rgba(0,212,184,0.22);
   padding:7px 20px;font-size:0.78rem;color:var(--accent);text-align:center;
   font-family:var(--mono);letter-spacing:0.02em;}
 body.view-mode #viewBanner{display:block;}
@@ -524,7 +524,6 @@ body.view-mode .ack-btn{display:none!important;}
 body.view-mode #mt-configs{display:none!important;}
 body.view-mode #navSignOut{display:none!important;}
 body.view-mode #navUser{display:none!important;}
-body.view-mode .page-wrap{padding-top:calc(var(--nav-h) + 33px);}
 
 /* ── Settings pane ──────────────────────────────────────────────────────── */
 .settings-pane{max-width:640px;padding:2rem 1.5rem;}
