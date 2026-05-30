@@ -533,11 +533,21 @@ body.view-mode #navUser{display:none!important;}
   text-underline-offset:2px;cursor:pointer;}
 #emailSetupBanner a:hover{opacity:0.8;}
 
-/* ── Settings pane ──────────────────────────────────────────────────────── */
+/* ── Settings pane — accordion ──────────────────────────────────────────── */
 .settings-pane{max-width:640px;padding:2rem 1.5rem;}
 .settings-section{background:var(--surface2);border:0.5px solid var(--border);
-  border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;}
-.settings-heading{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;}
+  border-radius:12px;margin-bottom:8px;overflow:hidden;}
+.acc-header{display:flex;align-items:center;justify-content:space-between;width:100%;
+  padding:0.9rem 1.25rem;background:none;border:none;cursor:pointer;text-align:left;
+  color:var(--text);transition:background 0.15s;}
+.acc-header:hover{background:rgba(255,255,255,0.03);}
+.settings-heading{font-size:0.93rem;font-weight:600;color:var(--text);margin:0;}
+.acc-chevron{width:16px;height:16px;color:var(--text-dim);flex-shrink:0;
+  transition:transform 0.25s ease;}
+.settings-section.open .acc-chevron{transform:rotate(180deg);}
+.acc-body{max-height:0;overflow:hidden;transition:max-height 0.3s ease;}
+.settings-section.open .acc-body{max-height:1000px;}
+.acc-body-inner{padding:0 1.25rem 1.25rem;}
 .settings-desc{font-size:0.8rem;color:var(--text-muted);line-height:1.5;margin-bottom:1rem;}
 .share-link-row{display:flex;gap:8px;align-items:center;}
 .share-link-input{flex:1;background:var(--surface3);border:0.5px solid var(--border);
@@ -942,8 +952,12 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
     <div class="settings-pane">
 
       <!-- Email Delivery -->
-      <div class="settings-section">
-        <div class="settings-heading">Email Delivery</div>
+      <div class="settings-section" id="acc-email-delivery">
+        <button class="acc-header" onclick="toggleAccordion('acc-email-delivery')">
+          <span class="settings-heading">Email Delivery</span>
+          <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">
         <div class="settings-desc">
           Configure your SMTP relay to receive ping-down and recovery alerts.
           Gmail works great — use an App Password for authentication.
@@ -1008,11 +1022,16 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div>
         <div id="emailDeliveryMsg" style="margin-top:0.6rem;font-size:0.78rem;
              line-height:1.55;display:none;"></div>
+        </div></div><!-- /acc-body-inner /acc-body -->
       </div>
 
       <!-- Alert Notifications -->
-      <div class="settings-section">
-        <div class="settings-heading">Alert Notifications</div>
+      <div class="settings-section" id="acc-alert-notifications">
+        <button class="acc-header" onclick="toggleAccordion('acc-alert-notifications')">
+          <span class="settings-heading">Alert Notifications</span>
+          <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">
         <div class="settings-desc">
           When a device goes offline, an alert email is sent to this address.
           Leave blank to use your account email
@@ -1027,11 +1046,16 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
           </button>
         </div>
         <div id="alertEmailMsg" style="margin-top:0.6rem;font-size:0.78rem;display:none;"></div>
+        </div></div><!-- /acc-body-inner /acc-body -->
       </div>
 
       <!-- Default SSH Credentials -->
-      <div class="settings-section">
-        <div class="settings-heading">Default SSH Credentials</div>
+      <div class="settings-section" id="acc-default-ssh">
+        <button class="acc-header" onclick="toggleAccordion('acc-default-ssh')">
+          <span class="settings-heading">Default SSH Credentials</span>
+          <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">
         <div class="settings-desc">
           Site-wide SSH fallback — used when a device has no per-device credentials set.
           Ideal for bulk imports where every device shares the same login.
@@ -1054,11 +1078,16 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div>
         <div id="defaultSshMsg" style="margin-top:0.6rem;font-size:0.78rem;
              line-height:1.55;display:none;"></div>
+        </div></div><!-- /acc-body-inner /acc-body -->
       </div>
 
       <!-- View Link -->
-      <div class="settings-section">
-        <div class="settings-heading">View Link</div>
+      <div class="settings-section" id="acc-view-link">
+        <button class="acc-header" onclick="toggleAccordion('acc-view-link')">
+          <span class="settings-heading">View Link</span>
+          <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">
         <div class="settings-desc">
           Share a read-only link with your helpdesk team, manager, or client — no login required.
           Visitors see live device status and alerts but cannot add, edit, or delete anything.
@@ -1086,11 +1115,16 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
             Regenerating creates a new link and immediately invalidates the old one.
           </div>
         </div>
+        </div></div><!-- /acc-body-inner /acc-body -->
       </div>
 
       <!-- Agent API Key -->
-      <div class="settings-section">
-        <div class="settings-heading">Agent API Key</div>
+      <div class="settings-section" id="acc-api-key">
+        <button class="acc-header" onclick="toggleAccordion('acc-api-key')">
+          <span class="settings-heading">Agent API Key</span>
+          <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">
         <div class="settings-desc">
           Your monitoring agent uses this key to authenticate with SpanGate.
           Paste it into <code style="font-family:var(--mono);color:var(--accent);font-size:0.8rem;">config.yaml</code> on your Pi, Mac, or Windows machine.
@@ -1128,6 +1162,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
 
         <div id="settingsKeyMsg" style="margin-top:0.75rem;font-size:0.78rem;
              line-height:1.55;display:none;"></div>
+        </div></div><!-- /acc-body-inner /acc-body -->
       </div>
 
     </div>
@@ -3413,6 +3448,26 @@ function _showSettingsKeyMsg(msg, ok, ms = 6000) {
   el.style.color  = ok ? 'var(--accent)' : '#f87171';
   el.style.display = 'block';
   if (ok) setTimeout(() => { el.style.display = 'none'; }, ms);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS — ACCORDION
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _ACC_IDS = [
+  'acc-email-delivery',
+  'acc-alert-notifications',
+  'acc-default-ssh',
+  'acc-view-link',
+  'acc-api-key',
+];
+
+function toggleAccordion(id) {
+  const isOpen = document.getElementById(id).classList.contains('open');
+  // Close all
+  _ACC_IDS.forEach(aid => document.getElementById(aid)?.classList.remove('open'));
+  // If it was closed, open it now
+  if (!isOpen) document.getElementById(id).classList.add('open');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
