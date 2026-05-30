@@ -34,7 +34,7 @@ router = APIRouter(tags=["Admin"])
 # ── Retention constants ───────────────────────────────────────────────────────
 _RETENTION_DAYS_FREE    = 30    # alerts / configs kept for free-plan sites
 _RETENTION_DAYS_PAID    = 365   # alerts / configs kept for paid-plan sites
-_MAX_CONFIGS_PER_DEVICE = 10    # hard cap on stored backups per device (paid only)
+_MAX_CONFIGS_PER_DEVICE = 4     # keep the 4 most recent backups per device (~1/week = ~4/month)
 
 
 def _verify_cron_secret(authorization: str | None = Header(default=None)) -> None:

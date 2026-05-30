@@ -32,6 +32,9 @@ router = APIRouter(tags=["Device Configs"])
 
 VALID_VENDORS = {"cisco", "aruba_cx", "juniper", "other", "internet"}
 
+# Vendors that support SSH config backup — trigger an immediate backup on first add
+SSH_BACKUP_VENDORS = {"cisco", "aruba_cx", "juniper"}
+
 # Device limits per subscription plan
 PLAN_LIMITS: dict[str, int] = {
     "free":       10,
@@ -198,6 +201,14 @@ async def add_device_config(
 
     device_type = payload.device_type or VENDOR_DEFAULT_TYPE.get(payload.vendor, "cisco_ios")
 
+    # Auto-trigger an immediate backup for SSH-capable vendors so the first
+    # config snapshot arrives without waiting for the next scheduled pull.
+    auto_backup_at = (
+        datetime.now(timezone.utc)
+        if payload.ssh_enabled and payload.vendor in SSH_BACKUP_VENDORS
+        else None
+    )
+
     row = DeviceConfig(
         site_id=ctx["site_id"],
         hostname=payload.hostname,
@@ -210,6 +221,7 @@ async def add_device_config(
         ping_enabled=payload.ping_enabled,
         ssh_enabled=payload.ssh_enabled,
         group_name=payload.group_name or None,
+        backup_requested_at=auto_backup_at,
     )
     db.add(row)
     try:
@@ -261,6 +273,10 @@ async def update_device_config(
     # Auto-refresh device_type when vendor changes (unless device_type was also supplied)
     if "vendor" in updates and "device_type" not in updates:
         row.device_type = VENDOR_DEFAULT_TYPE.get(row.vendor, "cisco_ios")
+
+    # If SSH was just switched ON for a backup-capable vendor, queue an immediate backup
+    if updates.get("ssh_enabled") is True and row.vendor in SSH_BACKUP_VENDORS:
+        row.backup_requested_at = datetime.now(timezone.utc)
 
     row.updated_at = datetime.now(timezone.utc)
 
