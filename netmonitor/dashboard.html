@@ -1800,6 +1800,7 @@ function showDashboard(agentOnline, lastHeartbeat) {
   renderDevices();
   renderAlerts();
   updateAlertCounts();
+  loadEmailDelivery();   // check SMTP config and show banner if not set
 }
 
 function updatePlanUsage(info) {
