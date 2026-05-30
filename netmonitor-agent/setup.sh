@@ -57,6 +57,10 @@ IS_LINUX=false; IS_MAC=false
 echo ""
 info "Checking for Docker..."
 
+# _DOCKER is "docker" normally; becomes "sudo docker" when Docker was just
+# installed and the docker group hasn't activated for this session yet.
+_DOCKER="docker"
+
 if ! command -v docker &>/dev/null; then
   if $IS_LINUX; then
     echo ""
@@ -64,10 +68,6 @@ if ! command -v docker &>/dev/null; then
     curl -fsSL https://get.docker.com | sh
     # Add current user to docker group (takes effect next login)
     sudo usermod -aG docker "$USER" 2>/dev/null || true
-    # Activate group for this session
-    newgrp docker <<INNERSCRIPT
-      docker --version
-INNERSCRIPT
   elif $IS_MAC; then
     echo ""
     error "Docker Desktop is not installed.\n\n  Download it from: https://www.docker.com/products/docker-desktop\n  Install it, start it, then re-run this script."
@@ -75,7 +75,14 @@ INNERSCRIPT
 fi
 
 if ! docker info &>/dev/null 2>&1; then
-  if $IS_MAC; then
+  if $IS_LINUX && sudo docker info &>/dev/null 2>&1; then
+    # Docker is running but the docker group isn't active yet for this session
+    # (happens right after a fresh install before the user logs out/in).
+    # Use sudo for all Docker commands this session.
+    _DOCKER="sudo docker"
+    warn "Docker group not yet active for this login session — using sudo."
+    warn "Log out and back in once to use Docker without sudo in future."
+  elif $IS_MAC; then
     error "Docker is installed but not running.\n  Open Docker Desktop from your Applications folder and try again."
   else
     error "Docker is installed but not running.\n  Start it with:  sudo systemctl start docker"
@@ -83,8 +90,8 @@ if ! docker info &>/dev/null 2>&1; then
 fi
 
 # Prefer 'docker compose' (v2 plugin), fall back to docker-compose (v1)
-if docker compose version &>/dev/null 2>&1; then
-  COMPOSE="docker compose"
+if $_DOCKER compose version &>/dev/null 2>&1; then
+  COMPOSE="$_DOCKER compose"
 elif command -v docker-compose &>/dev/null; then
   COMPOSE="docker-compose"
 else
@@ -93,7 +100,7 @@ else
     sudo apt-get install -y docker-compose-plugin 2>/dev/null || \
       sudo yum install -y docker-compose-plugin 2>/dev/null || \
       error "Could not install docker-compose-plugin. Install it manually."
-    COMPOSE="docker compose"
+    COMPOSE="$_DOCKER compose"
   else
     error "Docker Compose not found. Make sure Docker Desktop is up to date."
   fi
@@ -196,7 +203,7 @@ success "docker-compose.yml created."
 # ── Pull image + start ────────────────────────────────────────────────────────
 echo ""
 info "Pulling latest agent image from Docker Hub..."
-docker pull "$IMAGE"
+$_DOCKER pull "$IMAGE"
 
 echo ""
 info "Starting SpanGate agent..."
