@@ -21,6 +21,10 @@ Routers mounted at /api/v1:
   GET  /devices/{hostname}
   GET  /dashboard
   GET  /admin/cleanup   ← called by Vercel Cron
+  POST /site/share-token
+  DELETE /site/share-token
+  GET  /site/share-token
+  GET  /share/{token}   ← public read-only dashboard view
 
 GET /health  — no auth, for uptime probes
 """
@@ -34,7 +38,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine
 from models import Base
-from routers import agents, alerts, cleanup, configs, dashboard, device_configs, devices, feedback, ssh_tests
+from routers import agents, alerts, cleanup, configs, dashboard, device_configs, devices, feedback, share, ssh_tests
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -137,6 +141,7 @@ for _router in (
     device_configs.router,
     devices.router,
     feedback.router,
+    share.router,
     ssh_tests.router,
 ):
     app.include_router(_router, prefix="/api/v1")

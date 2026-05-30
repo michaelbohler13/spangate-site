@@ -508,6 +508,39 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   display:none;font-family:var(--mono);}
 .csv-result.ok  {background:rgba(0,212,184,0.08);border:0.5px solid rgba(0,212,184,0.25);color:var(--accent);}
 .csv-result.warn{background:rgba(255,193,7,0.07);border:0.5px solid rgba(255,193,7,0.3);color:#ffc107;}
+
+/* ── View-only mode ─────────────────────────────────────────────────────── */
+#viewBanner{display:none;position:fixed;top:0;left:0;right:0;z-index:200;
+  background:rgba(0,212,184,0.12);border-bottom:1px solid rgba(0,212,184,0.25);
+  padding:7px 20px;font-size:0.78rem;color:var(--accent);text-align:center;
+  font-family:var(--mono);letter-spacing:0.02em;}
+body.view-mode #viewBanner{display:block;}
+body.view-mode .dev-action-btn{display:none!important;}
+body.view-mode #addDeviceBtn{display:none!important;}
+body.view-mode #importCsvBtn{display:none!important;}
+body.view-mode #exportCsvBtn{display:none!important;}
+body.view-mode #ack-all-btn{display:none!important;}
+body.view-mode .ack-btn{display:none!important;}
+body.view-mode #mt-configs{display:none!important;}
+body.view-mode #navSignOut{display:none!important;}
+body.view-mode #navUser{display:none!important;}
+body.view-mode .page-wrap{padding-top:calc(var(--nav-h) + 33px);}
+
+/* ── Settings pane ──────────────────────────────────────────────────────── */
+.settings-pane{max-width:640px;padding:2rem 1.5rem;}
+.settings-section{background:var(--surface2);border:0.5px solid var(--border);
+  border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;}
+.settings-heading{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;}
+.settings-desc{font-size:0.8rem;color:var(--text-muted);line-height:1.5;margin-bottom:1rem;}
+.share-link-row{display:flex;gap:8px;align-items:center;}
+.share-link-input{flex:1;background:var(--surface3);border:0.5px solid var(--border);
+  border-radius:8px;padding:8px 12px;color:var(--text-muted);font-family:var(--mono);
+  font-size:0.75rem;outline:none;cursor:default;}
+.share-actions{display:flex;gap:8px;margin-top:10px;}
+.btn-danger{background:transparent;border:0.5px solid rgba(255,95,87,0.4);
+  color:#ff5f57;border-radius:8px;padding:6px 14px;font-size:0.8rem;
+  cursor:pointer;transition:background 0.15s;}
+.btn-danger:hover{background:rgba(255,95,87,0.1);}
 </style>
 </head>
 <body>
@@ -551,6 +584,9 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   <span>⚠ Mock mode — no backend connected</span>
   <button onclick="this.parentElement.style.display='none'">×</button>
 </div>
+
+<!-- ── VIEW-ONLY BANNER (shown when visiting via share link) ──────────────── -->
+<div id="viewBanner">👁 Read Only — you are viewing a shared dashboard</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!-- STATE A — ONBOARDING                                                       -->
@@ -760,6 +796,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
     <button class="main-tab active" id="mt-devices" onclick="switchTab('devices')">Devices</button>
     <button class="main-tab" id="mt-alerts" onclick="switchTab('alerts')">Alerts</button>
     <button class="main-tab" id="mt-configs" onclick="switchTab('configs')">Configs</button>
+    <button class="main-tab" id="mt-settings" onclick="switchTab('settings')" style="margin-left:auto;">⚙ Settings</button>
   </div>
 
   <!-- ── DEVICES PANE ──────────────────────────────────────────────────────── -->
@@ -830,6 +867,45 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
       </select>
     </div>
     <div id="backupList"></div>
+  </div>
+
+  <!-- ── SETTINGS PANE ──────────────────────────────────────────────────────── -->
+  <div class="tab-pane" id="pane-settings">
+    <div class="settings-pane">
+
+      <!-- Share Dashboard -->
+      <div class="settings-section">
+        <div class="settings-heading">Share Dashboard</div>
+        <div class="settings-desc">
+          Generate a read-only link you can share with employees or colleagues.
+          Visitors can see live device status and alerts but cannot add, edit, or
+          delete anything. SSH passwords are never exposed.
+        </div>
+
+        <!-- No token yet -->
+        <div id="shareNoToken">
+          <button class="btn btn-outline" onclick="generateShareToken()" style="font-size:0.82rem;">
+            Generate Share Link
+          </button>
+        </div>
+
+        <!-- Token exists -->
+        <div id="shareHasToken" style="display:none;">
+          <div class="share-link-row">
+            <input class="share-link-input" id="shareLinkInput" type="text" readonly />
+            <button class="btn btn-ghost" onclick="copyShareLink(this)" style="font-size:0.8rem;white-space:nowrap;">Copy Link</button>
+          </div>
+          <div class="share-actions">
+            <button class="btn btn-ghost" onclick="generateShareToken()" style="font-size:0.8rem;">↻ Regenerate</button>
+            <button class="btn-danger" onclick="revokeShareToken()">Revoke</button>
+          </div>
+          <div style="margin-top:0.75rem;font-size:0.72rem;color:var(--text-dim);">
+            Regenerating creates a new link and immediately invalidates the old one.
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
 </div><!-- /dashboard -->
@@ -1080,6 +1156,10 @@ let collapsedGroups = new Set(JSON.parse(localStorage.getItem('sg-collapsed-grou
 let deviceSearch   = '';
 let planInfo       = { plan: 'free', device_limit: 10, device_count: 0, devices_remaining: 10 };
 
+// Read-only share-link mode — set when ?view=TOKEN is in the URL
+const VIEW_TOKEN = new URLSearchParams(location.search).get('view');
+let _shareRefreshTimer = null;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1120,6 +1200,12 @@ function alertBadgeLabel(t) {
 // AUTH
 // ─────────────────────────────────────────────────────────────────────────────
 async function initApp() {
+  // ── Read-only share-link mode ────────────────────────────────────────────
+  if (VIEW_TOKEN) {
+    await initViewMode(VIEW_TOKEN);
+    return;
+  }
+
   // Require login — redirects to login page if not authenticated
   const user = await SpanGate.requireLogin('netmonitor');
   if (!user) return;
@@ -1581,10 +1667,13 @@ function navToTab(tab) {
 
 function switchTab(tab) {
   activeTab = tab;
-  ['devices','alerts','configs'].forEach(t => {
-    document.getElementById('pane-'+t).className = 'tab-pane' + (t === tab ? ' active' : '');
-    document.getElementById('mt-'+t).className   = 'main-tab'  + (t === tab ? ' active' : '');
+  ['devices','alerts','configs','settings'].forEach(t => {
+    const pane = document.getElementById('pane-'+t);
+    const btn  = document.getElementById('mt-'+t);
+    if (pane) pane.className = 'tab-pane' + (t === tab ? ' active' : '');
+    if (btn)  btn.className  = 'main-tab'  + (t === tab ? ' active' : '');
   });
+  if (tab === 'settings') loadShareTokenStatus();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2846,6 +2935,169 @@ async function runCsvImport() {
   await _reloadDeviceConfigs();
   try { renderDevices(); } catch(e) {}
   _refreshPlanInfo();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// READ-ONLY SHARE-LINK VIEW MODE
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function initViewMode(token) {
+  // Apply view-mode class — hides all write controls via CSS
+  document.body.classList.add('view-mode');
+
+  // Hide loading overlay and onboarding, show dashboard shell
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.style.display = 'none';
+  showDashboard(false, null);
+
+  // Hide settings tab (not relevant for viewers)
+  const mtSettings = document.getElementById('mt-settings');
+  if (mtSettings) mtSettings.style.display = 'none';
+
+  // Load data
+  const ok = await _fetchShareData(token);
+  if (!ok) return;
+
+  // Poll every 30 s for live updates
+  _shareRefreshTimer = setInterval(() => _fetchShareData(token), 30_000);
+}
+
+async function _fetchShareData(token) {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/share/${token}`);
+    if (res.status === 404) {
+      showBackendBanner('This share link has been revoked or is invalid.');
+      return false;
+    }
+    if (!res.ok) {
+      showBackendBanner(`Share data unavailable (${res.status})`);
+      return false;
+    }
+    const data = await res.json();
+
+    // Populate site name
+    const siteNameEl = document.getElementById('siteName');
+    if (siteNameEl) siteNameEl.textContent = data.site_name || 'Network Monitor';
+
+    // Update agent status from heartbeat
+    if (data.heartbeat) {
+      updateAgentStatus(true, data.heartbeat.last_seen);
+      updateAgentHealth(data.heartbeat);
+    } else {
+      updateAgentStatus(false, null);
+    }
+
+    // Map share data into the global arrays renderDevices() / renderAlerts() expect
+    // devices[] from share endpoint has both config + live status merged
+    deviceConfigs = data.devices.map(d => ({
+      id:          d.hostname,   // read-only — no real id needed
+      hostname:    d.hostname,
+      ip:          d.ip,
+      vendor:      d.vendor,
+      device_type: 'unknown',
+      group_name:  d.group_name || null,
+      ping_enabled: d.ping_enabled,
+      ssh_enabled: false,        // never expose SSH in share mode
+    }));
+    liveDevices = data.devices.map(d => ({
+      hostname:    d.hostname,
+      ip:          d.ip,
+      vendor:      d.vendor,
+      device_type: 'unknown',
+      status:      d.status,
+      last_seen:   d.last_seen,
+      maintenance: d.maintenance,
+    }));
+
+    // Map alerts
+    const all = data.alerts || [];
+    activeAlerts   = all.filter(a => a.alert_type === 'ping_down' || a.alert_type === 'config_change');
+    resolvedAlerts = all.filter(a => a.alert_type === 'ping_up');
+
+    renderDevices();
+    renderAlerts();
+    updateAlertCounts();
+
+    lastRefreshedAt = new Date();
+    const stamp = document.getElementById('devRefreshStamp');
+    if (stamp) stamp.textContent = 'Updated ' + lastRefreshedAt.toLocaleTimeString();
+
+    return true;
+  } catch(e) {
+    showBackendBanner('Could not load share data — check your connection');
+    return false;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS — SHARE TOKEN MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadShareTokenStatus() {
+  if (!apiKey) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/site/share-token`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    _renderShareSection(data.view_token);
+  } catch(e) { /* silent */ }
+}
+
+function _renderShareSection(token) {
+  const noToken  = document.getElementById('shareNoToken');
+  const hasToken = document.getElementById('shareHasToken');
+  const linkInput = document.getElementById('shareLinkInput');
+  if (!noToken || !hasToken) return;
+
+  if (token) {
+    const url = `${location.origin}/netmonitor/dashboard?view=${token}`;
+    if (linkInput) linkInput.value = url;
+    noToken.style.display  = 'none';
+    hasToken.style.display = '';
+  } else {
+    noToken.style.display  = '';
+    hasToken.style.display = 'none';
+  }
+}
+
+async function generateShareToken() {
+  if (!apiKey) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/site/share-token`, {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) { alert('Could not generate share link. Try again.'); return; }
+    const data = await res.json();
+    _renderShareSection(data.view_token);
+  } catch(e) { alert('Could not generate share link. Try again.'); }
+}
+
+async function revokeShareToken() {
+  if (!apiKey) return;
+  if (!confirm('Revoke the share link? Anyone using it will immediately lose access.')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/site/share-token`, {
+      method:  'DELETE',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) { alert('Could not revoke share link. Try again.'); return; }
+    _renderShareSection(null);
+  } catch(e) { alert('Could not revoke share link. Try again.'); }
+}
+
+function copyShareLink(btn) {
+  const input = document.getElementById('shareLinkInput');
+  if (!input) return;
+  navigator.clipboard.writeText(input.value).then(() => {
+    if (btn) { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000); }
+  }).catch(() => {
+    input.select();
+    document.execCommand('copy');
+    if (btn) { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000); }
+  });
 }
 </script>
 </body>
