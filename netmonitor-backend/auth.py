@@ -85,8 +85,40 @@ async def verify_api_key(
 
     raw_key = authorization.removeprefix("Bearer ").strip()
 
-    # ── 1. Try nm_profiles (owner) ────────────────────────────────────────────
     client = _get_supabase()
+
+    # ── 1. Try sites.api_key (multi-site — primary lookup post-Phase 3) ───────
+    try:
+        site_res = (
+            client.table("sites")
+            .select("id, owner_user_id, plan")
+            .eq("api_key", raw_key)
+            .single()
+            .execute()
+        )
+        if site_res.data:
+            s       = site_res.data
+            site_id = s["id"]
+            user_id = s["owner_user_id"]
+            plan    = s.get("plan") or "free"
+
+            request.state.user_id       = user_id
+            request.state.site_id       = site_id
+            request.state.plan          = plan
+            request.state.role          = "owner"
+            request.state.owner_user_id = user_id
+
+            return {
+                "user_id":       user_id,
+                "site_id":       site_id,
+                "plan":          plan,
+                "role":          "owner",
+                "owner_user_id": user_id,
+            }
+    except Exception as exc:
+        logger.debug("sites api_key lookup failed (will try nm_profiles): %s", exc)
+
+    # ── 2. Try nm_profiles (legacy / backward compat) ─────────────────────────
     profile = None
     try:
         result = (

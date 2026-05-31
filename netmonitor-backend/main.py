@@ -40,7 +40,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine
 from models import Base
-from routers import agents, alerts, cleanup, configs, credential_profiles, dashboard, device_configs, devices, feedback, settings, share, ssh_tests, team
+from routers import agents, alerts, cleanup, configs, credential_profiles, dashboard, device_configs, devices, feedback, settings, share, sites, ssh_tests, team
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -146,6 +146,7 @@ for _router in (
     feedback.router,
     settings.router,
     share.router,
+    sites.router,
     ssh_tests.router,
     team.router,
 ):

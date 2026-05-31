@@ -663,6 +663,106 @@ body.view-mode #navUser{display:none!important;}
 .team-active-badge{font-size:0.65rem;font-family:var(--mono);font-weight:600;
   letter-spacing:0.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;
   background:rgba(0,212,184,0.08);color:#00d4b8;border:0.5px solid rgba(0,212,184,0.25);}
+
+/* ── ALL SITES GLOBAL VIEW ──────────────────────────────────────────────── */
+#sitesView{display:none;padding-bottom:3rem;}
+.sv-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:1.5rem 2rem 0.75rem;}
+.sv-title{font-size:1.1rem;font-weight:600;letter-spacing:-0.03em;color:var(--text);}
+.sv-sub{font-size:0.75rem;color:var(--text-dim);margin-top:2px;font-family:var(--mono);}
+.sv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:14px;padding:0.75rem 2rem 2rem;}
+
+/* Site card */
+.site-card{background:var(--surface);border:0.5px solid var(--border-bright);
+  border-radius:14px;padding:1.15rem 1.25rem;cursor:pointer;transition:all 0.15s;}
+.site-card:hover{border-color:rgba(0,212,184,0.45);background:rgba(0,212,184,0.02);}
+.sc-name{font-size:0.92rem;font-weight:600;letter-spacing:-0.02em;
+  color:var(--text);margin-bottom:0.55rem;}
+.sc-agent{display:flex;align-items:center;gap:7px;margin-bottom:0.85rem;}
+.sc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.sc-dot.online{background:var(--accent);animation:pulseDot 2s ease-in-out infinite;}
+.sc-dot.offline{background:#6e6e73;}
+.sc-agent-txt{font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);}
+.sc-counts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0.8rem;}
+.sc-cnt{font-family:var(--mono);font-size:0.7rem;padding:2px 8px;
+  border-radius:5px;display:flex;align-items:center;gap:4px;}
+.sc-cnt-up{background:rgba(0,212,184,0.1);color:var(--accent);border:0.5px solid rgba(0,212,184,0.25);}
+.sc-cnt-dn{background:rgba(255,95,87,0.1);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.25);}
+.sc-cnt-tot{background:rgba(255,255,255,0.04);color:var(--text-dim);border:0.5px solid var(--border);}
+.sc-health{display:flex;gap:1rem;margin-bottom:0.65rem;}
+.sc-hm{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:0.63rem;}
+.sc-hm-lbl{color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;}
+.sc-hm-val{color:var(--text-muted);}
+.sc-hm-val.ok{color:var(--accent);}
+.sc-hm-val.warn{color:#f5a623;}
+.sc-hm-val.crit{color:#ff5f57;}
+.sc-enter{font-family:var(--mono);font-size:0.67rem;color:var(--text-dim);
+  transition:color 0.15s;margin-top:0.5rem;}
+.site-card:hover .sc-enter{color:var(--accent);}
+
+/* Add site card */
+.sc-add{background:transparent;border:0.5px dashed rgba(255,255,255,0.12);
+  border-radius:14px;padding:1.15rem 1.25rem;cursor:pointer;
+  transition:all 0.15s;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;min-height:150px;}
+.sc-add:hover{border-color:rgba(0,212,184,0.4);background:rgba(0,212,184,0.02);}
+.sc-add-icon{font-size:1.4rem;color:var(--text-dim);transition:color 0.15s;}
+.sc-add-txt{font-size:0.8rem;color:var(--text-dim);font-family:var(--mono);transition:color 0.15s;}
+.sc-add:hover .sc-add-icon,.sc-add:hover .sc-add-txt{color:var(--accent);}
+
+/* Loading skeleton for site cards */
+.sv-loading{padding:1.5rem 2rem;font-family:var(--mono);font-size:0.78rem;color:var(--text-dim);}
+
+/* Back-to-all-sites button (inside site header) */
+.back-btn{background:none;border:none;font-family:var(--mono);font-size:0.67rem;
+  color:var(--accent);cursor:pointer;padding:0;display:none;align-items:center;
+  gap:5px;letter-spacing:-0.01em;transition:opacity 0.15s;flex-shrink:0;}
+.back-btn:hover{opacity:0.7;}
+.back-btn.visible{display:flex;}
+
+/* Site switcher (top-right of site-hdr) */
+.ss-wrap{position:relative;display:none;}
+.ss-wrap.visible{display:block;}
+.ss-btn{background:var(--surface2);border:0.5px solid var(--border-bright);
+  border-radius:8px;padding:4px 10px;font-family:var(--mono);font-size:0.67rem;
+  color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:all 0.15s;white-space:nowrap;}
+.ss-btn:hover{border-color:rgba(0,212,184,0.35);color:var(--text);}
+.ss-caret{opacity:0.55;font-size:0.55rem;}
+.ss-drop{position:absolute;top:calc(100% + 6px);right:0;min-width:180px;
+  background:var(--surface2);border:0.5px solid var(--border-bright);
+  border-radius:10px;overflow:hidden;z-index:300;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);display:none;}
+.ss-drop.open{display:block;}
+.ss-item{padding:8px 14px;font-family:var(--mono);font-size:0.73rem;
+  color:var(--text-muted);cursor:pointer;transition:background 0.1s;white-space:nowrap;}
+.ss-item:hover{background:rgba(0,212,184,0.06);color:var(--text);}
+.ss-item.active{color:var(--accent);}
+.ss-sep{height:0.5px;background:var(--border);margin:3px 0;}
+.ss-all{padding:8px 14px;font-family:var(--mono);font-size:0.73rem;
+  color:var(--text-dim);cursor:pointer;transition:background 0.1s;}
+.ss-all:hover{background:rgba(255,255,255,0.03);color:var(--accent);}
+
+/* Add-site modal overlay */
+#addSiteModal{position:fixed;inset:0;z-index:2000;display:none;
+  align-items:center;justify-content:center;padding:2rem;}
+#addSiteModal.open{display:flex;}
+.asm-bg{position:absolute;inset:0;background:rgba(0,0,0,0.72);}
+.asm-box{position:relative;width:100%;max-width:440px;
+  background:var(--surface);border:0.5px solid var(--border-bright);
+  border-radius:14px;padding:1.5rem;z-index:1;}
+.asm-title{font-size:1rem;font-weight:600;letter-spacing:-0.02em;margin-bottom:0.4rem;}
+.asm-sub{font-size:0.8rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.55;}
+.asm-label{font-size:0.72rem;font-weight:600;letter-spacing:0.04em;
+  text-transform:uppercase;color:var(--text-dim);font-family:var(--mono);
+  display:block;margin-bottom:5px;}
+.asm-input{width:100%;background:var(--surface2);border:0.5px solid var(--border-bright);
+  border-radius:8px;padding:10px 13px;font-family:var(--sans);font-size:0.88rem;
+  color:var(--text);outline:none;transition:border-color 0.15s;}
+.asm-input:focus{border-color:var(--accent);}
+.asm-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;}
+.asm-msg{font-size:0.78rem;margin-top:0.65rem;display:none;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -924,14 +1024,48 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
 </div><!-- /onboarding -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- STATE B — LIVE DASHBOARD                                                   -->
+<!-- STATE B — ALL SITES GLOBAL VIEW                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="sitesView">
+  <div class="sv-hdr">
+    <div>
+      <div class="sv-title">All Sites</div>
+      <div class="sv-sub" id="svSubline"></div>
+    </div>
+    <button class="btn btn-outline" onclick="openAddSiteModal()" style="font-size:0.78rem;padding:6px 14px;">+ Add Site</button>
+  </div>
+  <div class="sv-grid" id="svGrid">
+    <div class="sv-loading">Loading sites…</div>
+  </div>
+</div>
+
+<!-- Add Site modal -->
+<div id="addSiteModal">
+  <div class="asm-bg" onclick="closeAddSiteModal()"></div>
+  <div class="asm-box">
+    <div class="asm-title">Add a New Site</div>
+    <div class="asm-sub">A site represents one physical location monitored by a single agent (Raspberry Pi, Windows PC, or Mac). Each site gets its own API key.</div>
+    <label class="asm-label" for="asmNameInput">Site Name</label>
+    <input id="asmNameInput" class="asm-input" type="text" placeholder="e.g. Main Campus, Branch Office, Warehouse" maxlength="100"
+      onkeydown="if(event.key==='Enter')doAddSite()" autofocus />
+    <div class="asm-msg" id="asmMsg"></div>
+    <div class="asm-btns">
+      <button class="btn btn-ghost" onclick="closeAddSiteModal()" style="font-size:0.82rem;padding:8px 16px;">Cancel</button>
+      <button class="btn btn-primary" id="asmCreateBtn" onclick="doAddSite()" style="font-size:0.82rem;padding:8px 18px;">Create Site</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- STATE C — LIVE DASHBOARD (single site)                                     -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div id="dashboard">
 
   <!-- Site header -->
   <div class="site-hdr">
     <div class="site-hdr-l">
-      <div class="site-name-label" id="siteNameLabel">Main Campus</div>
+      <button class="back-btn" id="backToAllBtn" onclick="_showAllSites()">← All Sites</button>
+      <div class="site-name-label" id="siteNameLabel">My Site</div>
       <div class="agent-online">
         <span class="pulse-dot"></span>
         <span class="agent-txt">Agent connected</span>
@@ -941,6 +1075,14 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
       <span id="lastSeenTxt">Last seen: 2 minutes ago</span>
       <span class="hdr-sep">·</span>
       <span id="deviceSummary">3 devices · 2 up · 1 down</span>
+      <span class="hdr-sep" id="ssSepEl" style="display:none;">·</span>
+      <div class="ss-wrap" id="ssSwitchWrap">
+        <button class="ss-btn" onclick="_toggleSiteSwitcher()">
+          <span id="ssCurrentName">My Site</span>
+          <span class="ss-caret">▾</span>
+        </button>
+        <div class="ss-drop" id="ssDrop"></div>
+      </div>
     </div>
   </div>
 
@@ -1327,6 +1469,23 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div></div><!-- /acc-body-inner /acc-body -->
       </div>
 
+      <!-- Sites Management (owner only) -->
+      <div class="settings-section owner-only" id="acc-sites">
+        <button class="acc-header" onclick="toggleAccordion('acc-sites')">
+          <span class="settings-heading">Sites</span>
+          <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">
+        <div class="settings-desc">
+          Each site is one monitored location — a single Pi, Windows PC, or Mac running the SpanGate agent.
+          Your current plan determines how many sites you can have.
+        </div>
+        <div id="siteSettingsList" style="margin-bottom:1rem;"></div>
+        <button class="btn btn-outline" onclick="openAddSiteModal()" style="font-size:0.78rem;padding:6px 14px;">+ Add Site</button>
+        <div id="siteSettingsMsg" style="font-size:0.78rem;margin-top:0.65rem;display:none;"></div>
+        </div></div>
+      </div>
+
       <!-- Agent API Key (owner only — team members use their own member_api_key) -->
       <div class="settings-section owner-only" id="acc-api-key">
         <button class="acc-header" onclick="toggleAccordion('acc-api-key')">
@@ -1656,6 +1815,11 @@ let collapsedGroups = new Set(JSON.parse(localStorage.getItem('sg-collapsed-grou
 let deviceSearch   = '';
 let planInfo       = { plan: 'free', device_limit: 10, device_count: 0, devices_remaining: 10 };
 
+// ── Multi-site state ──────────────────────────────────────────────────────────
+let _allSites      = [];   // all sites owned by the user (from Supabase)
+let _currentSiteId = null; // site_id of the currently loaded site view
+let _svSummary     = [];   // summary data for the All Sites card wall
+
 // Read-only share-link mode — set when ?view=TOKEN is in the URL
 const VIEW_TOKEN = new URLSearchParams(location.search).get('view');
 let _shareRefreshTimer = null;
@@ -1727,21 +1891,58 @@ async function initApp() {
   const sae = document.getElementById('settingsAcctEmail');
   if (sae) sae.textContent = accountEmail;
 
-  // ── 1. Try to load as site owner ─────────────────────────────────────────
+  // ── 1. Try to load sites (multi-site support) ────────────────────────────
   if (db) {
+    const { data: sites } = await db
+      .from('sites')
+      .select('id, site_name, api_key, plan, created_at')
+      .eq('owner_user_id', user.id)
+      .order('created_at', { ascending: true });
+
+    if (sites && sites.length > 0) {
+      _allSites = sites;
+      _myRole   = 'owner';
+
+      // Check URL param or session storage for a previously-selected site
+      const urlParams  = new URLSearchParams(location.search);
+      const urlSiteId  = urlParams.get('site');
+      const forceAll   = urlParams.get('allsites') === '1';
+      const storedId   = sessionStorage.getItem('sg-current-site');
+      const targetId   = urlSiteId || (forceAll ? null : storedId) || null;
+      const selected   = targetId ? sites.find(s => s.id === targetId) : null;
+
+      if (sites.length === 1 || (!forceAll && selected)) {
+        // Single site OR user returned to a previously-visited site → load it
+        const site     = selected || sites[0];
+        apiKey         = site.api_key;
+        _currentSiteId = site.id;
+        injectApiKey(apiKey);
+        _updateSiteSwitcher();
+      } else {
+        // Multiple sites and none selected yet → show All Sites card wall
+        hideLoader();
+        _showAllSites();
+        _loadSitesSummary();
+        return;
+      }
+    }
+  }
+
+  // ── 2. Fallback: nm_profiles (legacy / before Phase 3 SQL migration) ────────
+  if (!apiKey && db) {
     const { data: profile } = await db
       .from('nm_profiles')
       .select('api_key')
       .eq('id', user.id)
       .maybeSingle();
     if (profile?.api_key) {
-      apiKey   = profile.api_key;
-      _myRole  = 'owner';
+      apiKey  = profile.api_key;
+      _myRole = 'owner';
       injectApiKey(apiKey);
     }
   }
 
-  // ── 2. If not an owner, try team member access (member_api_key) ───────────
+  // ── 3. If not an owner, try team member access (member_api_key) ────────────
   if (!apiKey && db) {
     try {
       const { data: { session } } = await db.auth.getSession();
@@ -3977,6 +4178,15 @@ async function settingsGenerateKey() {
 
   const newKey = _generateApiKeyVal();
 
+  // Update sites table (primary — Phase 3+)
+  if (_currentSiteId) {
+    await db.from('sites').update({ api_key: newKey }).eq('id', _currentSiteId);
+    // Keep _allSites in sync
+    const idx = _allSites.findIndex(s => s.id === _currentSiteId);
+    if (idx !== -1) _allSites[idx] = { ..._allSites[idx], api_key: newKey };
+  }
+
+  // Also update nm_profiles for backward compat / legacy fallback
   const { error } = await db
     .from('nm_profiles')
     .upsert({ id: accountUserId, api_key: newKey }, { onConflict: 'id' });
@@ -4342,6 +4552,7 @@ const _ACC_IDS = [
   'acc-ssh-profiles',
   'acc-team',
   'acc-view-link',
+  'acc-sites',
   'acc-api-key',
 ];
 
@@ -4353,7 +4564,9 @@ function toggleAccordion(id) {
   if (!isOpen) {
     document.getElementById(id)?.classList.add('open');
     // Lazy-load team members when Team accordion opens
-    if (id === 'acc-team') loadTeamMembers();
+    if (id === 'acc-team')  loadTeamMembers();
+    // Render the sites list when Sites accordion opens
+    if (id === 'acc-sites') _renderSiteSettings();
   }
 }
 
@@ -4646,6 +4859,346 @@ function copyShareLink(btn) {
     document.execCommand('copy');
     if (btn) { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000); }
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MULTI-SITE — ALL SITES GLOBAL VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Show the All Sites card wall (Level 1). */
+function _showAllSites() {
+  stopLiveRefresh();
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('dashboard').style.display  = 'none';
+  document.getElementById('sitesView').style.display  = '';
+  // Update browser URL without reload — use ?allsites=1 to avoid
+  // conflicting with ?view=<share-token> used by the share-link feature
+  const url = new URL(location.href);
+  url.searchParams.delete('site');
+  url.searchParams.delete('view');
+  url.searchParams.set('allsites', '1');
+  history.pushState({ svView: 'all' }, '', url.toString());
+}
+
+/** Load summary data for all sites and render cards. */
+async function _loadSitesSummary() {
+  if (!db) return;
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.access_token) return;
+    const res = await fetch(`${API_BASE}/api/v1/sites/summary`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) return;
+    _svSummary = await res.json();
+    _renderSiteCards();
+  } catch(e) {
+    console.warn('[SITES] Failed to load summary:', e);
+    _renderSiteCards(); // render with whatever _allSites we have
+  }
+}
+
+/** Render the site card grid. */
+function _renderSiteCards() {
+  const grid = document.getElementById('svGrid');
+  const sub  = document.getElementById('svSubline');
+  if (!grid) return;
+
+  const sites = _svSummary.length ? _svSummary : _allSites.map(s => ({ ...s, agent_online: false, device_count: 0, devices_up: 0, devices_down: 0 }));
+
+  // Subline: total sites + total devices
+  const totalDevs = sites.reduce((n, s) => n + (s.device_count || 0), 0);
+  if (sub) sub.textContent = `${sites.length} site${sites.length !== 1 ? 's' : ''} · ${totalDevs} device${totalDevs !== 1 ? 's' : ''} total`;
+
+  let html = '';
+  for (const s of sites) {
+    const online = s.agent_online;
+    const cpuCls = s.cpu_percent == null ? '' : s.cpu_percent > 90 ? 'crit' : s.cpu_percent > 70 ? 'warn' : 'ok';
+    const memCls = s.mem_percent == null ? '' : s.mem_percent > 90 ? 'crit' : s.mem_percent > 70 ? 'warn' : 'ok';
+
+    const healthRow = (s.cpu_percent != null) ? `
+      <div class="sc-health">
+        <span class="sc-hm"><span class="sc-hm-lbl">CPU</span><span class="sc-hm-val ${cpuCls}">${s.cpu_percent.toFixed(0)}%</span></span>
+        <span class="sc-hm"><span class="sc-hm-lbl">RAM</span><span class="sc-hm-val ${memCls}">${s.mem_percent != null ? s.mem_percent.toFixed(0)+'%' : '—'}</span></span>
+        ${s.temp_celsius != null ? `<span class="sc-hm"><span class="sc-hm-lbl">TEMP</span><span class="sc-hm-val">${s.temp_celsius.toFixed(1)}°C</span></span>` : ''}
+      </div>` : '';
+
+    html += `<div class="site-card" onclick="_enterSite(${JSON.stringify(s.id)})">
+      <div class="sc-name">${esc(s.site_name)}</div>
+      <div class="sc-agent">
+        <span class="sc-dot ${online ? 'online' : 'offline'}"></span>
+        <span class="sc-agent-txt">${online ? 'Agent online' : (s.last_seen ? 'Agent offline' : 'No agent yet')}</span>
+      </div>
+      <div class="sc-counts">
+        <span class="sc-cnt sc-cnt-up">↑ ${s.devices_up} up</span>
+        <span class="sc-cnt sc-cnt-dn">↓ ${s.devices_down} down</span>
+        <span class="sc-cnt sc-cnt-tot">${s.device_count} total</span>
+      </div>
+      ${healthRow}
+      <div class="sc-enter">Open site →</div>
+    </div>`;
+  }
+
+  // Add site card (only if within plan limit)
+  const plan      = _allSites[0]?.plan || 'free';
+  const planLims  = { free: 1, pro: 5, enterprise: 25, msp: 999 };
+  if (_allSites.length < (planLims[plan] || 1)) {
+    html += `<div class="sc-add" onclick="openAddSiteModal()">
+      <span class="sc-add-icon">+</span>
+      <span class="sc-add-txt">Add Site</span>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+/** Drill into a specific site — loads its single-site dashboard view. */
+async function _enterSite(siteId) {
+  const site = _allSites.find(s => s.id === siteId);
+  if (!site) return;
+
+  stopLiveRefresh();
+  apiKey         = site.api_key;
+  _currentSiteId = site.id;
+  sessionStorage.setItem('sg-current-site', siteId);
+  injectApiKey(apiKey);
+  planInfo = { plan: site.plan || 'free', device_limit: 10, device_count: 0, devices_remaining: 10 };
+
+  // Show back button
+  const back = document.getElementById('backToAllBtn');
+  if (back) back.classList.add('visible');
+
+  _updateSiteSwitcher();
+
+  // Update site name label
+  const snl = document.getElementById('siteNameLabel');
+  if (snl) snl.textContent = site.site_name;
+
+  // Update URL
+  const url = new URL(location.href);
+  url.searchParams.set('site', siteId);
+  url.searchParams.delete('view');
+  url.searchParams.delete('allsites');
+  history.pushState({ svView: 'site', siteId }, '', url.toString());
+
+  // Show dashboard and load data
+  document.getElementById('sitesView').style.display  = 'none';
+  document.getElementById('onboarding').style.display = 'none';
+  showDashboard(false, null);
+  startLiveRefresh();
+  await determineState();
+}
+
+/** Switch active site without going via the All Sites view. */
+async function _switchSite(siteId) {
+  if (siteId === _currentSiteId) return;
+  _closeSiteSwitcher();
+  await _enterSite(siteId);
+}
+
+// ── Site switcher dropdown ────────────────────────────────────────────────────
+
+function _updateSiteSwitcher() {
+  const wrap    = document.getElementById('ssSwitchWrap');
+  const sep     = document.getElementById('ssSepEl');
+  const curName = document.getElementById('ssCurrentName');
+  const drop    = document.getElementById('ssDrop');
+
+  if (!wrap) return;
+
+  if (_allSites.length < 2) {
+    wrap.classList.remove('visible');
+    if (sep) sep.style.display = 'none';
+    return;
+  }
+
+  wrap.classList.add('visible');
+  if (sep) sep.style.display = '';
+
+  const curr = _allSites.find(s => s.id === _currentSiteId);
+  if (curName && curr) curName.textContent = curr.site_name;
+
+  if (drop) {
+    drop.innerHTML =
+      _allSites.map(s =>
+        `<div class="ss-item${s.id === _currentSiteId ? ' active' : ''}" onclick="_switchSite(${JSON.stringify(s.id)})">${esc(s.site_name)}</div>`
+      ).join('') +
+      '<div class="ss-sep"></div>' +
+      '<div class="ss-all" onclick="_closeSiteSwitcher();_showAllSites();_loadSitesSummary();">← All Sites</div>';
+  }
+}
+
+function _toggleSiteSwitcher() {
+  const drop = document.getElementById('ssDrop');
+  if (drop) drop.classList.toggle('open');
+}
+
+function _closeSiteSwitcher() {
+  const drop = document.getElementById('ssDrop');
+  if (drop) drop.classList.remove('open');
+}
+
+// Close switcher when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ss-wrap')) _closeSiteSwitcher();
+});
+
+// ── Browser back/forward ──────────────────────────────────────────────────────
+
+window.addEventListener('popstate', async (e) => {
+  const state = e.state;
+  if (!state) return;
+  if (state.svView === 'all') {
+    _showAllSites();
+    _loadSitesSummary();
+  } else if (state.svView === 'site' && state.siteId) {
+    await _enterSite(state.siteId);
+  }
+});
+
+// ── Add Site modal ────────────────────────────────────────────────────────────
+
+function openAddSiteModal() {
+  const modal = document.getElementById('addSiteModal');
+  const input = document.getElementById('asmNameInput');
+  const msg   = document.getElementById('asmMsg');
+  const btn   = document.getElementById('asmCreateBtn');
+  if (!modal) return;
+  if (input)  { input.value = ''; setTimeout(() => input.focus(), 80); }
+  if (msg)    { msg.style.display = 'none'; }
+  if (btn)    { btn.textContent = 'Create Site'; btn.disabled = false; }
+  modal.classList.add('open');
+}
+
+function closeAddSiteModal() {
+  const modal = document.getElementById('addSiteModal');
+  if (modal) modal.classList.remove('open');
+}
+
+/** Render the sites list in the Settings → Sites accordion. */
+function _renderSiteSettings() {
+  const list = document.getElementById('siteSettingsList');
+  if (!list) return;
+
+  if (!_allSites.length) {
+    list.innerHTML = '<div style="font-size:0.8rem;color:var(--text-dim);font-family:var(--mono);">No sites yet.</div>';
+    return;
+  }
+
+  list.innerHTML = _allSites.map(s => {
+    const isCurrent = s.id === _currentSiteId;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;
+        background:var(--surface3);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:0;">
+        <span style="font-size:0.84rem;color:var(--text);">${esc(s.site_name)}</span>
+        ${isCurrent ? '<span style="font-size:0.65rem;font-family:var(--mono);color:var(--accent);margin-left:6px;letter-spacing:0.04em;">CURRENT</span>' : ''}
+      </div>
+      <button onclick="_renameSitePrompt(${JSON.stringify(s.id)},${JSON.stringify(s.site_name)})"
+        style="background:none;border:0.5px solid var(--border-bright);color:var(--text-dim);
+          border-radius:5px;padding:3px 10px;font-size:0.72rem;cursor:pointer;
+          font-family:var(--sans);transition:all 0.15s;"
+        onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-dim)'">Rename</button>
+      ${_allSites.length > 1 ? `<button onclick="_deleteSiteConfirm(${JSON.stringify(s.id)},${JSON.stringify(s.site_name)})"
+        style="background:none;border:0.5px solid rgba(255,95,87,0.25);color:#ff5f57;
+          border-radius:5px;padding:3px 10px;font-size:0.72rem;cursor:pointer;
+          font-family:var(--sans);transition:all 0.15s;">Delete</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function _renameSitePrompt(siteId, currentName) {
+  const newName = prompt(`Rename site (current: "${currentName}"):`, currentName);
+  if (!newName?.trim() || newName.trim() === currentName) return;
+
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.access_token) return;
+    const res = await fetch(`${API_BASE}/api/v1/sites/${encodeURIComponent(siteId)}`, {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ site_name: newName.trim() }),
+    });
+    if (!res.ok) { alert('Could not rename site.'); return; }
+    const updated = await res.json();
+    // Update local list
+    const idx = _allSites.findIndex(s => s.id === siteId);
+    if (idx !== -1) _allSites[idx] = { ..._allSites[idx], site_name: updated.site_name };
+    // Update site name label if this is the current site
+    if (siteId === _currentSiteId) {
+      const snl = document.getElementById('siteNameLabel');
+      if (snl) snl.textContent = updated.site_name;
+      _updateSiteSwitcher();
+    }
+    _renderSiteSettings();
+  } catch(e) { alert('Network error — try again.'); }
+}
+
+async function _deleteSiteConfirm(siteId, siteName) {
+  if (!confirm(`Delete site "${siteName}"?\n\nThis removes the site and all associated device/alert/config data. This cannot be undone.`)) return;
+
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.access_token) return;
+    const res = await fetch(`${API_BASE}/api/v1/sites/${encodeURIComponent(siteId)}`, {
+      method:  'DELETE',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      alert(body.detail || 'Could not delete site.');
+      return;
+    }
+    // Remove from local list
+    _allSites = _allSites.filter(s => s.id !== siteId);
+    // If we deleted the current site, switch to another
+    if (siteId === _currentSiteId && _allSites.length > 0) {
+      await _enterSite(_allSites[0].id);
+    }
+    _renderSiteSettings();
+    _updateSiteSwitcher();
+  } catch(e) { alert('Network error — try again.'); }
+}
+
+async function doAddSite() {
+  if (!db || !accountUserId) return;
+  const input = document.getElementById('asmNameInput');
+  const msg   = document.getElementById('asmMsg');
+  const btn   = document.getElementById('asmCreateBtn');
+
+  const name = input?.value.trim();
+  if (!name) {
+    if (msg) { msg.textContent = 'Please enter a site name.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+    return;
+  }
+
+  if (btn) { btn.textContent = 'Creating…'; btn.disabled = true; }
+
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.access_token) throw new Error('Not logged in');
+
+    const res = await fetch(`${API_BASE}/api/v1/sites`, {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ site_name: name }),
+    });
+    const body = await res.json();
+
+    if (!res.ok) {
+      if (msg) { msg.textContent = body.detail || 'Could not create site. Try again.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+      if (btn) { btn.textContent = 'Create Site'; btn.disabled = false; }
+      return;
+    }
+
+    // Add to local list and enter the new site
+    _allSites.push(body);
+    closeAddSiteModal();
+    await _enterSite(body.id);
+
+  } catch(e) {
+    if (msg) { msg.textContent = 'Network error — try again.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+    if (btn) { btn.textContent = 'Create Site'; btn.disabled = false; }
+  }
 }
 </script>
 </body>
