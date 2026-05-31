@@ -294,7 +294,7 @@
       <h1 style="font-size:clamp(2.5rem,6vw,4.5rem);font-weight:700;letter-spacing:-0.04em;line-height:1.05;margin-bottom:1.5rem;">Network Visibility,<br><span style="background:linear-gradient(120deg,#00d4ff 0%,#2a8a78 50%,#00d4b8 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientShift 6s ease-in-out infinite alternate;">Finally Under Control.</span></h1>
       <p style="font-size:1.2rem;color:#8b949e;max-width:600px;margin:0 auto 0.75rem;line-height:1.7;font-weight:400;">Real-time device monitoring, instant config change detection, and automated alerts — all from a lightweight agent running on a $50 Pi.</p>
       <div style="display:flex;align-items:center;justify-content:center;gap:2rem;margin-top:1.5rem;font-size:0.875rem;color:#00d4b8;font-weight:500;">
-        <span>&#10003; 3 Vendors</span><span>&#10003; Config Change Alerts</span><span>&#10003; One-Command Install</span>
+        <span>&#10003; Any IP Device</span><span>&#10003; Config Change Alerts</span><span>&#10003; One-Command Install</span>
       </div>
     </div>
     <div style="background:rgba(10,10,10,0.85);backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 60px rgba(0,212,184,0.04);">
@@ -382,7 +382,7 @@
     <div style="padding:2rem 1.75rem;border-right:0.5px solid rgba(255,255,255,0.06);">
       <div style="font-family:var(--mono);font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#00d4b8;margin-bottom:0.6rem;">Smart Alerts</div>
       <div style="font-size:0.95rem;font-weight:600;color:#f5f5f7;margin-bottom:0.4rem;letter-spacing:-0.02em;">Only what matters.</div>
-      <div style="font-size:0.8rem;color:#6e6e73;line-height:1.6;">Device down, config changed, agent offline. In-app alerts now — email and Slack webhooks coming soon.</div>
+      <div style="font-size:0.8rem;color:#6e6e73;line-height:1.6;">Device down, config changed, agent offline. In-app and SMTP email alerts included — Slack webhooks coming soon.</div>
     </div>
 
     <div style="padding:2rem 1.75rem;">
@@ -402,7 +402,7 @@
     <div class="stat-row reveal">
       <div class="stat-cell"><div class="stat-num teal">60s</div><div class="stat-label">Ping interval</div></div>
       <div class="stat-cell"><div class="stat-num">500+</div><div class="stat-label">Devices per agent</div></div>
-      <div class="stat-cell"><div class="stat-num">3</div><div class="stat-label">Vendors supported</div></div>
+      <div class="stat-cell"><div class="stat-num">10+</div><div class="stat-label">Device types</div></div>
       <div class="stat-cell"><div class="stat-num teal">$50</div><div class="stat-label">Min. hardware cost</div></div>
       <div class="stat-cell"><div class="stat-num teal">0</div><div class="stat-label">Credentials sent to cloud</div></div>
     </div>
@@ -423,13 +423,18 @@
       <div class="bento-card wide reveal">
         <div class="bento-icon bi-teal">📡</div>
         <div class="bento-title">Live device dashboard</div>
-        <div class="bento-desc">ICMP ping every 60 seconds keeps you current on every device. The dashboard shows live status, 24-hour uptime bars, last-seen timestamps, and vendor details in one clean table. Click any device for a full slide-out panel with active alerts and config history.</div>
+        <div class="bento-desc">ICMP ping every 60 seconds keeps you current on every device — switches, firewalls, UPS units, cameras, printers, anything with an IP. The dashboard shows live status, last-seen timestamps, and vendor details in one clean table. Click any device for a slide-out panel with active alerts and config history.</div>
         <div class="mini-terminal">
-          <span class="tc">! Ping sweep — Main Campus — 10.1.0.0/24</span><br>
-          <span class="tg">●</span> <span class="tk">core-sw-01</span>&nbsp;&nbsp;&nbsp;<span class="tv">10.1.1.1</span>&nbsp;&nbsp;&nbsp;<span class="tg">Online</span>&nbsp;&nbsp;&nbsp;<span class="tc">uptime 100.0%</span><br>
-          <span class="tg">●</span> <span class="tk">dist-sw-02</span>&nbsp;&nbsp;&nbsp;<span class="tv">10.1.1.2</span>&nbsp;&nbsp;&nbsp;<span class="tg">Online</span>&nbsp;&nbsp;&nbsp;<span class="tc">uptime&nbsp;&nbsp;98.2%</span><br>
-          <span class="tr">●</span> <span class="tk">access-sw-14</span> <span class="tv">10.1.2.14</span>&nbsp;&nbsp;<span class="tr">Offline</span>&nbsp;&nbsp;<span class="tc">last seen 4h ago</span><br>
-          <span class="tg">●</span> <span class="tk">fw-edge-01</span>&nbsp;&nbsp;&nbsp;<span class="tv">10.0.0.1</span>&nbsp;&nbsp;&nbsp;<span class="tg">Online</span>&nbsp;&nbsp;&nbsp;<span class="tc">uptime 100.0%</span><br>
+          <span class="tc">SpanGate Agent v1.2 — Main Campus</span><br>
+          <span class="tc">Scanning 10.1.0.0/24 (47 devices)…</span><br>
+          <br>
+          <span class="tg">●</span> <span class="tk">core-sw-01</span>&nbsp;&nbsp;&nbsp;<span class="tv">10.1.1.1</span>&nbsp;&nbsp;&nbsp;<span class="tg">online</span><br>
+          <span class="tg">●</span> <span class="tk">dist-sw-02</span>&nbsp;&nbsp;&nbsp;<span class="tv">10.1.1.2</span>&nbsp;&nbsp;&nbsp;<span class="tg">online</span><br>
+          <span class="tr">✗</span> <span class="tk">access-sw-14</span> <span class="tv">10.1.2.14</span>&nbsp;&nbsp;<span class="tr">offline</span>&nbsp;&nbsp;<span class="tc">→ alert sent</span><br>
+          <span class="tg">●</span> <span class="tk">ups-rack-01</span>&nbsp;&nbsp;<span class="tv">10.1.1.10</span>&nbsp;&nbsp;&nbsp;<span class="tg">online</span><br>
+          <span class="tg">●</span> <span class="tk">cam-lobby-01</span>&nbsp;<span class="tv">10.1.1.20</span>&nbsp;&nbsp;&nbsp;<span class="tg">online</span><br>
+          <br>
+          <span class="tc">Heartbeat →</span> <span class="tk">spangate.com</span>&nbsp;&nbsp;<span class="tg">✓ ok</span><br>
           <span class="cursor"></span>
         </div>
       </div>
@@ -450,11 +455,11 @@
       <div class="bento-card reveal">
         <div class="bento-icon bi-orange">🔔</div>
         <div class="bento-title">Smart alerts</div>
-        <div class="bento-desc">Alerts when a device goes offline, a config changes unexpectedly, or the agent stops reporting. In-app now — email and Slack webhooks coming soon.</div>
+        <div class="bento-desc">Alerts when a device goes offline, a config changes unexpectedly, or the agent stops reporting. In-app alerts and SMTP email delivery — configure your own mail server in Settings. Slack webhooks coming soon.</div>
         <div class="alert-list">
           <div class="alert-row crit"><span>🔴</span><div><div class="alert-name">access-sw-14 offline</div><div style="font-size:0.58rem;color:var(--text-dim);">Device unreachable</div></div><span class="alert-spacer"></span><span style="font-size:0.58rem;color:var(--text-dim);">4h ago</span></div>
           <div class="alert-row warn"><span>&#9889;</span><div><div class="alert-name">dist-sw-02 config changed</div><div style="font-size:0.58rem;color:var(--text-dim);">VLAN 10 IP modified</div></div><span class="alert-spacer"></span><span style="font-size:0.58rem;color:var(--text-dim);">2h ago</span></div>
-          <div class="alert-row info"><span>ℹ️</span><div><div class="alert-name">Weekly config pull complete</div><div style="font-size:0.58rem;color:var(--text-dim);">All devices backed up</div></div><span class="alert-spacer"></span><span style="font-size:0.58rem;color:var(--text-dim);">6h ago</span></div>
+          <div class="alert-row info"><span>🟢</span><div><div class="alert-name">access-sw-14 back online</div><div style="font-size:0.58rem;color:var(--text-dim);">Device recovered</div></div><span class="alert-spacer"></span><span style="font-size:0.58rem;color:var(--text-dim);">1h ago</span></div>
         </div>
       </div>
       <div class="bento-card reveal">
@@ -463,9 +468,26 @@
         <div class="bento-desc">30-day rolling backup for every device. Side-by-side diff viewer shows exactly what changed, when, and on which device. Always know your last known-good state.</div>
       </div>
       <div class="bento-card reveal">
-        <div class="bento-icon bi-green">🗺️</div>
-        <div class="bento-title">Auto discovery</div>
-        <div class="bento-desc">Subnet scan finds all reachable devices on first run. Review the list, confirm, and monitoring activates. Add devices manually too — whatever works for your network.</div>
+        <div class="bento-icon bi-green">👥</div>
+        <div class="bento-title">Team access &amp; roles</div>
+        <div class="bento-desc">Invite staff with owner, admin, or viewer roles. Admins can add devices and manage settings. Viewers get a read-only dashboard — no accidental changes.</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-top:1rem;">
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:0.62rem;">
+            <span style="width:22px;height:22px;border-radius:50%;background:rgba(0,212,184,0.15);display:flex;align-items:center;justify-content:center;font-size:0.6rem;flex-shrink:0;">MB</span>
+            <span style="color:var(--text);flex:1;">m.bohler@school.org</span>
+            <span style="background:rgba(0,212,184,0.1);color:#00d4b8;border:0.5px solid rgba(0,212,184,0.3);border-radius:3px;padding:1px 6px;font-size:0.58rem;">owner</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:0.62rem;">
+            <span style="width:22px;height:22px;border-radius:50%;background:rgba(91,141,238,0.15);display:flex;align-items:center;justify-content:center;font-size:0.6rem;flex-shrink:0;">JD</span>
+            <span style="color:var(--text);flex:1;">j.doe@school.org</span>
+            <span style="background:rgba(91,141,238,0.1);color:#5b8dee;border:0.5px solid rgba(91,141,238,0.3);border-radius:3px;padding:1px 6px;font-size:0.58rem;">admin</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:0.62rem;">
+            <span style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:0.6rem;flex-shrink:0;">PR</span>
+            <span style="color:var(--text-muted);flex:1;">principal@school.org</span>
+            <span style="background:rgba(255,255,255,0.06);color:var(--text-dim);border:0.5px solid var(--border);border-radius:3px;padding:1px 6px;font-size:0.58rem;">viewer</span>
+          </div>
+        </div>
       </div>
       <div class="bento-card wide reveal" style="background:rgba(0,212,184,0.03);border-color:rgba(0,212,184,0.2);">
         <div class="bento-icon bi-teal">🏢</div>
@@ -475,6 +497,16 @@
           <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:0.65rem;color:var(--accent);">● Main Campus — 50 devices</div>
           <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);">● North Campus — 32 devices</div>
           <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);">● South Campus — 28 devices</div>
+        </div>
+      </div>
+      <div class="bento-card reveal">
+        <div class="bento-icon bi-purple">🔗</div>
+        <div class="bento-title">Live View Link</div>
+        <div class="bento-desc">Generate a read-only shareable link to your dashboard — perfect for a NOC screen, a principal's office display, or a shared TV in the server room. No login required.</div>
+        <div style="margin-top:1rem;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:0.7rem;">🔗</span>
+          <span style="font-family:var(--mono);font-size:0.6rem;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">spangate.com/share/a8f3…</span>
+          <span style="font-family:var(--mono);font-size:0.58rem;color:var(--accent);background:rgba(0,212,184,0.08);border:0.5px solid rgba(0,212,184,0.2);border-radius:4px;padding:2px 7px;white-space:nowrap;">● live</span>
         </div>
       </div>
     </div>
@@ -493,7 +525,7 @@
     </div>
     <div class="steps reveal">
       <div class="step"><div class="step-num">01</div><div class="step-title">Sign up &amp; get API key</div><div class="step-desc">Create an account. Copy your API key from the Settings page.</div></div>
-      <div class="step"><div class="step-num">02</div><div class="step-title">Run the installer</div><div class="step-desc">One-liner on Linux or Pi. Windows service via NSSM.</div><div class="code-pill">curl -sSL https://install.spangate.com | bash</div><div style="display:flex;gap:6px;justify-content:center;margin-top:0.75rem;flex-wrap:wrap;"><a href="/netmonitor/install-pi" style="font-size:0.65rem;color:var(--accent);text-decoration:none;font-family:var(--mono);background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.2);border-radius:6px;padding:3px 9px;">🍓 Pi guide</a><a href="/netmonitor/install-windows" style="font-size:0.65rem;color:var(--accent);text-decoration:none;font-family:var(--mono);background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.2);border-radius:6px;padding:3px 9px;">⊞ Windows guide</a></div></div>
+      <div class="step"><div class="step-num">02</div><div class="step-title">Run the installer</div><div class="step-desc">One-liner on Linux or Pi. Windows service via NSSM.</div><div class="code-pill">curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</div><div style="display:flex;gap:6px;justify-content:center;margin-top:0.75rem;flex-wrap:wrap;"><a href="/netmonitor/install-pi" style="font-size:0.65rem;color:var(--accent);text-decoration:none;font-family:var(--mono);background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.2);border-radius:6px;padding:3px 9px;">🍓 Pi guide</a><a href="/netmonitor/install-windows" style="font-size:0.65rem;color:var(--accent);text-decoration:none;font-family:var(--mono);background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.2);border-radius:6px;padding:3px 9px;">⊞ Windows guide</a></div></div>
       <div class="step"><div class="step-num">03</div><div class="step-title">Enter key + site name</div><div class="step-desc">Interactive prompts. No YAML. No JSON. Name your site and confirm.</div></div>
       <div class="step"><div class="step-num">04</div><div class="step-title">Agent scans &amp; activates</div><div class="step-desc">Discovers devices on your subnet, shows you the list, you confirm. Runs as a systemd service — auto-starts on reboot.</div></div>
     </div>
@@ -592,7 +624,7 @@
     <div class="section-center reveal"><div class="section-eyebrow">FAQ</div><h2 class="section-title">Common questions</h2></div>
     <div style="max-width:720px;margin:2rem auto 0;display:flex;flex-direction:column;gap:12px;">
       <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>What hardware does the agent run on?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Any Linux machine — Raspberry Pi, VM, or desktop. A Pi Zero 2W (~$50) handles up to 50 devices. A Pi 4 (~$150) handles up to 200. A Pi 5 (~$249) handles up to 1,000. A VM or desktop is unlimited. Windows support is available via a .exe installer. Don't want to set it up yourself? We'll ship you a pre-configured Pi for a one-time $199 setup charge.</div></details>
-      <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>Which vendors are supported?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Network Monitor supports <strong style="color:var(--text);">Cisco IOS-XE</strong>, <strong style="color:var(--text);">Aruba CX (AOS-CX)</strong>, and <strong style="color:var(--text);">Juniper JunOS</strong>. ICMP ping works on any reachable device — config pulls via SSH require one of these three vendors at launch.</div></details>
+      <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>Which vendors are supported?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">ICMP ping monitoring works on <strong style="color:var(--text);">any IP-reachable device</strong> — switches, routers, firewalls, UPS units, HVAC controllers, IP cameras, printers, or anything else on your network. SSH config backup and change detection currently supports <strong style="color:var(--text);">Cisco IOS-XE</strong>, <strong style="color:var(--text);">Aruba CX (AOS-CX)</strong>, and <strong style="color:var(--text);">Juniper JunOS</strong>, with more platforms coming.</div></details>
       <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>Are my SSH credentials safe?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Yes. SSH credentials are encrypted locally on your Pi or VM using your unique API key and are never transmitted to our servers. Only config text and alert data ever leave your network. Your credentials stay in your building.</div></details>
       <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>How long are configs stored?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Configs, diffs, and alerts are retained for 30 days and then automatically purged. We don't store your network data indefinitely. Ping status is live only — not stored at all.</div></details>
       <details style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;"><summary style="padding:1.1rem 1.25rem;font-size:0.9rem;font-weight:600;color:var(--text);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;"><span>Can I monitor multiple sites?</span><span style="color:var(--accent);font-size:0.8rem;flex-shrink:0;margin-left:1rem;">&#9660;</span></summary><div style="padding:0 1.25rem 1.1rem;font-size:0.82rem;color:var(--text-muted);line-height:1.7;border-top:0.5px solid var(--border);">Yes. Multi-site support is built in from day one. Each site gets its own agent. All sites appear in a single dashboard. Plus, Pro, and District plans support multiple agents and sites.</div></details>
