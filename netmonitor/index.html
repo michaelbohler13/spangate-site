@@ -325,38 +325,76 @@
           <div style="font-family:var(--mono);font-size:2rem;font-weight:600;color:#f5f5f7;line-height:1;">8<span style="font-size:0.9rem;color:#444;">s ago</span></div>
         </div>
       </div>
-      <!-- Device list -->
+      <!-- Device list — columns match real dashboard -->
       <div style="padding:0;">
-        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:8px 16px;font-family:var(--mono);font-size:0.58rem;text-transform:uppercase;letter-spacing:0.07em;color:#333;border-bottom:0.5px solid rgba(255,255,255,0.04);">
-          <span>Hostname</span><span>Vendor</span><span>Status</span><span>24hr uptime</span><span>Config</span>
+        <!-- Header -->
+        <div style="display:grid;grid-template-columns:130px 1.3fr 0.85fr 0.7fr 0.9fr 1fr 80px;padding:7px 16px;font-family:var(--mono);font-size:0.54rem;text-transform:uppercase;letter-spacing:0.07em;color:#333;border-bottom:0.5px solid rgba(255,255,255,0.04);">
+          <span>Status</span><span>Hostname</span><span>IP</span><span>Vendor</span><span>Type</span><span>Last Seen</span><span>Backup</span>
         </div>
-        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:10px 16px;font-family:var(--mono);font-size:0.7rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);">
-          <div><span style="color:#f5f5f7;font-weight:600;">core-sw-01</span><span style="color:#333;font-size:0.58rem;margin-left:8px;">10.1.1.1</span></div>
-          <span style="color:#555;">Cisco IOS-XE</span>
-          <span style="color:#28c840;">● online</span>
-          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:100%;height:100%;background:linear-gradient(90deg,#2a8a78,#00d4b8);"></div></div><span style="color:#333;font-size:0.58rem;">100%</span></div>
-          <span style="color:#28c840;font-size:0.62rem;">✓ clean</span>
+        <!-- Row: core-sw-01 — Cisco — Online 100% -->
+        <div style="display:grid;grid-template-columns:130px 1.3fr 0.85fr 0.7fr 0.9fr 1fr 80px;padding:9px 16px;font-family:var(--mono);font-size:0.68rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:980px;font-size:0.6rem;font-weight:600;background:rgba(0,212,184,0.14);color:#00d4b8;border:0.5px solid rgba(0,212,184,0.3);width:fit-content;">↑ ONLINE</span>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:44px;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:100%;height:100%;background:#00d4b8;"></div></div><span style="color:#444;font-size:0.52rem;">100%</span></div>
+          </div>
+          <span style="color:#f5f5f7;font-weight:600;">core-sw-01</span>
+          <span style="color:#555;font-size:0.62rem;">10.1.1.1</span>
+          <span style="color:#2997ff;">Cisco</span>
+          <span style="color:#333;font-size:0.6rem;">cisco_ios</span>
+          <span style="color:#555;">2 min ago</span>
+          <span style="color:#00d4b8;font-size:0.62rem;">📋 May 30</span>
         </div>
-        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:10px 16px;font-family:var(--mono);font-size:0.7rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);background:rgba(210,153,34,0.03);">
-          <div><span style="color:#f5f5f7;font-weight:600;">dist-sw-02</span><span style="color:#333;font-size:0.58rem;margin-left:8px;">10.1.1.2</span></div>
-          <span style="color:#555;">Aruba CX</span>
-          <span style="color:#28c840;">● online</span>
-          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:98%;height:100%;background:linear-gradient(90deg,#2a8a78,#00d4b8);"></div></div><span style="color:#333;font-size:0.58rem;">98%</span></div>
-          <span style="color:#d29922;font-size:0.62rem;">⚡ changed</span>
+        <!-- Row: dist-sw-02 — Aruba CX — Online 98% -->
+        <div style="display:grid;grid-template-columns:130px 1.3fr 0.85fr 0.7fr 0.9fr 1fr 80px;padding:9px 16px;font-family:var(--mono);font-size:0.68rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:980px;font-size:0.6rem;font-weight:600;background:rgba(0,212,184,0.14);color:#00d4b8;border:0.5px solid rgba(0,212,184,0.3);width:fit-content;">↑ ONLINE</span>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:44px;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:98%;height:100%;background:#28c840;"></div></div><span style="color:#444;font-size:0.52rem;">98%</span></div>
+          </div>
+          <span style="color:#f5f5f7;font-weight:600;">dist-sw-02</span>
+          <span style="color:#555;font-size:0.62rem;">10.1.1.2</span>
+          <span style="color:#ff6b2b;">Aruba CX</span>
+          <span style="color:#333;font-size:0.6rem;">aruba_aoscx</span>
+          <span style="color:#555;">1 min ago</span>
+          <span style="color:#00d4b8;font-size:0.62rem;">📋 May 28</span>
         </div>
-        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:10px 16px;font-family:var(--mono);font-size:0.7rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);background:rgba(255,95,87,0.03);">
-          <div><span style="color:#f5f5f7;font-weight:600;">access-sw-14</span><span style="color:#333;font-size:0.58rem;margin-left:8px;">10.1.2.14</span></div>
-          <span style="color:#555;">Aruba CX</span>
-          <span style="color:#ff5f57;">● offline</span>
-          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:72%;height:100%;background:#ff5f57;"></div></div><span style="color:#333;font-size:0.58rem;">72%</span></div>
-          <span style="color:#28c840;font-size:0.62rem;">✓ clean</span>
+        <!-- Row: access-sw-14 — Aruba CX — Offline 72% -->
+        <div style="display:grid;grid-template-columns:130px 1.3fr 0.85fr 0.7fr 0.9fr 1fr 80px;padding:9px 16px;font-family:var(--mono);font-size:0.68rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);background:rgba(255,95,87,0.02);">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:980px;font-size:0.6rem;font-weight:600;background:rgba(255,95,87,0.14);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.3);width:fit-content;">↓ OFFLINE</span>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:44px;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:72%;height:100%;background:#ff5f57;"></div></div><span style="color:#444;font-size:0.52rem;">72%</span></div>
+          </div>
+          <span style="color:#f5f5f7;font-weight:600;">access-sw-14</span>
+          <span style="color:#555;font-size:0.62rem;">10.1.2.14</span>
+          <span style="color:#ff6b2b;">Aruba CX</span>
+          <span style="color:#333;font-size:0.6rem;">aruba_aoscx</span>
+          <span style="color:#ff5f57;">4h ago</span>
+          <span style="color:#555;font-size:0.62rem;">📋 May 24</span>
         </div>
-        <div style="display:grid;grid-template-columns:1.5fr 1fr 80px 1fr 100px;padding:10px 16px;font-family:var(--mono);font-size:0.7rem;align-items:center;">
-          <div><span style="color:#f5f5f7;font-weight:600;">fw-edge-01</span><span style="color:#333;font-size:0.58rem;margin-left:8px;">10.0.0.1</span></div>
-          <span style="color:#555;">Juniper JunOS</span>
-          <span style="color:#28c840;">● online</span>
-          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:100%;height:100%;background:linear-gradient(90deg,#2a8a78,#00d4b8);"></div></div><span style="color:#333;font-size:0.58rem;">100%</span></div>
-          <span style="color:#28c840;font-size:0.62rem;">✓ clean</span>
+        <!-- Row: fw-edge-01 — Juniper — Online 100% -->
+        <div style="display:grid;grid-template-columns:130px 1.3fr 0.85fr 0.7fr 0.9fr 1fr 80px;padding:9px 16px;font-family:var(--mono);font-size:0.68rem;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.03);">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:980px;font-size:0.6rem;font-weight:600;background:rgba(0,212,184,0.14);color:#00d4b8;border:0.5px solid rgba(0,212,184,0.3);width:fit-content;">↑ ONLINE</span>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:44px;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:100%;height:100%;background:#00d4b8;"></div></div><span style="color:#444;font-size:0.52rem;">100%</span></div>
+          </div>
+          <span style="color:#f5f5f7;font-weight:600;">fw-edge-01</span>
+          <span style="color:#555;font-size:0.62rem;">10.0.0.1</span>
+          <span style="color:#30d158;">Juniper</span>
+          <span style="color:#333;font-size:0.6rem;">juniper_junos</span>
+          <span style="color:#555;">3 min ago</span>
+          <span style="color:#00d4b8;font-size:0.62rem;">📋 May 29</span>
+        </div>
+        <!-- Row: ups-rack-01 — UPS / ping-only — Online 100% -->
+        <div style="display:grid;grid-template-columns:130px 1.3fr 0.85fr 0.7fr 0.9fr 1fr 80px;padding:9px 16px;font-family:var(--mono);font-size:0.68rem;align-items:center;">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:980px;font-size:0.6rem;font-weight:600;background:rgba(0,212,184,0.14);color:#00d4b8;border:0.5px solid rgba(0,212,184,0.3);width:fit-content;">↑ ONLINE</span>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:44px;height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;"><div style="width:100%;height:100%;background:#00d4b8;"></div></div><span style="color:#444;font-size:0.52rem;">100%</span></div>
+          </div>
+          <span style="color:#f5f5f7;font-weight:600;">ups-rack-01</span>
+          <span style="color:#555;font-size:0.62rem;">10.1.1.10</span>
+          <span style="color:#f59e0b;">UPS</span>
+          <span style="color:#333;font-size:0.6rem;">ping_only</span>
+          <span style="color:#555;">1 min ago</span>
+          <span style="color:#444;">—</span>
         </div>
       </div>
     </div>
