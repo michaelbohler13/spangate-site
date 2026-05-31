@@ -1402,7 +1402,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         <input type="file" id="csvFileInput" accept=".csv,text/csv,text/plain" onchange="csvFileChosen(event)">
         <div class="csv-drop-icon">📂</div>
         <div class="csv-drop-label" id="csvDropLabel">Click to choose a CSV file, or drag &amp; drop here</div>
-        <div class="csv-drop-hint">hostname · ip · vendor · ssh_port · ssh_username · ssh_password · ping_enabled · ssh_enabled · group_name</div>
+        <div class="csv-drop-hint">hostname · ip · vendor · ssh_port · ssh_username · ssh_password · ping_enabled · ssh_enabled · group_name · credential_profile_name</div>
       </div>
       <div class="csv-preview" id="csvPreview" style="display:none;">
         <div class="csv-preview-lbl" id="csvPreviewLbl"></div>
@@ -1414,6 +1414,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
               <th>Hostname</th><th>IP</th><th>Vendor</th>
               <th style="width:50px;">SSH</th>
               <th>Group</th>
+              <th>Credential Profile</th>
             </tr></thead>
             <tbody id="csvPreviewBody"></tbody>
           </table>
@@ -3165,19 +3166,20 @@ function exportDeviceCsv() {
   }
   // Column order matches the import template exactly so the file can be
   // re-imported without editing.  ssh_password is always blank for security.
-  const cols = ['hostname','ip','vendor','ssh_port','ssh_username','ssh_password','ping_enabled','ssh_enabled','group_name'];
+  const cols = ['hostname','ip','vendor','ssh_port','ssh_username','ssh_password','ping_enabled','ssh_enabled','group_name','credential_profile_name'];
   const rows = [cols];
   deviceConfigs.forEach(d => {
     rows.push([
       d.hostname,
       d.ip,
-      d.vendor       || 'cisco',
-      d.ssh_port     ?? 22,
-      d.ssh_username || '',
-      '',                          // ssh_password — never exported
-      d.ping_enabled ?? true,
-      d.ssh_enabled  ?? false,
-      d.group_name   || '',
+      d.vendor                  || 'cisco',
+      d.ssh_port                ?? 22,
+      d.ssh_username            || '',
+      '',                                    // ssh_password — never exported
+      d.ping_enabled            ?? true,
+      d.ssh_enabled             ?? false,
+      d.group_name              || '',
+      d.credential_profile_name || '',       // named SSH credential profile
     ]);
   });
   const csv  = rows.map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\r\n');
@@ -3197,7 +3199,7 @@ function exportDeviceCsv() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const _CSV_VALID_VENDORS = ['cisco','aruba_cx','juniper','other','internet'];
-const _CSV_COLUMNS = ['hostname','ip','vendor','ssh_port','ssh_username','ssh_password','ping_enabled','ssh_enabled','group_name'];
+const _CSV_COLUMNS = ['hostname','ip','vendor','ssh_port','ssh_username','ssh_password','ping_enabled','ssh_enabled','group_name','credential_profile_name'];
 let _csvRows = [];
 
 function openImportModal() {
@@ -3226,11 +3228,11 @@ function _csvKey(e) { if (e.key === 'Escape') closeCsvModal(); }
 function downloadCsvTemplate() {
   const rows = [
     _CSV_COLUMNS,
-    ['core-sw-01',   '10.1.1.1',   'cisco',    '22', 'admin', 'cisco123', 'true',  'true',  'Core'],
-    ['access-sw-02', '10.1.1.2',   'aruba_cx', '22', 'admin', 'aruba123', 'true',  'true',  'Building A'],
-    ['firewall-01',  '10.1.1.254', 'cisco',    '22', 'admin', '',         'true',  'false', 'Core'],
-    ['gateway-01',   '192.168.1.1','other',    '22', '',      '',         'true',  'false', ''],
-    ['google-dns',   '8.8.8.8',    'internet', '22', '',      '',         'true',  'false', 'Internet'],
+    ['core-sw-01',   '10.1.1.1',   'cisco',    '22', 'admin', 'cisco123', 'true',  'true',  'Core',       'Core Switches'],
+    ['access-sw-02', '10.1.1.2',   'aruba_cx', '22', 'admin', 'aruba123', 'true',  'true',  'Building A', 'Access Layer'],
+    ['firewall-01',  '10.1.1.254', 'cisco',    '22', 'admin', '',         'true',  'false', 'Core',      'Core Switches'],
+    ['gateway-01',   '192.168.1.1','other',    '22', '',      '',         'true',  'false', '',          ''],
+    ['google-dns',   '8.8.8.8',    'internet', '22', '',      '',         'true',  'false', 'Internet',  ''],
   ];
   const csv = rows.map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -3296,11 +3298,12 @@ function _parseCsvFile(file) {
       const vendor       = vendorRaw.toLowerCase();
       const portRaw      = get(fields, 'ssh_port');
       const ssh_port     = portRaw ? parseInt(portRaw, 10) : 22;
-      const ssh_username = get(fields, 'ssh_username');
-      const ssh_password = get(fields, 'ssh_password');
-      const pingStr      = (get(fields, 'ping_enabled') || 'true').toLowerCase();
-      const sshStr       = (get(fields, 'ssh_enabled')  || 'false').toLowerCase();
-      const group_name   = get(fields, 'group_name');
+      const ssh_username           = get(fields, 'ssh_username');
+      const ssh_password           = get(fields, 'ssh_password');
+      const pingStr                = (get(fields, 'ping_enabled') || 'true').toLowerCase();
+      const sshStr                 = (get(fields, 'ssh_enabled')  || 'false').toLowerCase();
+      const group_name             = get(fields, 'group_name');
+      const credential_profile_name = get(fields, 'credential_profile_name');
 
       const ping_enabled = pingStr !== 'false' && pingStr !== '0' && pingStr !== 'no';
       const ssh_enabled  = sshStr === 'true'   || sshStr === '1'   || sshStr === 'yes';
@@ -3320,6 +3323,7 @@ function _parseCsvFile(file) {
         hostname, ip, vendor,
         ssh_port: isNaN(ssh_port) ? 22 : ssh_port,
         ssh_username, ssh_password, ping_enabled, ssh_enabled, group_name,
+        credential_profile_name,
         errors,
         status: errors.length ? 'error' : 'ready',
       };
@@ -3356,6 +3360,7 @@ function _renderCsvPreview(filename) {
       <td>${esc(r.vendor)}</td>
       <td>${r.ssh_enabled ? '✓' : '—'}</td>
       <td>${esc(r.group_name || '')}</td>
+      <td>${esc(r.credential_profile_name || '')}</td>
     </tr>${errHtml}`;
   }).join('');
 
@@ -3404,6 +3409,14 @@ async function runCsvImport() {
       if (r.ssh_username) body.ssh_username = r.ssh_username;
       if (r.ssh_password) body.ssh_password = r.ssh_password;
       if (r.group_name)   body.group_name   = r.group_name;
+      // Resolve credential profile name → id (case-insensitive match)
+      if (r.credential_profile_name) {
+        const prof = credentialProfiles.find(
+          p => p.name.toLowerCase() === r.credential_profile_name.toLowerCase()
+        );
+        if (prof) body.credential_profile_id = prof.id;
+        // If name not found, fall through to site default (no id set)
+      }
 
       try {
         const res = await fetch(`${API_BASE}/api/v1/device-configs`, {
