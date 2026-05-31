@@ -1,8 +1,8 @@
 {
-  "latest": "1.2",
+  "latest": "1.0.0",
   "releases": [
     {
-      "version": "1.2",
+      "version": "1.0.0",
       "label": "Uptime tracking & email alerts",
       "date": "2026-05-31",
       "changes": {
@@ -25,7 +25,7 @@
       }
     },
     {
-      "version": "1.1",
+      "version": "0.9.0",
       "label": "Config backups & maintenance mode",
       "date": "2026-03-15",
       "changes": {
@@ -47,7 +47,7 @@
       }
     },
     {
-      "version": "1.0",
+      "version": "0.8.0",
       "label": "Initial release",
       "date": "2026-01-20",
       "changes": {
