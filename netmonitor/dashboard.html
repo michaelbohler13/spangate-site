@@ -1745,7 +1745,7 @@ function startLiveRefresh() {
         updateAgentHealth(data);
       }
       _refreshPlanInfo();
-      renderDevices();
+      if (!_renamingGroup) renderDevices();   // don't wipe group rename input mid-edit
       renderAlerts();
       updateAlertCounts();
     } catch(e) {}
@@ -2126,11 +2126,13 @@ function toggleGroup(gn) {
 }
 
 // ── Group rename ──────────────────────────────────────────────────────────────
-let _renamingGroup = null;
+let _renamingGroup  = null;
+let _renameGroupDraft = '';   // tracks typed value so live refresh can't wipe it
 
 function startGroupRename(gn, event) {
   event.stopPropagation();
-  _renamingGroup = gn;
+  _renamingGroup    = gn;
+  _renameGroupDraft = gn;     // pre-fill draft with current name
   renderDevices();
   setTimeout(() => {
     const inp = document.getElementById('grpRenameInput');
@@ -2139,16 +2141,16 @@ function startGroupRename(gn, event) {
 }
 
 function cancelGroupRename() {
-  _renamingGroup = null;
+  _renamingGroup    = null;
+  _renameGroupDraft = '';
   renderDevices();
 }
 
 async function saveGroupRename() {
-  const inp = document.getElementById('grpRenameInput');
-  if (!inp) return;
-  const newName = inp.value.trim();
+  const newName = _renameGroupDraft.trim();   // read draft, not DOM (refresh-safe)
   const oldName = _renamingGroup;
-  _renamingGroup = null;
+  _renamingGroup    = null;
+  _renameGroupDraft = '';
 
   if (!newName || newName === oldName) { renderDevices(); return; }
 
@@ -2433,7 +2435,7 @@ function renderDevices() {
     // Use data-gn attribute to avoid double-quote conflict with JSON.stringify in onclick
     if (_renamingGroup === gn) {
       // Inline rename mode — row click disabled while input is active
-      html += `<tr class="grp-row ${worstCls}"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span><input id="grpRenameInput" class="grp-rename-input" value="${esc(gn)}" onclick="event.stopPropagation();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveGroupRename();}if(event.key==='Escape')cancelGroupRename();" /><button class="grp-rename-save" onclick="saveGroupRename();event.stopPropagation();">✓ Save</button><button class="grp-rename-cancel" onclick="cancelGroupRename();event.stopPropagation();">✕</button></td></tr>`;
+      html += `<tr class="grp-row ${worstCls}"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span><input id="grpRenameInput" class="grp-rename-input" value="${esc(_renameGroupDraft)}" oninput="_renameGroupDraft=this.value" onclick="event.stopPropagation();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveGroupRename();}if(event.key==='Escape')cancelGroupRename();" /><button class="grp-rename-save" onclick="saveGroupRename();event.stopPropagation();">✓ Save</button><button class="grp-rename-cancel" onclick="cancelGroupRename();event.stopPropagation();">✕</button></td></tr>`;
     } else {
       html += `<tr class="grp-row ${worstCls}" data-gn="${esc(gn)}" onclick="toggleGroup(this.dataset.gn)"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}<button class="grp-rename-btn" data-gn="${esc(gn)}" onclick="startGroupRename(this.dataset.gn,event)" title="Rename group">✎</button></td></tr>`;
     }
