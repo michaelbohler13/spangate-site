@@ -3475,6 +3475,7 @@ async function runCsvImport() {
         ping_enabled: r.ping_enabled,
         ssh_enabled:  plan === 'free' ? false : r.ssh_enabled,
       };
+      body.skip_auto_backup = true;   // prevent backup flood on large imports
       if (r.ssh_username) body.ssh_username = r.ssh_username;
       if (r.ssh_password) body.ssh_password = r.ssh_password;
       if (r.group_name)   body.group_name   = r.group_name;
@@ -3521,9 +3522,18 @@ async function runCsvImport() {
     const resultEl = document.getElementById('csvResult');
     resultEl.className     = 'csv-result ' + (planLimitMsg || failed ? 'warn' : 'ok');
     resultEl.style.display = '';
-    resultEl[planLimitMsg ? 'innerHTML' : 'textContent'] = planLimitMsg
+    const summaryHtml = planLimitMsg
       ? `${esc(parts.join(' · '))}<br><span style="font-size:0.72rem;opacity:0.85;">${esc(planLimitMsg)}</span>`
-      : parts.join(' · ');
+      : esc(parts.join(' · '));
+    const agentTip = added > 0
+      ? `<div style="margin-top:10px;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:6px;border:0.5px solid var(--border-bright);font-size:0.72rem;color:var(--text-muted);line-height:1.55;">
+           ℹ Devices will show as <strong>Unknown</strong> until the agent pings them — usually 2–5 min.<br>
+           If status doesn't update after 10 minutes, restart your agent:<br>
+           <code style="font-family:var(--mono);color:var(--accent);font-size:0.7rem;">sudo docker restart spangate-agent</code>
+           &nbsp;·&nbsp; <a href="/netmonitor/faq.html" target="_blank" style="color:var(--accent);text-decoration:none;">FAQ ↗</a>
+         </div>`
+      : '';
+    resultEl.innerHTML = summaryHtml + agentTip;
 
   } finally {
     // Always show Close and schedule auto-close regardless of what happened above

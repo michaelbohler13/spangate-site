@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Monitor — FAQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d1117; --bg2:#0a0a0a; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#222222;
+    --border:rgba(255,255,255,0.08); --border-bright:rgba(255,255,255,0.15);
+    --text:#f5f5f7; --text-muted:#a1a1a6; --text-dim:#6e6e73;
+    --accent:#00d4b8; --teal:#2a8a78;
+    --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+
+  /* NAV */
+  nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);background:rgba(0,0,0,0.72);border-bottom:0.5px solid var(--border);}
+  .nav-top{height:36px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;border-bottom:0.5px solid rgba(255,255,255,0.06);}
+  .nav-top a{font-size:0.8rem;font-weight:500;letter-spacing:-0.01em;color:#8b949e;text-decoration:none;padding:4px 12px;border-radius:6px;transition:all 0.2s;}
+  .nav-top a:hover{color:#fff;background:rgba(255,255,255,0.05);}
+  .nav-top a.active{color:#00d4b8;background:rgba(0,212,184,0.08);}
+  .nav-bottom{height:48px;display:flex;align-items:center;padding:0 2rem;}
+  .nav-logo{font-size:1rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px;}
+  .nav-links{display:flex;gap:1.75rem;margin-left:2.5rem;list-style:none;}
+  .nav-links a{font-size:0.78rem;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;}
+  .nav-links a:hover{color:var(--text);}
+  .nav-links a.active{color:var(--accent);}
+  .nav-spacer{flex:1;}
+  .nav-right{display:flex;align-items:center;gap:12px;}
+  .nav-my-monitor{font-size:0.78rem;font-weight:600;color:#00d4b8;text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;font-family:var(--mono);}
+  .nav-my-monitor:hover{color:#1af0d4;}
+  .nav-signin{font-size:0.78rem;color:var(--text-muted);text-decoration:none;letter-spacing:-0.01em;transition:color 0.15s;}
+  .nav-signin:hover{color:var(--text);}
+  .nav-cta{font-size:0.78rem;font-weight:500;color:var(--text);background:rgba(0,212,184,0.12);border:0.5px solid rgba(0,212,184,0.3);border-radius:980px;padding:5px 14px;text-decoration:none;letter-spacing:-0.01em;transition:all 0.15s;}
+  .nav-cta:hover{background:rgba(0,212,184,0.2);}
+
+  /* FOOTER */
+  footer{border-top:0.5px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+  .footer-left{font-size:0.75rem;color:var(--text-dim);}
+  .footer-links{display:flex;gap:1.5rem;list-style:none;}
+  .footer-links a{font-size:0.75rem;color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .footer-links a:hover{color:var(--text-muted);}
+
+  /* PAGE LAYOUT */
+  .faq-page{max-width:780px;margin:0 auto;padding:116px 2rem 5rem;}
+
+  /* HEADER */
+  .guide-breadcrumb{font-size:0.72rem;color:var(--text-dim);font-family:var(--mono);margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
+  .guide-breadcrumb a{color:var(--text-dim);text-decoration:none;transition:color 0.15s;}
+  .guide-breadcrumb a:hover{color:var(--accent);}
+  .guide-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:600;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.75rem;}
+  .guide-subtitle{font-size:0.95rem;color:var(--text-muted);line-height:1.6;max-width:520px;margin-bottom:2.5rem;}
+
+  /* SECTION HEADING */
+  .faq-section-title{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);font-family:var(--mono);margin:2.5rem 0 1rem;padding-bottom:0.5rem;border-bottom:0.5px solid var(--border);}
+
+  /* FAQ ITEM */
+  .faq-item{border:0.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color 0.2s;}
+  .faq-item:hover{border-color:var(--border-bright);}
+  .faq-q{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;cursor:pointer;gap:1rem;user-select:none;}
+  .faq-q-text{font-size:0.9rem;font-weight:500;letter-spacing:-0.01em;color:var(--text);line-height:1.4;}
+  .faq-chevron{color:var(--text-dim);font-size:0.7rem;flex-shrink:0;transition:transform 0.2s;}
+  .faq-item.open .faq-chevron{transform:rotate(180deg);}
+  .faq-a{display:none;padding:0 1.25rem 1.25rem;border-top:0.5px solid var(--border);}
+  .faq-item.open .faq-a{display:block;}
+  .faq-a p{font-size:0.85rem;color:var(--text-muted);line-height:1.7;margin-top:1rem;margin-bottom:0.6rem;}
+  .faq-a p:last-child{margin-bottom:0;}
+  .faq-a strong{color:var(--text);}
+  .faq-a a{color:var(--accent);text-decoration:none;}
+  .faq-a a:hover{text-decoration:underline;}
+
+  /* CODE BLOCK */
+  .faq-code{background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;padding:0.75rem 1rem;margin:0.75rem 0;font-family:var(--mono);font-size:0.78rem;color:var(--accent);overflow-x:auto;white-space:pre;}
+  .faq-code-label{font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);font-family:var(--mono);margin-bottom:0.3rem;}
+
+  /* CALLOUT */
+  .faq-tip{background:rgba(0,212,184,0.06);border:0.5px solid rgba(0,212,184,0.2);border-radius:8px;padding:0.85rem 1rem;margin:0.75rem 0;font-size:0.82rem;color:var(--text-muted);line-height:1.6;}
+  .faq-tip strong{color:var(--accent);}
+
+  /* CREDENTIAL TABLE */
+  .cred-table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:0.75rem 0;}
+  .cred-table th{text-align:left;padding:7px 12px;font-size:0.62rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:0.5px solid var(--border);font-family:var(--mono);}
+  .cred-table td{padding:8px 12px;color:var(--text-muted);border-bottom:0.5px solid rgba(255,255,255,0.04);vertical-align:top;line-height:1.5;}
+  .cred-table tr:last-child td{border-bottom:none;}
+  .cred-table td:first-child{color:var(--text);font-weight:500;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-top">
+    <a href="/">SpanGate</a>
+    <a href="/netmonitor/" class="active">Network Monitor</a>
+  </div>
+  <div class="nav-bottom">
+    <a href="/" class="nav-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00d4b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      SpanGate
+    </a>
+    <ul class="nav-links">
+      <li><a href="/netmonitor/dashboard">Dashboard</a></li>
+      <li><a href="/netmonitor/install-pi">Raspberry Pi</a></li>
+      <li><a href="/netmonitor/install-windows">Windows</a></li>
+      <li><a href="/netmonitor/install-mac">macOS</a></li>
+      <li><a href="/netmonitor/upgrade">Updates</a></li>
+      <li><a href="/netmonitor/faq" class="active">FAQ</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="nav-right">
+      <a href="/netmonitor/dashboard" class="nav-my-monitor">● My Network Monitor</a>
+      <a href="../login.html" class="nav-signin">Sign in</a>
+      <a href="../login.html" class="nav-cta">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<div class="faq-page">
+
+  <div class="guide-breadcrumb">
+    <a href="/netmonitor/">Network Monitor</a>
+    <span style="color:var(--border-bright);">/</span>
+    <span style="color:var(--accent);">FAQ</span>
+  </div>
+  <h1 class="guide-title">Frequently Asked<br><span style="color:var(--accent);">Questions</span></h1>
+  <p class="guide-subtitle">Common questions about setup, the agent, SSH credentials, and device monitoring.</p>
+
+  <!-- ── DEVICE STATUS ───────────────────────────────────────────────────── -->
+  <div class="faq-section-title">Device Status</div>
+
+  <div class="faq-item open">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">Why are my devices showing as Unknown after importing?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>Unknown means the agent hasn't pinged the device yet. After a CSV import the agent needs one polling cycle — usually <strong>2–5 minutes</strong> — to pick up the new device list and run its first ping sweep.</p>
+      <p>If devices are still Unknown after <strong>10 minutes</strong> and the agent is showing as online, restart the agent container:</p>
+      <div class="faq-code-label">Raspberry Pi / Linux</div>
+      <div class="faq-code">sudo docker restart spangate-agent</div>
+      <p>After a restart the agent re-fetches the device list immediately and begins pinging. Statuses typically update within 2–3 minutes.</p>
+      <div class="faq-tip"><strong>Tip:</strong> A restart is most commonly needed after a full wipe-and-reimport (deleting all devices and adding them back). Normal imports — adding new devices to an existing list — usually resolve on their own within a few minutes.</div>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">The agent is online but ping statuses aren't updating — what's wrong?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>The most common cause is that the agent is busy processing a large number of SSH backup requests and the ping cycle is running slowly. This can happen after a bulk import where many devices were added with SSH enabled at the same time.</p>
+      <p>Wait a few minutes for the backup queue to drain, then hit <strong>↻ Refresh</strong> on the dashboard. If statuses still don't update, restart the agent:</p>
+      <div class="faq-code">sudo docker restart spangate-agent</div>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">A device shows Down but I can reach it — why?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>SpanGate uses ICMP ping to determine device status. A few common reasons a reachable device may show as Down:</p>
+      <p><strong>Firewall blocking ICMP</strong> — the device or an intermediate firewall is blocking ping packets from the agent's Pi. Allow ICMP echo requests from the Pi's IP on the target device.</p>
+      <p><strong>Agent can't reach the device's subnet</strong> — the Pi needs a routed path to the device. Check that the Pi's default route or a static route covers the device's subnet.</p>
+      <p><strong>Stale status</strong> — click <strong>↻ Refresh</strong> or wait for the next polling cycle. The agent pings every few minutes so status updates are not immediate.</p>
+    </div>
+  </div>
+
+  <!-- ── AGENT ──────────────────────────────────────────────────────────── -->
+  <div class="faq-section-title">Agent</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">How do I restart the agent?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>SSH into the machine running the agent and run:</p>
+      <div class="faq-code-label">Raspberry Pi / Linux (Docker)</div>
+      <div class="faq-code">sudo docker restart spangate-agent</div>
+      <p>To confirm it restarted successfully:</p>
+      <div class="faq-code">sudo docker ps</div>
+      <p>The <strong>STATUS</strong> column should show <code style="font-family:var(--mono);font-size:0.85em;">Up X seconds</code> after the restart.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">How do I check the agent logs?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>View live agent output with:</p>
+      <div class="faq-code">sudo docker logs spangate-agent --tail 50 -f</div>
+      <p>Press <strong>Ctrl+C</strong> to stop following. Look for lines starting with <code style="font-family:var(--mono);font-size:0.85em;">[PING]</code>, <code style="font-family:var(--mono);font-size:0.85em;">[SSH]</code>, and <code style="font-family:var(--mono);font-size:0.85em;">[HEARTBEAT]</code> to confirm each subsystem is running.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">The agent shows as offline — how do I troubleshoot?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>First confirm the container is running:</p>
+      <div class="faq-code">sudo docker ps | grep spangate-agent</div>
+      <p>If it's not listed, start it:</p>
+      <div class="faq-code">sudo docker start spangate-agent</div>
+      <p>If it keeps stopping, check the logs for errors:</p>
+      <div class="faq-code">sudo docker logs spangate-agent --tail 100</div>
+      <p>Common causes: <strong>invalid API key</strong> in the config file, <strong>no internet access</strong> from the Pi, or a <strong>misconfigured backend URL</strong>. Check <code style="font-family:var(--mono);font-size:0.85em;">/config/config.yaml</code> and confirm the API key matches what's shown in Settings → API Key.</p>
+    </div>
+  </div>
+
+  <!-- ── SSH CREDENTIALS ────────────────────────────────────────────────── -->
+  <div class="faq-section-title">SSH Credentials</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">What's the difference between Site Default, Credential Profiles, and per-device credentials?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>SpanGate uses a three-tier credential system. The agent uses the first match it finds:</p>
+      <table class="cred-table">
+        <thead><tr><th>Tier</th><th>Where to set it</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td>Per-device</td><td>Edit device → Custom (per-device)</td><td>One-off devices with unique credentials</td></tr>
+          <tr><td>Credential Profile</td><td>Settings → SSH Credential Profiles</td><td>Groups of devices sharing the same login (e.g. all core switches)</td></tr>
+          <tr><td>Site Default</td><td>Settings → Default SSH Credentials</td><td>Catch-all for all other devices — set it once and forget it</td></tr>
+        </tbody>
+      </table>
+      <p>If a device has no per-device credentials and no profile assigned, it automatically falls back to the Site Default. You only need to set what's different from the default.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">SSH backups aren't triggering — what should I check?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>SSH config backups require a paid plan and SSH to be enabled on the device. Check the following:</p>
+      <p><strong>1. SSH is enabled</strong> — Edit the device and confirm the SSH toggle is on.</p>
+      <p><strong>2. Credentials are set</strong> — The device needs valid credentials via Site Default, a Credential Profile, or per-device credentials. Test the connection using the <strong>Test Connection</strong> button in the device edit modal.</p>
+      <p><strong>3. The agent can reach the device on port 22</strong> — Confirm SSH is open on the device and reachable from the Pi's network.</p>
+      <p><strong>4. Request a manual backup</strong> — Click the backup icon (📋) next to the device. The agent picks up backup requests within 60 seconds.</p>
+    </div>
+  </div>
+
+  <!-- ── IMPORT / EXPORT ────────────────────────────────────────────────── -->
+  <div class="faq-section-title">Import &amp; Export</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">Can I assign credential profiles during a CSV import?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>Yes. Include a <code style="font-family:var(--mono);font-size:0.85em;">credential_profile_name</code> column in your CSV with the exact name of the profile (case-insensitive). The import matches the name to an existing profile and assigns it automatically.</p>
+      <p>Leave the column blank (or omit it) to use the Site Default for that device.</p>
+      <div class="faq-code">hostname,ip,vendor,...,credential_profile_name
+core-sw-01,10.1.1.1,cisco,...,Core Switches
+access-sw-01,10.1.2.1,aruba_cx,...,Access Layer
+firewall-01,10.1.1.254,cisco,...,</div>
+      <p>Download the current template from <strong>⬆ Import CSV → Download Template</strong> to see all available columns.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      <span class="faq-q-text">Why doesn't my exported CSV include SSH passwords?</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-a">
+      <p>Passwords are intentionally never included in exports — this prevents credentials from accidentally ending up in shared files, email attachments, or version control.</p>
+      <p>When re-importing a previously exported file, leave the <code style="font-family:var(--mono);font-size:0.85em;">ssh_password</code> column blank and use <strong>Credential Profiles</strong> or the <strong>Site Default</strong> to supply credentials to devices that need SSH access.</p>
+    </div>
+  </div>
+
+</div><!-- /faq-page -->
+
+<footer>
+  <div class="footer-left">© 2026 SpanGate. All rights reserved.</div>
+  <ul class="footer-links">
+    <li><a href="/terms.html">Terms</a></li>
+    <li><a href="/privacy.html">Privacy</a></li>
+    <li><a href="/netmonitor/faq">FAQ</a></li>
+  </ul>
+</footer>
+
+<script>
+function toggleFaq(qEl) {
+  const item = qEl.closest('.faq-item');
+  item.classList.toggle('open');
+}
+</script>
+</body>
+</html>

@@ -69,6 +69,7 @@ class DeviceConfigIn(BaseModel):
     ssh_enabled:           bool         = False
     group_name:            Optional[str] = None
     credential_profile_id: Optional[int] = None
+    skip_auto_backup:      bool         = False  # set True on CSV import to avoid flooding the agent
 
     @field_validator("hostname")
     @classmethod
@@ -213,9 +214,11 @@ async def add_device_config(
 
     # Auto-trigger an immediate backup for SSH-capable vendors so the first
     # config snapshot arrives without waiting for the next scheduled pull.
+    # skip_auto_backup=True (set by CSV import) avoids flooding the agent
+    # with hundreds of backup requests at once.
     auto_backup_at = (
         datetime.now(timezone.utc)
-        if payload.ssh_enabled and payload.vendor in SSH_BACKUP_VENDORS
+        if payload.ssh_enabled and payload.vendor in SSH_BACKUP_VENDORS and not payload.skip_auto_backup
         else None
     )
 
