@@ -284,7 +284,7 @@
       <!-- Remote trigger button (Phase B1 — works once agent supports polling) -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;flex-wrap:wrap;">
         <button class="trigger-update-btn" id="triggerUpdateBtn" onclick="triggerRemoteUpdate()">
-          ⚡ Trigger Update
+          ⚡ Version Update
         </button>
         <span class="trigger-update-status" id="triggerUpdateStatus"></span>
       </div>
@@ -980,19 +980,19 @@ async function triggerRemoteUpdate() {
         status.style.color = 'var(--accent)';
       }
     } else if (res.status === 404) {
-      if (btn) { btn.disabled = false; btn.textContent = '⚡ Trigger Update'; }
+      if (btn) { btn.disabled = false; btn.textContent = '⚡ Version Update'; }
       if (status) {
         status.textContent = 'No agent connected yet. Run the manual command below to install.';
         status.style.color = '#ffc107';
       }
     } else if (res.status === 403) {
-      if (btn) { btn.disabled = false; btn.textContent = '⚡ Trigger Update'; }
-      if (status) { status.textContent = 'Viewer accounts cannot trigger updates.'; status.style.color = '#ff9500'; }
+      if (btn) { btn.disabled = false; btn.textContent = '⚡ Version Update'; }
+      if (status) { status.textContent = 'Viewer accounts cannot send version updates.'; status.style.color = '#ff9500'; }
     } else {
       throw new Error(res.status);
     }
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '⚡ Trigger Update'; }
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Version Update'; }
     if (status) { status.textContent = 'Could not reach backend — use the manual command below.'; status.style.color = '#8b949e'; }
   }
 }

@@ -7,7 +7,7 @@
       "date": "2026-05-31",
       "changes": {
         "added": [
-          "Remote update trigger — dashboard can now send an update command to the agent via ⚡ Trigger Update on the upgrade page",
+          "Remote update trigger — dashboard can now send an update command to the agent via ⚡ Version Update on the upgrade page",
           "Agent command polling loop — checks for pending commands every 60 seconds",
           "Self-update via Docker — agent pulls the latest image and restarts its own container automatically",
           "Docker CLI bundled in agent image — no host dependencies needed for self-update"
