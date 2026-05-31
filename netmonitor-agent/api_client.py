@@ -7,13 +7,16 @@ All requests are authenticated with the customer API key and retried on failure.
 import logging
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import requests
 
 logger = logging.getLogger(__name__)
 
-AGENT_VERSION = "1.0.0"
+# Read version from VERSION file — single source of truth shared with agent.py
+_version_file = Path(__file__).parent / "VERSION"
+AGENT_VERSION = _version_file.read_text(encoding="utf-8").strip() if _version_file.exists() else "1.0.0"
 MAX_RETRIES = 3
 RETRY_BACKOFF = 5  # seconds
 
@@ -274,6 +277,25 @@ class APIClient:
             "/api/v1/agent/ssh-test-result",
             {"test_id": test_id, "success": success, "result_msg": result_msg},
         )
+
+    def get_pending_commands(self) -> str | None:
+        """
+        Poll the backend for any pending agent command.
+
+        Called every 60 seconds by agent_command_loop.  The backend clears the
+        command atomically on delivery — the agent will not see it again.
+
+        Returns:
+            Command string (e.g. ``"update"``) or ``None`` if no command is queued.
+        """
+        url = f"{self.api_url}/api/v1/agent/pending-commands"
+        try:
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+            return response.json().get("command")  # "update" | None
+        except requests.RequestException as exc:
+            logger.debug("[CMD] Failed to fetch pending commands: %s", exc)
+            return None
 
     def heartbeat(
         self,

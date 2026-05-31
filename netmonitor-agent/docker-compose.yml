@@ -17,6 +17,13 @@ services:
       # Expose host thermal sensors so the agent can report CPU temperature.
       # Safe to remove on non-Linux hosts — the agent degrades gracefully.
       - /sys/class/thermal:/sys/class/thermal:ro
+      # ── Self-update support ──────────────────────────────────────────────
+      # Docker socket — lets the agent talk to the host Docker daemon.
+      # Required for "⚡ Trigger Update" from the dashboard.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Compose directory — agent reads docker-compose.yml from here when
+      # executing docker compose pull && docker compose up -d.
+      - .:/spangate-compose:ro
     logging:
       driver: json-file
       options:

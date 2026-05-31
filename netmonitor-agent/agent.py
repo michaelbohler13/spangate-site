@@ -25,6 +25,7 @@ _version_file = Path(__file__).parent / "VERSION"
 AGENT_VERSION = _version_file.read_text(encoding="utf-8").strip() if _version_file.exists() else "1.0.0"
 HEARTBEAT_INTERVAL   = 300   # 5 minutes
 DEVICE_POLL_INTERVAL = 60    # 1 minute — how often to refresh devices from dashboard
+COMMAND_POLL_INTERVAL = 60   # 1 minute — how often to check for pending agent commands
 DEFAULT_CONFIG_PATH  = Path(__file__).parent / "config.yaml"
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
@@ -241,6 +242,77 @@ async def ssh_test_loop(
             logger.error("[ST] SSH test loop error: %s", exc)
 
 
+def _execute_self_update() -> None:
+    """
+    Pull the latest agent image and restart the container.
+
+    Runs ``docker compose pull && docker compose up -d`` from the mounted
+    compose directory.  Requires:
+      - Docker socket mounted : /var/run/docker.sock:/var/run/docker.sock
+      - Compose dir mounted   : .:/spangate-compose:ro
+
+    The ``docker compose up -d`` command starts a new container and stops
+    this one — the process will be terminated by Docker as part of the swap.
+    """
+    import subprocess
+
+    compose_dir = "/spangate-compose"
+    try:
+        logger.info("[CMD] Self-update: docker compose pull …")
+        subprocess.run(
+            ["docker", "compose", "pull"],
+            cwd=compose_dir,
+            timeout=120,
+            check=True,
+        )
+        logger.info("[CMD] Self-update: docker compose up -d …")
+        subprocess.run(
+            ["docker", "compose", "up", "-d"],
+            cwd=compose_dir,
+            timeout=30,
+            check=True,
+        )
+        logger.info("[CMD] Self-update complete — new container starting.")
+    except subprocess.TimeoutExpired:
+        logger.error("[CMD] Self-update timed out — run manually: docker compose pull && docker compose up -d")
+    except subprocess.CalledProcessError as exc:
+        logger.error("[CMD] Self-update command failed (exit %d)", exc.returncode)
+    except FileNotFoundError:
+        logger.error(
+            "[CMD] docker CLI not found in container — upgrade to agent v1.1.0+ image. "
+            "Run manually: cd ~/spangate-agent && docker compose pull && docker compose up -d"
+        )
+
+
+async def agent_command_loop(api: APIClient) -> None:
+    """
+    Poll GET /api/v1/agent/pending-commands every COMMAND_POLL_INTERVAL seconds.
+
+    When the dashboard user clicks "⚡ Trigger Update", the backend stores
+    ``{"command": "update"}`` which this loop picks up and executes.
+
+    The command is consumed atomically — the agent sees it exactly once.
+
+    Args:
+        api: Authenticated API client.
+    """
+    logger.info("[CMD] Agent command loop started — polling every %ds", COMMAND_POLL_INTERVAL)
+    event_loop = asyncio.get_event_loop()
+    while True:
+        try:
+            await asyncio.sleep(COMMAND_POLL_INTERVAL)
+            cmd = api.get_pending_commands()
+            if cmd == "update":
+                logger.info("[CMD] Received 'update' command — executing self-update …")
+                await event_loop.run_in_executor(None, _execute_self_update)
+            elif cmd:
+                logger.warning("[CMD] Unknown command received: %r — ignoring", cmd)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[CMD] Agent command loop error: %s", exc)
+
+
 async def heartbeat_loop(
     api: APIClient,
     site_name: str,
@@ -378,6 +450,7 @@ async def main() -> None:
             device_config_loop(api, devices, ssh_puller),
             backup_request_loop(api, ssh_puller),
             ssh_test_loop(api, ssh_puller),
+            agent_command_loop(api),
         )
     except asyncio.CancelledError:
         logger.info("Agent shut down cleanly.")

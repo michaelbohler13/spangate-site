@@ -1,3 +1,7 @@
+# Stage 1 — grab Docker CLI + compose plugin binaries
+FROM docker:27-cli AS docker-cli
+
+# Stage 2 — main agent image
 FROM python:3.11-slim
 
 LABEL org.opencontainers.image.title="SpanGate Network Monitor Agent"
@@ -29,6 +33,12 @@ RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 RUN apt-get purge -y --auto-remove \
     gcc libssl-dev libffi-dev python3-dev cargo pkg-config \
     && rm -rf /var/lib/apt/lists/* /root/.cargo
+
+# Copy Docker CLI + compose plugin from the docker:cli stage.
+# Required for the self-update feature (agent_command_loop).
+# The socket must be mounted at runtime: /var/run/docker.sock:/var/run/docker.sock
+COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/ /usr/local/libexec/docker/cli-plugins/
 
 COPY agent.py agent_metrics.py api_client.py pinger.py ssh_puller.py VERSION ./
 

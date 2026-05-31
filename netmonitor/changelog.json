@@ -1,6 +1,25 @@
 {
-  "latest": "1.0.0",
+  "latest": "1.1.0",
   "releases": [
+    {
+      "version": "1.1.0",
+      "label": "Remote update & self-update support",
+      "date": "2026-05-31",
+      "changes": {
+        "added": [
+          "Remote update trigger — dashboard can now send an update command to the agent via ⚡ Trigger Update on the upgrade page",
+          "Agent command polling loop — checks for pending commands every 60 seconds",
+          "Self-update via Docker — agent pulls the latest image and restarts its own container automatically",
+          "Docker CLI bundled in agent image — no host dependencies needed for self-update"
+        ],
+        "fixed": [
+          "Agent version string now reads from VERSION file consistently — fixes mismatch between reported version and image version"
+        ],
+        "changed": [
+          "docker-compose.yml mounts Docker socket and compose directory to enable self-update"
+        ]
+      }
+    },
     {
       "version": "1.0.0",
       "label": "Uptime tracking & email alerts",
