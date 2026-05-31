@@ -1628,8 +1628,9 @@ async function determineState() {
   updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
   updateAgentHealth(data);
 
-  // Fetch plan usage (non-blocking)
+  // Fetch plan usage + credential profiles (non-blocking)
   _refreshPlanInfo();
+  loadCredentialProfiles();
 
   // Fetch device-configs separately so a failure doesn't block devices/alerts.
   let dcRes = null;
