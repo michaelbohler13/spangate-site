@@ -2136,7 +2136,12 @@ function startGroupRename(gn, event) {
   renderDevices();
   setTimeout(() => {
     const inp = document.getElementById('grpRenameInput');
-    if (inp) { inp.focus(); inp.select(); }
+    if (!inp) return;
+    // Attach via addEventListener so it can write to the module-level let variable.
+    // Inline oninput="" runs in global scope and cannot reach let/const variables.
+    inp.addEventListener('input', () => { _renameGroupDraft = inp.value; });
+    inp.focus();
+    inp.select();
   }, 40);
 }
 
@@ -2435,7 +2440,7 @@ function renderDevices() {
     // Use data-gn attribute to avoid double-quote conflict with JSON.stringify in onclick
     if (_renamingGroup === gn) {
       // Inline rename mode — row click disabled while input is active
-      html += `<tr class="grp-row ${worstCls}"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span><input id="grpRenameInput" class="grp-rename-input" value="${esc(_renameGroupDraft)}" oninput="_renameGroupDraft=this.value" onclick="event.stopPropagation();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveGroupRename();}if(event.key==='Escape')cancelGroupRename();" /><button class="grp-rename-save" onclick="saveGroupRename();event.stopPropagation();">✓ Save</button><button class="grp-rename-cancel" onclick="cancelGroupRename();event.stopPropagation();">✕</button></td></tr>`;
+      html += `<tr class="grp-row ${worstCls}"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span><input id="grpRenameInput" class="grp-rename-input" value="${esc(_renameGroupDraft)}" onclick="event.stopPropagation();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveGroupRename();}if(event.key==='Escape')cancelGroupRename();" /><button class="grp-rename-save" onclick="saveGroupRename();event.stopPropagation();">✓ Save</button><button class="grp-rename-cancel" onclick="cancelGroupRename();event.stopPropagation();">✕</button></td></tr>`;
     } else {
       html += `<tr class="grp-row ${worstCls}" data-gn="${esc(gn)}" onclick="toggleGroup(this.dataset.gn)"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}<button class="grp-rename-btn" data-gn="${esc(gn)}" onclick="startGroupRename(this.dataset.gn,event)" title="Rename group">✎</button></td></tr>`;
     }
