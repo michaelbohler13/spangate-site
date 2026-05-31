@@ -21,7 +21,9 @@ arrive within 15 seconds of queueing.  Tests expire after 5 minutes.
 """
 
 import logging
+import os
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -30,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth import AuthContext
 from database import get_db
-from models import SshTest
+from models import SshCredentialProfile, SshTest
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["SSH Tests"])
@@ -42,12 +44,15 @@ _TEST_TTL = timedelta(minutes=5)
 
 class SshTestRequest(BaseModel):
     """SSH test parameters posted by the dashboard."""
-    ip:           str = Field(..., max_length=253)
-    vendor:       str = Field("cisco",    max_length=100)
-    device_type:  str = Field("cisco_ios", max_length=100)
-    ssh_username: str = Field("",         max_length=100)
-    ssh_password: str = Field("",         max_length=255)
-    ssh_port:     int = Field(22, ge=1, le=65535)
+    ip:                    str           = Field(..., max_length=253)
+    vendor:                str           = Field("cisco",     max_length=100)
+    device_type:           str           = Field("cisco_ios", max_length=100)
+    ssh_username:          str           = Field("",          max_length=100)
+    ssh_password:          str           = Field("",          max_length=255)
+    ssh_port:              int           = Field(22, ge=1, le=65535)
+    # Credential resolution helpers — backend fills in username/password when set
+    credential_profile_id: Optional[int] = None   # use named profile
+    use_site_default:      bool          = False   # use site-wide default SSH creds
 
 
 @router.post("/test-ssh", status_code=202)
@@ -67,14 +72,51 @@ async def create_ssh_test(
     Returns:
         ``{"test_id": <id>}`` — use this to poll GET /test-ssh/{test_id}.
     """
+    # ── Resolve credentials ────────────────────────────────────────────────────
+    ssh_username = body.ssh_username or ""
+    ssh_password = body.ssh_password or ""
+
+    if body.credential_profile_id is not None:
+        # Named credential profile — look it up in the DB
+        prof_result = await db.execute(
+            select(SshCredentialProfile).where(
+                SshCredentialProfile.id      == body.credential_profile_id,
+                SshCredentialProfile.site_id == ctx["site_id"],
+            )
+        )
+        prof = prof_result.scalar_one_or_none()
+        if prof:
+            ssh_username = prof.ssh_user     or ""
+            ssh_password = prof.ssh_password or ""
+        else:
+            raise HTTPException(status_code=404, detail="Credential profile not found.")
+
+    elif body.use_site_default:
+        # Site-wide fallback — fetch from nm_profiles via Supabase
+        try:
+            from supabase import create_client
+            _sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+            nm  = (
+                _sb.table("nm_profiles")
+                   .select("default_ssh_user,default_ssh_password")
+                   .eq("id", ctx["user_id"])
+                   .single()
+                   .execute()
+            )
+            if nm.data:
+                ssh_username = nm.data.get("default_ssh_user")     or ""
+                ssh_password = nm.data.get("default_ssh_password") or ""
+        except Exception as exc:
+            logger.warning("[SSH-TEST] Could not fetch site default SSH creds: %s", exc)
+
     now = datetime.now(timezone.utc)
     row = SshTest(
         site_id=ctx["site_id"],
         ip=body.ip,
         vendor=body.vendor,
         device_type=body.device_type,
-        ssh_username=body.ssh_username or None,
-        ssh_password=body.ssh_password or None,
+        ssh_username=ssh_username or None,
+        ssh_password=ssh_password or None,
         ssh_port=body.ssh_port,
         status="pending",
         expires_at=now + _TEST_TTL,

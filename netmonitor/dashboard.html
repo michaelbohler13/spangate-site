@@ -2896,22 +2896,38 @@ async function testDmSshConnection() {
   const ip      = document.getElementById('dmIp').value.trim();
   const vendor  = document.getElementById('dmVendor').value;
   const sshPort = parseInt(document.getElementById('dmSshPort').value, 10) || 22;
-  const sshUser = document.getElementById('dmSshUsername').value.trim();
-  const sshPass = document.getElementById('dmSshPassword').value;
   const errEl   = document.getElementById('dmError');
+
+  // ── Resolve credential source ────────────────────────────────────────────────
+  const credVal          = document.getElementById('dmCredProfile')?.value || 'custom';
+  let sshUser            = '';
+  let sshPass            = '';
+  let credentialProfileId = null;
+  let useSiteDefault     = false;
+
+  if (credVal === 'site_default') {
+    useSiteDefault = true;                          // backend resolves from nm_profiles
+  } else if (credVal === 'custom') {
+    sshUser = document.getElementById('dmSshUsername').value.trim();
+    sshPass = document.getElementById('dmSshPassword').value;
+  } else {
+    credentialProfileId = parseInt(credVal, 10);    // backend resolves from ssh_credential_profiles
+  }
 
   // ── Validation ──────────────────────────────────────────────────────────────
   if (!ip) {
     errEl.textContent = 'Enter an IP address or domain before testing.';
     return;
   }
-  if (!sshUser) {
-    errEl.textContent = 'Enter an SSH username before testing.';
-    return;
-  }
-  if (!sshPass && document.getElementById('dmSshPassword').placeholder.includes('keep')) {
-    errEl.textContent = 'Enter the SSH password to run a connection test.';
-    return;
+  if (credVal === 'custom') {
+    if (!sshUser) {
+      errEl.textContent = 'Enter an SSH username before testing.';
+      return;
+    }
+    if (!sshPass && document.getElementById('dmSshPassword').placeholder.includes('keep')) {
+      errEl.textContent = 'Enter the SSH password to run a connection test.';
+      return;
+    }
   }
   errEl.textContent = '';
 
@@ -2933,8 +2949,12 @@ async function testDmSshConnection() {
     const res = await fetch(`${API_BASE}/api/v1/test-ssh`, {
       method:  'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ ip, vendor, device_type: deviceType,
-                                ssh_username: sshUser, ssh_password: sshPass, ssh_port: sshPort }),
+      body:    JSON.stringify({
+                 ip, vendor, device_type: deviceType, ssh_port: sshPort,
+                 ssh_username: sshUser, ssh_password: sshPass,
+                 credential_profile_id: credentialProfileId,
+                 use_site_default: useSiteDefault,
+               }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
