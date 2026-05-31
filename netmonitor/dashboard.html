@@ -400,6 +400,20 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .grp-pill{display:inline-block;font-size:0.6rem;font-weight:600;padding:1px 7px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;vertical-align:middle;}
 .grp-pill-down{background:rgba(255,95,87,0.15);color:#ff5f57;border:0.5px solid rgba(255,95,87,0.35);}
 .grp-pill-maint{background:rgba(255,193,7,0.12);color:#ffc107;border:0.5px solid rgba(255,193,7,0.35);}
+/* Rename group inline controls */
+.grp-rename-btn{display:none;background:none;border:none;color:var(--text-dim);cursor:pointer;
+  padding:0 5px;font-size:0.85rem;line-height:1;vertical-align:middle;opacity:0.7;
+  transition:opacity 0.15s;}
+.grp-row:hover .grp-rename-btn{display:inline;}
+.grp-rename-btn:hover{opacity:1;color:var(--accent);}
+.grp-rename-input{background:var(--surface3);border:0.5px solid var(--accent);border-radius:5px;
+  color:var(--text);font-family:var(--mono);font-size:0.72rem;font-weight:600;letter-spacing:0.06em;
+  text-transform:uppercase;padding:1px 7px;outline:none;width:220px;}
+.grp-rename-save,.grp-rename-cancel{background:none;border:0.5px solid var(--border-bright);
+  border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:0.75rem;padding:1px 7px;
+  margin-left:4px;transition:all 0.15s;}
+.grp-rename-save:hover{color:var(--accent);border-color:var(--accent);}
+.grp-rename-cancel:hover{color:#ff5f57;border-color:#ff5f57;}
 
 /* ── DEVICE MANAGEMENT ────────────────────────────────────────────────────── */
 .pane-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:0.6rem;}
@@ -2111,6 +2125,54 @@ function toggleGroup(gn) {
   renderDevices();
 }
 
+// ── Group rename ──────────────────────────────────────────────────────────────
+let _renamingGroup = null;
+
+function startGroupRename(gn, event) {
+  event.stopPropagation();
+  _renamingGroup = gn;
+  renderDevices();
+  setTimeout(() => {
+    const inp = document.getElementById('grpRenameInput');
+    if (inp) { inp.focus(); inp.select(); }
+  }, 40);
+}
+
+function cancelGroupRename() {
+  _renamingGroup = null;
+  renderDevices();
+}
+
+async function saveGroupRename() {
+  const inp = document.getElementById('grpRenameInput');
+  if (!inp) return;
+  const newName = inp.value.trim();
+  const oldName = _renamingGroup;
+  _renamingGroup = null;
+
+  if (!newName || newName === oldName) { renderDevices(); return; }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/device-configs/group-rename`, {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ old_name: oldName, new_name: newName }),
+    });
+    if (res.ok) {
+      // Update local cache so the UI reflects the change immediately
+      deviceConfigs.forEach(c => { if (c.group_name === oldName) c.group_name = newName; });
+      // Move collapsed state to new name if needed
+      if (collapsedGroups.has(oldName)) {
+        collapsedGroups.delete(oldName);
+        collapsedGroups.add(newName);
+        localStorage.setItem('sg-collapsed-groups', JSON.stringify([...collapsedGroups]));
+      }
+    }
+  } catch(e) { /* silent — local cache already updated */ }
+
+  renderDevices();
+}
+
 function onDeviceSearch(val) {
   deviceSearch = val.trim().toLowerCase();
   const clear = document.getElementById('devSearchClear');
@@ -2369,7 +2431,12 @@ function renderDevices() {
                     + (grpMaints ? `<span class="grp-pill grp-pill-maint">🔧 ${grpMaints}</span>` : '');
     const icon = isCollapsed ? '▶' : '▼';
     // Use data-gn attribute to avoid double-quote conflict with JSON.stringify in onclick
-    html += `<tr class="grp-row ${worstCls}" data-gn="${esc(gn)}" onclick="toggleGroup(this.dataset.gn)"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}</td></tr>`;
+    if (_renamingGroup === gn) {
+      // Inline rename mode — row click disabled while input is active
+      html += `<tr class="grp-row ${worstCls}"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span><input id="grpRenameInput" class="grp-rename-input" value="${esc(gn)}" onclick="event.stopPropagation();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveGroupRename();}if(event.key==='Escape')cancelGroupRename();" /><button class="grp-rename-save" onclick="saveGroupRename();event.stopPropagation();">✓ Save</button><button class="grp-rename-cancel" onclick="cancelGroupRename();event.stopPropagation();">✕</button></td></tr>`;
+    } else {
+      html += `<tr class="grp-row ${worstCls}" data-gn="${esc(gn)}" onclick="toggleGroup(this.dataset.gn)"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}<button class="grp-rename-btn" data-gn="${esc(gn)}" onclick="startGroupRename(this.dataset.gn,event)" title="Rename group">✎</button></td></tr>`;
+    }
     if (!isCollapsed) hostnames.forEach(h => { html += deviceRow(h); });
   });
 
