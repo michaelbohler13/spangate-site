@@ -3453,7 +3453,7 @@ function exportDeviceCsv() {
 // CSV IMPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _CSV_VALID_VENDORS = ['cisco','aruba_cx','juniper','other','internet'];
+const _CSV_VALID_VENDORS = ['cisco','aruba_cx','juniper','other','ups','hvac','camera','printer','ping_only','internet'];
 const _CSV_COLUMNS = ['hostname','ip','vendor','ssh_port','ssh_username','ssh_password','ping_enabled','ssh_enabled','group_name','credential_profile_name'];
 let _csvRows = [];
 
@@ -3483,11 +3483,17 @@ function _csvKey(e) { if (e.key === 'Escape') closeCsvModal(); }
 function downloadCsvTemplate() {
   const rows = [
     _CSV_COLUMNS,
+    // Network devices (SSH capable) — vendor: cisco | aruba_cx | juniper | other
     ['core-sw-01',   '10.1.1.1',   'cisco',    '22', 'admin', 'cisco123', 'true',  'true',  'Core',       'Core Switches'],
     ['access-sw-02', '10.1.1.2',   'aruba_cx', '22', 'admin', 'aruba123', 'true',  'true',  'Building A', 'Access Layer'],
-    ['firewall-01',  '10.1.1.254', 'cisco',    '22', 'admin', '',         'true',  'false', 'Core',      'Core Switches'],
-    ['gateway-01',   '192.168.1.1','other',    '22', '',      '',         'true',  'false', '',          ''],
-    ['google-dns',   '8.8.8.8',    'internet', '22', '',      '',         'true',  'false', 'Internet',  ''],
+    ['firewall-01',  '10.1.1.254', 'cisco',    '22', 'admin', '',         'true',  'false', 'Core',       'Core Switches'],
+    ['gateway-01',   '192.168.1.1','other',    '22', '',      '',         'true',  'false', '',           ''],
+    // Ping-only devices (no SSH) — vendor: ups | hvac | camera | printer | ping_only | internet
+    ['ups-rack-01',  '10.1.1.10',  'ups',      '22', '',      '',         'true',  'false', 'Server Room',''],
+    ['hvac-unit-01', '10.1.1.11',  'hvac',     '22', '',      '',         'true',  'false', 'Building A', ''],
+    ['cam-lobby',    '10.1.1.20',  'camera',   '22', '',      '',         'true',  'false', 'Cameras',    ''],
+    ['printer-hr',   '10.1.1.30',  'printer',  '22', '',      '',         'true',  'false', 'HR',         ''],
+    ['google-dns',   '8.8.8.8',    'internet', '22', '',      '',         'true',  'false', 'Internet',   ''],
   ];
   const csv = rows.map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv' });
