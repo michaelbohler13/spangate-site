@@ -22,10 +22,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from auth import AuthContext
 from database import get_db
-from models import DeviceConfig
+from models import DeviceConfig, SshCredentialProfile
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Device Configs"])
@@ -57,16 +58,17 @@ VENDOR_DEFAULT_TYPE: dict[str, str] = {
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class DeviceConfigIn(BaseModel):
-    hostname:     str
-    ip:           str
-    vendor:       str        = "cisco"
-    device_type:  Optional[str] = None   # auto-filled from vendor if omitted
-    ssh_username: Optional[str] = None
-    ssh_password: Optional[str] = None
-    ssh_port:     int        = 22
-    ping_enabled: bool       = True
-    ssh_enabled:  bool       = False
-    group_name:   Optional[str] = None   # display group / folder
+    hostname:              str
+    ip:                    str
+    vendor:                str          = "cisco"
+    device_type:           Optional[str] = None
+    ssh_username:          Optional[str] = None
+    ssh_password:          Optional[str] = None
+    ssh_port:              int          = 22
+    ping_enabled:          bool         = True
+    ssh_enabled:           bool         = False
+    group_name:            Optional[str] = None
+    credential_profile_id: Optional[int] = None
 
     @field_validator("hostname")
     @classmethod
@@ -102,32 +104,35 @@ class DeviceConfigIn(BaseModel):
 
 class DeviceConfigOut(BaseModel):
     """Returned to the dashboard — ssh_password intentionally excluded."""
-    id:                  int
-    hostname:            str
-    ip:                  str
-    vendor:              str
-    device_type:         str
-    ssh_username:        Optional[str]
-    ssh_port:            int
-    ping_enabled:        bool
-    ssh_enabled:         bool
-    group_name:          Optional[str]
-    backup_requested_at: Optional[str]
-    created_at:          str
-    updated_at:          str
+    id:                     int
+    hostname:               str
+    ip:                     str
+    vendor:                 str
+    device_type:            str
+    ssh_username:           Optional[str]
+    ssh_port:               int
+    ping_enabled:           bool
+    ssh_enabled:            bool
+    group_name:             Optional[str]
+    credential_profile_id:  Optional[int]
+    credential_profile_name: Optional[str]
+    backup_requested_at:    Optional[str]
+    created_at:             str
+    updated_at:             str
 
 
 class DeviceConfigPatch(BaseModel):
-    hostname:     Optional[str]  = None
-    ip:           Optional[str]  = None
-    vendor:       Optional[str]  = None
-    device_type:  Optional[str]  = None
-    ssh_username: Optional[str]  = None
-    ssh_password: Optional[str]  = None
-    ssh_port:     Optional[int]  = None
-    ping_enabled: Optional[bool] = None
-    ssh_enabled:  Optional[bool] = None
-    group_name:   Optional[str]  = None
+    hostname:              Optional[str]  = None
+    ip:                    Optional[str]  = None
+    vendor:                Optional[str]  = None
+    device_type:           Optional[str]  = None
+    ssh_username:          Optional[str]  = None
+    ssh_password:          Optional[str]  = None
+    ssh_port:              Optional[int]  = None
+    ping_enabled:          Optional[bool] = None
+    ssh_enabled:           Optional[bool] = None
+    group_name:            Optional[str]  = None
+    credential_profile_id: Optional[int]  = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -144,6 +149,10 @@ def _to_out(row: DeviceConfig) -> DeviceConfigOut:
         ping_enabled=row.ping_enabled,
         ssh_enabled=row.ssh_enabled,
         group_name=row.group_name,
+        credential_profile_id=row.credential_profile_id,
+        credential_profile_name=(
+            row.credential_profile.name if row.credential_profile else None
+        ),
         backup_requested_at=row.backup_requested_at.isoformat() if row.backup_requested_at else None,
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat(),
@@ -161,6 +170,7 @@ async def list_device_configs(
     result = await db.execute(
         select(DeviceConfig)
         .where(DeviceConfig.site_id == ctx["site_id"])
+        .options(selectinload(DeviceConfig.credential_profile))
         .order_by(DeviceConfig.hostname)
     )
     return [_to_out(r) for r in result.scalars().all()]
@@ -221,6 +231,7 @@ async def add_device_config(
         ping_enabled=payload.ping_enabled,
         ssh_enabled=payload.ssh_enabled,
         group_name=payload.group_name or None,
+        credential_profile_id=payload.credential_profile_id or None,
         backup_requested_at=auto_backup_at,
     )
     db.add(row)
@@ -238,32 +249,6 @@ async def add_device_config(
     return _to_out(row)
 
 
-# ── POST /device-configs/bulk-clear-ssh ──────────────────────────────────────
-
-@router.post("/device-configs/bulk-clear-ssh", status_code=200)
-async def bulk_clear_ssh_creds(
-    ctx: AuthContext,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """
-    Clear ssh_username and ssh_password on every device for this site.
-    Devices will fall back to the site-wide default SSH credentials.
-    """
-    from sqlalchemy import update as sa_update
-    result = await db.execute(
-        sa_update(DeviceConfig)
-        .where(DeviceConfig.site_id == ctx["site_id"])
-        .values(ssh_username=None, ssh_password=None)
-    )
-    await db.commit()
-    cleared = result.rowcount
-    logger.info(
-        "[BULK-CLEAR-SSH] Cleared per-device SSH creds on %d devices for site %s",
-        cleared, ctx["site_id"],
-    )
-    return {"ok": True, "cleared": cleared}
-
-
 # ── PATCH /device-configs/{id} ────────────────────────────────────────────────
 
 @router.patch("/device-configs/{device_id}", response_model=DeviceConfigOut)
@@ -275,10 +260,12 @@ async def update_device_config(
 ) -> DeviceConfigOut:
     """Update one or more fields on an existing device."""
     result = await db.execute(
-        select(DeviceConfig).where(
+        select(DeviceConfig)
+        .where(
             DeviceConfig.id == device_id,
             DeviceConfig.site_id == ctx["site_id"],
         )
+        .options(selectinload(DeviceConfig.credential_profile))
     )
     row = result.scalar_one_or_none()
     if row is None:
@@ -554,6 +541,7 @@ async def agent_device_list(
     result = await db.execute(
         select(DeviceConfig)
         .where(DeviceConfig.site_id == ctx["site_id"])
+        .options(selectinload(DeviceConfig.credential_profile))
         .order_by(DeviceConfig.hostname)
     )
     rows = result.scalars().all()
@@ -563,14 +551,20 @@ async def agent_device_list(
 
     for r in rows:
         # force_backup kept for backwards compatibility with older agent versions.
-        # New agents ignore it; backup_request_loop handles on-demand backups.
         force = bool(
             r.backup_requested_at
             and (now - r.backup_requested_at) < _BACKUP_REQUEST_TTL
         )
-        # Use per-device credentials when set; fall back to site defaults
-        ssh_user = r.ssh_username or default_ssh_user
-        ssh_pass = r.ssh_password or default_ssh_password
+        # Priority: per-device creds → credential profile → site default
+        if r.ssh_username:
+            ssh_user = r.ssh_username
+            ssh_pass = r.ssh_password or ""
+        elif r.credential_profile:
+            ssh_user = r.credential_profile.ssh_user or ""
+            ssh_pass = r.credential_profile.ssh_password or ""
+        else:
+            ssh_user = default_ssh_user
+            ssh_pass = default_ssh_password
 
         devices.append({
             "hostname":     r.hostname,

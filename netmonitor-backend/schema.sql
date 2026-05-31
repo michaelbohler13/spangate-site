@@ -156,3 +156,21 @@ alter table nm_profiles
 alter table nm_profiles
     add column if not exists default_ssh_user     text,
     add column if not exists default_ssh_password text;
+
+-- 2026-05-30: SSH Credential Profiles — named sets assignable to groups of devices
+create table if not exists ssh_credential_profiles (
+    id           bigserial    primary key,
+    site_id      text         not null,
+    name         text         not null,
+    ssh_user     text,
+    ssh_password text,
+    created_at   timestamptz  not null default now(),
+    unique(site_id, name)
+);
+
+create index if not exists ix_ssh_cred_profiles_site_name
+    on ssh_credential_profiles (site_id, name);
+
+alter table device_configs
+    add column if not exists credential_profile_id bigint
+    references ssh_credential_profiles(id) on delete set null;

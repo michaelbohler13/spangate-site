@@ -560,6 +560,15 @@ body.view-mode #navUser{display:none!important;}
 .acc-body-inner{padding:0 1.25rem 1.25rem;}
 .settings-desc{font-size:0.8rem;color:var(--text-muted);line-height:1.5;margin-bottom:1rem;}
 .share-link-row{display:flex;gap:8px;align-items:center;}
+.profile-card{display:flex;align-items:center;gap:10px;padding:9px 12px;
+  background:var(--surface);border:0.5px solid var(--border);border-radius:8px;
+  margin-bottom:8px;flex-wrap:wrap;}
+.profile-card-name{font-size:0.82rem;font-weight:600;color:var(--text);flex:1;min-width:80px;}
+.profile-card-meta{font-size:0.75rem;color:var(--text-dim);font-family:var(--mono);}
+.profile-card-count{font-size:0.72rem;color:var(--text-dim);margin-left:auto;}
+.profile-form{background:var(--surface);border:0.5px solid var(--border-bright);
+  border-radius:8px;padding:12px;margin-bottom:10px;}
+.dm-cred-label{font-size:0.72rem;color:var(--text-dim);margin-bottom:2px;}
 .share-link-input{flex:1;background:var(--surface3);border:0.5px solid var(--border);
   border-radius:8px;padding:8px 12px;color:var(--text-muted);font-family:var(--mono);
   font-size:0.75rem;outline:none;cursor:default;}
@@ -1094,15 +1103,51 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <button class="btn btn-outline" onclick="saveDefaultSshCreds()"
                   style="font-size:0.82rem;padding:9px 18px;">Save</button>
-          <button class="btn btn-ghost" onclick="bulkClearSshCreds()"
-                  style="font-size:0.82rem;padding:9px 18px;">Clear all per-device credentials</button>
-        </div>
-        <div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-dim);line-height:1.5;">
-          "Clear all" removes individual device credentials so every device falls back to the default above.
         </div>
         <div id="defaultSshMsg" style="margin-top:0.6rem;font-size:0.78rem;
              line-height:1.55;display:none;"></div>
         </div></div><!-- /acc-body-inner /acc-body -->
+      </div>
+
+      <!-- SSH Credential Profiles -->
+      <div class="settings-section" id="acc-ssh-profiles">
+        <button class="acc-header" onclick="toggleAccordion('acc-ssh-profiles')">
+          <span class="settings-heading">SSH Credential Profiles</span>
+          <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">
+        <div class="settings-desc">
+          Named credential sets for groups of devices that share a login different
+          from the site default — e.g. "Aruba Core" or "ISP Routers".
+          Assign a profile to a device in the edit modal.
+          Per-device credentials always take priority over profiles.
+        </div>
+        <div id="sshProfilesList"></div>
+        <div id="sshProfileForm" class="profile-form" style="display:none;">
+          <div style="margin-bottom:8px;">
+            <div class="dm-label">Profile Name</div>
+            <input id="sshProfName" class="dm-input" type="text" placeholder="e.g. Aruba Core" autocomplete="off" />
+          </div>
+          <div style="margin-bottom:8px;">
+            <div class="dm-label">SSH Username</div>
+            <input id="sshProfUser" class="dm-input" type="text" placeholder="manager" autocomplete="off" />
+          </div>
+          <div style="margin-bottom:12px;">
+            <div class="dm-label">SSH Password</div>
+            <div class="pw-wrap">
+              <input id="sshProfPass" class="dm-input" type="password" placeholder="Leave blank to keep current" autocomplete="new-password" />
+              <button type="button" class="pw-eye" onclick="togglePwEye('sshProfPass',this)" tabindex="-1" aria-label="Show password"><!--eye--></button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" onclick="saveProfile()" style="font-size:0.8rem;padding:7px 16px;">Save Profile</button>
+            <button class="btn btn-ghost" onclick="cancelProfile()" style="font-size:0.8rem;padding:7px 16px;">Cancel</button>
+          </div>
+        </div>
+        <button class="btn btn-ghost" id="sshProfileAddBtn" onclick="openAddProfile()"
+                style="font-size:0.8rem;padding:7px 16px;margin-top:4px;">+ Add Profile</button>
+        <div id="sshProfileMsg" style="margin-top:0.6rem;font-size:0.78rem;line-height:1.55;display:none;"></div>
+        </div></div>
       </div>
 
       <!-- View Link -->
@@ -1252,6 +1297,15 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         <div class="dm-field" id="dmSshPortField">
           <label class="dm-label" for="dmSshPort">SSH Port</label>
           <input id="dmSshPort" class="dm-input" type="number" value="22" min="1" max="65535" />
+        </div>
+        <div class="dm-field" id="dmCredProfileField" style="display:none;grid-column:1/-1;">
+          <label class="dm-label" for="dmCredProfile">SSH Credential Profile</label>
+          <div class="cfg-select-wrap" style="display:block;width:100%;">
+            <select id="dmCredProfile" class="cfg-select dm-select" onchange="dmCredProfileChange()">
+              <option value="site_default">Site Default</option>
+              <option value="custom">Custom (per-device)</option>
+            </select>
+          </div>
         </div>
         <div class="dm-field" id="dmSshUsernameField">
           <label class="dm-label" for="dmSshUsername">SSH Username</label>
@@ -2034,6 +2088,7 @@ function switchTab(tab) {
     loadAlertEmailSetting();
     loadEmailDelivery();
     loadDefaultSshCreds();
+    loadCredentialProfiles();
   }
 }
 
@@ -2593,11 +2648,13 @@ function selectGroup(name) {
 function dmVendorChange() {
   const isInternet = document.getElementById('dmVendor').value === 'internet';
   const hide = isInternet ? 'none' : '';
-  document.getElementById('dmSshPortField').style.display     = hide;
-  document.getElementById('dmSshUsernameField').style.display = hide;
-  document.getElementById('dmSshPasswordField').style.display = hide;
-  document.getElementById('dmSshToggleRow').style.display     = hide;
+  document.getElementById('dmSshPortField').style.display      = hide;
+  document.getElementById('dmCredProfileField').style.display  = hide;
+  document.getElementById('dmSshToggleRow').style.display      = hide;
+  if (!isInternet) dmCredProfileChange();   // sync username/password visibility
   if (isInternet) {
+    document.getElementById('dmSshUsernameField').style.display = 'none';
+    document.getElementById('dmSshPasswordField').style.display = 'none';
     document.getElementById('dmSshEnabled').checked = false;
     document.getElementById('dmSshTestSection').style.display = 'none';
     _resetSshTest();
@@ -2610,6 +2667,17 @@ function dmSshToggleChange() {
   const on = document.getElementById('dmSshEnabled').checked;
   document.getElementById('dmSshTestSection').style.display = on ? '' : 'none';
   if (!on) _resetSshTest();
+}
+
+function dmCredProfileChange() {
+  const val    = document.getElementById('dmCredProfile')?.value || 'site_default';
+  const custom = val === 'custom';
+  document.getElementById('dmSshUsernameField').style.display = custom ? '' : 'none';
+  document.getElementById('dmSshPasswordField').style.display = custom ? '' : 'none';
+  // Clear-creds link only makes sense when custom was previously saved
+  if (!custom) {
+    document.getElementById('dmClearCredsRow').style.display = 'none';
+  }
 }
 
 async function autoLookupHostname() {
@@ -2685,6 +2753,7 @@ function openAddDevice() {
   document.getElementById('dmError').style.color       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Add Device';
   document.getElementById('dmClearCredsRow').style.display = 'none';
+  _populateCredProfileDropdown(null);   // reset to Site Default
   _resetSshTest();
   _applyDmPlanGating();
   dmVendorChange();
@@ -2714,8 +2783,14 @@ function openEditDevice(id, event) {
   document.getElementById('dmError').textContent       = '';
   document.getElementById('dmError').style.color       = '';
   document.getElementById('dmSaveBtn').textContent     = 'Save Changes';
-  // Show clear-creds link only when this device has per-device credentials saved
-  document.getElementById('dmClearCredsRow').style.display = cfg.ssh_username ? '' : 'none';
+  // Set profile dropdown: profile > custom (per-device) > site default
+  const selVal = cfg.credential_profile_id
+    ? String(cfg.credential_profile_id)
+    : cfg.ssh_username ? 'custom' : 'site_default';
+  _populateCredProfileDropdown(selVal);
+  // Show clear-creds link only when custom is selected and username exists
+  document.getElementById('dmClearCredsRow').style.display =
+    (selVal === 'custom' && cfg.ssh_username) ? '' : 'none';
   _resetSshTest();
   _applyDmPlanGating();
   dmVendorChange();
@@ -2931,14 +3006,23 @@ async function saveDevice() {
   btn.disabled    = true;
   btn.textContent = 'Saving…';
 
+  const profileVal = document.getElementById('dmCredProfile')?.value || 'site_default';
+
   try {
     let res;
     if (editingDeviceId === null) {
       // ── ADD ──
       const body = { hostname, ip, vendor, ssh_port: sshPort,
                      ping_enabled: pingEn, ssh_enabled: sshEn, group_name: groupName };
-      if (sshUser) body.ssh_username = sshUser;
-      if (sshPass) body.ssh_password = sshPass;
+      if (profileVal === 'custom') {
+        if (sshUser) body.ssh_username = sshUser;
+        if (sshPass) body.ssh_password = sshPass;
+        body.credential_profile_id = null;
+      } else if (profileVal === 'site_default') {
+        body.credential_profile_id = null;
+      } else {
+        body.credential_profile_id = parseInt(profileVal, 10);
+      }
       res = await fetch(`${API_BASE}/api/v1/device-configs`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -2947,9 +3031,18 @@ async function saveDevice() {
     } else {
       // ── EDIT ──
       const body = { ip, vendor, ssh_port: sshPort,
-                     ssh_username: sshUser || null,   // null clears the field
                      ping_enabled: pingEn, ssh_enabled: sshEn, group_name: groupName };
-      if (sshPass) body.ssh_password = sshPass;       // omit = keep existing
+      if (profileVal === 'custom') {
+        body.ssh_username          = sshUser || null;
+        if (sshPass) body.ssh_password = sshPass;
+        body.credential_profile_id = null;
+      } else if (profileVal === 'site_default') {
+        body.credential_profile_id = null;
+        body.ssh_username          = null;
+      } else {
+        body.credential_profile_id = parseInt(profileVal, 10);
+        body.ssh_username          = null;
+      }
       res = await fetch(`${API_BASE}/api/v1/device-configs/${editingDeviceId}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -3526,6 +3619,174 @@ function _showSettingsKeyMsg(msg, ok, ms = 6000) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CREDENTIAL PROFILES
+// ─────────────────────────────────────────────────────────────────────────────
+
+let credentialProfiles = [];   // [{id, name, ssh_user, ssh_password_set, device_count}]
+let _editingProfileId  = null; // null = adding new
+
+async function loadCredentialProfiles() {
+  if (!apiKey) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/credential-profiles`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return;
+    credentialProfiles = await res.json();
+    _renderProfileList();
+  } catch(e) { /* silent */ }
+}
+
+function _renderProfileList() {
+  const el = document.getElementById('sshProfilesList');
+  if (!el) return;
+  if (!credentialProfiles.length) {
+    el.innerHTML = `<div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:8px;">No profiles yet — add one below.</div>`;
+    return;
+  }
+  el.innerHTML = credentialProfiles.map(p => `
+    <div class="profile-card">
+      <span class="profile-card-name">${_esc(p.name)}</span>
+      <span class="profile-card-meta">${_esc(p.ssh_user || '—')} &nbsp;·&nbsp; ${p.ssh_password_set ? '••••••••' : 'no password'}</span>
+      <span class="profile-card-count">${p.device_count} device${p.device_count !== 1 ? 's' : ''}</span>
+      <button class="btn btn-ghost" onclick="openEditProfile(${p.id})" style="font-size:0.75rem;padding:4px 12px;">Edit</button>
+      <button class="btn-danger" onclick="deleteProfile(${p.id})" style="font-size:0.75rem;padding:4px 12px;">Delete</button>
+    </div>`).join('');
+}
+
+function _esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function openAddProfile() {
+  _editingProfileId = null;
+  document.getElementById('sshProfName').value       = '';
+  document.getElementById('sshProfUser').value       = '';
+  document.getElementById('sshProfPass').value       = '';
+  document.getElementById('sshProfPass').placeholder = 'Password';
+  document.getElementById('sshProfileForm').style.display    = '';
+  document.getElementById('sshProfileAddBtn').style.display  = 'none';
+  document.getElementById('sshProfName').focus();
+}
+
+function openEditProfile(id) {
+  const p = credentialProfiles.find(x => x.id === id);
+  if (!p) return;
+  _editingProfileId = id;
+  document.getElementById('sshProfName').value       = p.name;
+  document.getElementById('sshProfUser').value       = p.ssh_user || '';
+  document.getElementById('sshProfPass').value       = '';
+  document.getElementById('sshProfPass').placeholder = p.ssh_password_set
+    ? '•••••••• (saved — enter new to change)' : 'Password';
+  document.getElementById('sshProfileForm').style.display    = '';
+  document.getElementById('sshProfileAddBtn').style.display  = 'none';
+  document.getElementById('sshProfName').focus();
+}
+
+function cancelProfile() {
+  document.getElementById('sshProfileForm').style.display   = 'none';
+  document.getElementById('sshProfileAddBtn').style.display = '';
+  _editingProfileId = null;
+}
+
+async function saveProfile() {
+  const msg  = document.getElementById('sshProfileMsg');
+  const name = document.getElementById('sshProfName').value.trim();
+  const user = document.getElementById('sshProfUser').value.trim();
+  const pass = document.getElementById('sshProfPass').value;
+  if (!name) { _showProfileMsg('Profile name is required.', false); return; }
+
+  const body = { name, ssh_user: user };
+  if (pass) body.ssh_password = pass;
+
+  try {
+    const url = _editingProfileId
+      ? `${API_BASE}/api/v1/credential-profiles/${_editingProfileId}`
+      : `${API_BASE}/api/v1/credential-profiles`;
+    const res = await fetch(url, {
+      method:  _editingProfileId ? 'PATCH' : 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    if (res.ok) {
+      cancelProfile();
+      await loadCredentialProfiles();
+      _showProfileMsg(`✓ Profile "${name}" saved.`, true);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      _showProfileMsg(err.detail || 'Failed to save profile.', false);
+    }
+  } catch(e) {
+    _showProfileMsg('Network error — try again.', false);
+  }
+}
+
+async function deleteProfile(id) {
+  const p = credentialProfiles.find(x => x.id === id);
+  if (!p) return;
+  const msg = p.device_count
+    ? `Delete "${p.name}"?\n\n${p.device_count} device(s) will fall back to the site default.`
+    : `Delete "${p.name}"?`;
+  if (!confirm(msg)) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/credential-profiles/${id}`, {
+      method:  'DELETE',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      await loadCredentialProfiles();
+      const rev = data.devices_reverted || 0;
+      _showProfileMsg(
+        `✓ Profile deleted${rev ? ` — ${rev} device(s) reverted to site default` : ''}.`,
+        true,
+      );
+    } else {
+      _showProfileMsg('Failed to delete profile.', false);
+    }
+  } catch(e) {
+    _showProfileMsg('Network error — try again.', false);
+  }
+}
+
+function _showProfileMsg(text, ok) {
+  const el = document.getElementById('sshProfileMsg');
+  if (!el) return;
+  el.textContent  = text;
+  el.style.color  = ok ? 'var(--accent)' : '#f87171';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+// Populate the credential profile dropdown in the device modal.
+// selectedVal: profile id as string | 'custom' | 'site_default' | null (→ site_default)
+function _populateCredProfileDropdown(selectedVal) {
+  const sel = document.getElementById('dmCredProfile');
+  if (!sel) return;
+  // Rebuild options
+  sel.innerHTML = `<option value="site_default">Site Default</option>`;
+  credentialProfiles.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value       = String(p.id);
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  const divider = document.createElement('option');
+  divider.disabled = true;
+  divider.textContent = '──────────';
+  sel.appendChild(divider);
+  const custom = document.createElement('option');
+  custom.value       = 'custom';
+  custom.textContent = 'Custom (per-device)';
+  sel.appendChild(custom);
+  // Set selection
+  sel.value = selectedVal || 'site_default';
+  if (!sel.value) sel.value = 'site_default';  // fallback if id not in list
+  dmCredProfileChange();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SETTINGS — ACCORDION
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3553,6 +3814,7 @@ const _ACC_IDS = [
   'acc-email-delivery',
   'acc-alert-notifications',
   'acc-default-ssh',
+  'acc-ssh-profiles',
   'acc-view-link',
   'acc-api-key',
 ];
@@ -3783,40 +4045,6 @@ async function saveDefaultSshCreds() {
   }
   msg.style.display = 'block';
   setTimeout(() => { msg.style.display = 'none'; }, 5000);
-}
-
-async function bulkClearSshCreds() {
-  if (!apiKey) return;
-  const msg = document.getElementById('defaultSshMsg');
-
-  if (!confirm('Remove per-device SSH credentials from all devices?\n\nEvery device will fall back to the site default. This cannot be undone.')) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/device-configs/bulk-clear-ssh`, {
-      method:  'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}` },
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      msg.textContent = `✓ Cleared per-device credentials on ${data.cleared} device${data.cleared !== 1 ? 's' : ''} — all now use the site default.`;
-      msg.style.color = 'var(--accent)';
-      // Refresh local device config cache so the edit modal reflects cleared state
-      try {
-        const dcRes = await fetch(`${API_BASE}/api/v1/device-configs`, {
-          headers: { 'Authorization': `Bearer ${apiKey}` },
-        });
-        if (dcRes.ok) deviceConfigs = await dcRes.json();
-      } catch(e) { /* non-fatal */ }
-    } else {
-      msg.textContent = data.detail || 'Failed to clear credentials.';
-      msg.style.color = '#f87171';
-    }
-  } catch(e) {
-    msg.textContent = 'Network error — try again.';
-    msg.style.color = '#f87171';
-  }
-  msg.style.display = 'block';
-  setTimeout(() => { msg.style.display = 'none'; }, 8000);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

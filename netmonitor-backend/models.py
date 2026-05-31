@@ -4,11 +4,12 @@ SQLAlchemy ORM models for all database tables.
 
 Tables
 ------
-devices         — one row per monitored device per site
-agent_heartbeat — one row per site, upserted on every heartbeat
-configs         — running-config snapshots (30-day retention)
-config_diffs    — detected config changes with unified diff text (30-day retention)
-alerts          — ping and config-change alert log (30-day retention)
+devices                  — one row per monitored device per site
+agent_heartbeat          — one row per site, upserted on every heartbeat
+configs                  — running-config snapshots (30-day retention)
+config_diffs             — detected config changes with unified diff text (30-day retention)
+alerts                   — ping and config-change alert log (30-day retention)
+ssh_credential_profiles  — named SSH credential sets assignable to devices
 """
 
 from datetime import datetime
@@ -248,6 +249,37 @@ class Feedback(Base):
         return f"<Feedback id={self.id} subject={self.subject!r}>"
 
 
+# ── SshCredentialProfile ──────────────────────────────────────────────────────
+
+class SshCredentialProfile(Base):
+    """
+    A named SSH credential set that can be assigned to a group of devices.
+
+    Priority chain (agent uses first that is set):
+      per-device ssh_username/password  →  credential profile  →  site default
+    """
+
+    __tablename__ = "ssh_credential_profiles"
+
+    id:           Mapped[int]           = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    site_id:      Mapped[str]           = mapped_column(String(255), nullable=False, index=True)
+    name:         Mapped[str]           = mapped_column(String(100), nullable=False)
+    ssh_user:     Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    ssh_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at:   Mapped[datetime]      = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    device_configs: Mapped[list["DeviceConfig"]] = relationship(back_populates="credential_profile")
+
+    __table_args__ = (
+        Index("ix_ssh_cred_profiles_site_name", "site_id", "name", unique=True),
+    )
+
+    def __repr__(self) -> str:
+        return f"<SshCredentialProfile site={self.site_id!r} name={self.name!r}>"
+
+
 # ── DeviceConfig ──────────────────────────────────────────────────────────────
 
 class DeviceConfig(Base):
@@ -275,13 +307,21 @@ class DeviceConfig(Base):
     ssh_port:     Mapped[int]           = mapped_column(Integer,     nullable=False, default=22)
     ping_enabled: Mapped[bool]          = mapped_column(Boolean,     nullable=False, default=True)
     ssh_enabled:  Mapped[bool]          = mapped_column(Boolean,     nullable=False, default=False)
-    group_name:          Mapped[Optional[str]]      = mapped_column(String(100), nullable=True)   # display group / folder
+    group_name:           Mapped[Optional[str]]      = mapped_column(String(100), nullable=True)
+    credential_profile_id: Mapped[Optional[int]]    = mapped_column(
+        BigInteger,
+        ForeignKey("ssh_credential_profiles.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     backup_requested_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at:   Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at:   Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+    credential_profile: Mapped[Optional["SshCredentialProfile"]] = relationship(
+        back_populates="device_configs"
+    )
+
     __table_args__ = (
-        # Hostname must be unique within a site
         Index("ix_device_configs_site_hostname", "site_id", "hostname", unique=True),
     )
 
