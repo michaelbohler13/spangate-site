@@ -222,7 +222,7 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .s-configured{background:rgba(167,139,250,0.1);color:#a78bfa;border:0.5px solid rgba(167,139,250,0.3);}
 .s-maintenance{background:rgba(255,193,7,0.12);color:#ffc107;border:0.5px solid rgba(255,193,7,0.35);}
 .v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;}
-.v-internet{color:#a78bfa;} .v-other{color:var(--text-muted);}
+.v-internet{color:#a78bfa;} .v-other{color:var(--text-muted);} .v-ping{color:#f59e0b;}
 .hn{font-family:var(--mono);font-size:0.78rem;color:var(--text);}
 .ip-cell{font-family:var(--mono);font-size:0.76rem;color:var(--text);}
 .ls-cell{font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);}
@@ -684,7 +684,7 @@ body.view-mode #navUser{display:none!important;}
 </div>
 
 <!-- ── VIEW-ONLY BANNER (shown when visiting via share link) ──────────────── -->
-<div id="viewBanner">👁 View Link — read-only access &nbsp;·&nbsp; no login required</div>
+<div id="viewBanner">👁 Live View Link — read-only access &nbsp;·&nbsp; no login required</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!-- STATE A — ONBOARDING                                                       -->
@@ -1221,9 +1221,17 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </button>
         <div class="acc-body"><div class="acc-body-inner">
         <div class="settings-desc">
-          Invite team members to view or manage your site.
+          Need to share access to your site? You have two options:
+          <br><br>
+          <strong>Team Members (this section)</strong> — invite specific people by email.
+          They create a SpanGate account and log in with their own credentials.
           <strong>Admins</strong> can add/edit devices and update settings.
-          <strong>Viewers</strong> are read-only.
+          <strong>Viewers</strong> are read-only. You can remove them at any time.
+          <br><br>
+          <strong>Just need a quick read-only link?</strong> Use the
+          <a href="#" onclick="toggleAccordion('acc-view-link');return false;"
+             style="color:var(--accent);text-decoration:none;">Live View Link</a>
+          section below — no account required, just share the URL.
         </div>
         <div class="team-seat-info" id="teamSeatInfo"></div>
         <div id="teamMembersList"></div>
@@ -1245,23 +1253,28 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div></div>
       </div>
 
-      <!-- View Link -->
+      <!-- Live View Link -->
       <div class="settings-section" id="acc-view-link">
         <button class="acc-header" onclick="toggleAccordion('acc-view-link')">
-          <span class="settings-heading">View Link</span>
+          <span class="settings-heading">Live View Link</span>
           <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
         </button>
         <div class="acc-body"><div class="acc-body-inner">
         <div class="settings-desc">
-          Share a read-only link with your helpdesk team, manager, or client — no login required.
-          Visitors see live device status and alerts but cannot add, edit, or delete anything.
+          Share a read-only link with your manager, client, or helpdesk team — <strong>no login required</strong>.
+          Anyone with the URL can view live device status and alerts but cannot add, edit, or delete anything.
           SSH passwords are never exposed.
+          <br><br>
+          <strong>Need someone to actively manage devices?</strong> Use
+          <a href="#" onclick="toggleAccordion('acc-team');return false;"
+             style="color:var(--accent);text-decoration:none;">Team Members</a>
+          instead — they get a proper login with Admin or Viewer access.
         </div>
 
         <!-- No token yet -->
         <div id="shareNoToken">
           <button class="btn btn-outline" onclick="generateShareToken()" style="font-size:0.82rem;">
-            Generate View Link
+            Generate Live View Link
           </button>
         </div>
 
@@ -1381,11 +1394,20 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
           <label class="dm-label" for="dmVendor">Vendor</label>
           <div class="cfg-select-wrap" style="display:block;width:100%;">
             <select id="dmVendor" class="cfg-select dm-select" onchange="dmVendorChange()">
-              <option value="cisco">Cisco</option>
-              <option value="aruba_cx">Aruba CX</option>
-              <option value="juniper">Juniper</option>
-              <option value="other">Other</option>
-              <option value="internet">Internet / Website</option>
+              <optgroup label="Network Devices (SSH capable)">
+                <option value="cisco">Cisco</option>
+                <option value="aruba_cx">Aruba CX</option>
+                <option value="juniper">Juniper</option>
+                <option value="other">Other — Network Device</option>
+              </optgroup>
+              <optgroup label="Ping Only (no SSH)">
+                <option value="ups">UPS / Power</option>
+                <option value="hvac">HVAC / Environmental</option>
+                <option value="camera">IP Camera</option>
+                <option value="printer">Printer / Scanner</option>
+                <option value="internet">Internet / Website</option>
+                <option value="ping_only">Generic (Ping Only)</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -1630,10 +1652,17 @@ function cpFullCfg(btn) {
   setTimeout(() => { btn.textContent = 'Copy full config'; }, 2000);
 }
 function vendorLabel(v) {
-  return {cisco:'Cisco', aruba_cx:'Aruba CX', juniper:'Juniper', internet:'Internet'}[v] || v;
+  return {
+    cisco:'Cisco', aruba_cx:'Aruba CX', juniper:'Juniper', other:'Other',
+    ups:'UPS', hvac:'HVAC', camera:'IP Camera', printer:'Printer',
+    internet:'Internet', ping_only:'Ping Only',
+  }[v] || v;
 }
 function vendorClass(v) {
-  return {cisco:'v-cisco', aruba_cx:'v-aruba', juniper:'v-juniper', internet:'v-internet'}[v] || 'v-other';
+  return {
+    cisco:'v-cisco', aruba_cx:'v-aruba', juniper:'v-juniper', internet:'v-internet',
+    ups:'v-ping', hvac:'v-ping', camera:'v-ping', printer:'v-ping', ping_only:'v-ping',
+  }[v] || 'v-other';
 }
 function alertBadgeClass(t) {
   return {ping_down:'al-ping-down', ping_up:'al-ping-up', config_change:'al-config'}[t] || '';
@@ -2850,28 +2879,51 @@ function selectGroup(name) {
   document.getElementById('dmGroupDropdown').style.display = 'none';
 }
 
+// Vendors that don't support SSH — ping monitoring only
+const _PING_ONLY_VENDORS = new Set(['ups','hvac','camera','printer','ping_only','internet']);
+
 function dmVendorChange() {
-  const isInternet = document.getElementById('dmVendor').value === 'internet';
-  const hide = isInternet ? 'none' : '';
-  document.getElementById('dmSshPortField').style.display      = hide;
-  document.getElementById('dmCredProfileField').style.display  = hide;
-  document.getElementById('dmSshToggleRow').style.display      = hide;
-  if (!isInternet) dmCredProfileChange();   // sync username/password visibility
-  if (isInternet) {
+  const vendor     = document.getElementById('dmVendor').value;
+  const isPingOnly = _PING_ONLY_VENDORS.has(vendor);
+
+  if (isPingOnly) {
+    // Force SSH off and hide ALL SSH UI
+    document.getElementById('dmSshEnabled').checked            = false;
+    document.getElementById('dmSshToggleRow').style.display    = 'none';
+    document.getElementById('dmSshPortField').style.display    = 'none';
+    document.getElementById('dmCredProfileField').style.display = 'none';
     document.getElementById('dmSshUsernameField').style.display = 'none';
     document.getElementById('dmSshPasswordField').style.display = 'none';
-    document.getElementById('dmSshEnabled').checked = false;
-    document.getElementById('dmSshTestSection').style.display = 'none';
+    document.getElementById('dmClearCredsRow').style.display   = 'none';
+    document.getElementById('dmSshTestSection').style.display  = 'none';
     _resetSshTest();
   } else {
-    dmSshToggleChange();   // re-evaluate whether tester should be visible
+    // Network device — show the SSH toggle and let its state control the rest
+    document.getElementById('dmSshToggleRow').style.display = '';
+    dmSshToggleChange();
   }
 }
 
 function dmSshToggleChange() {
-  const on = document.getElementById('dmSshEnabled').checked;
-  document.getElementById('dmSshTestSection').style.display = on ? '' : 'none';
-  if (!on) _resetSshTest();
+  const on     = document.getElementById('dmSshEnabled').checked;
+  const vendor = document.getElementById('dmVendor').value;
+
+  // Ping-only vendors handled entirely by dmVendorChange — don't touch their state
+  if (_PING_ONLY_VENDORS.has(vendor)) return;
+
+  // Show / hide the SSH credential section based on toggle state
+  document.getElementById('dmSshPortField').style.display     = on ? '' : 'none';
+  document.getElementById('dmCredProfileField').style.display = on ? '' : 'none';
+  document.getElementById('dmSshTestSection').style.display   = on ? '' : 'none';
+
+  if (on) {
+    dmCredProfileChange();   // restore username/password visibility based on profile
+  } else {
+    document.getElementById('dmSshUsernameField').style.display = 'none';
+    document.getElementById('dmSshPasswordField').style.display = 'none';
+    document.getElementById('dmClearCredsRow').style.display    = 'none';
+    _resetSshTest();
+  }
 }
 
 function dmCredProfileChange() {

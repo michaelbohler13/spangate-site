@@ -31,10 +31,18 @@ from models import DeviceConfig, SshCredentialProfile
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Device Configs"])
 
-VALID_VENDORS = {"cisco", "aruba_cx", "juniper", "other", "internet"}
+VALID_VENDORS = {
+    # Network devices (SSH-capable)
+    "cisco", "aruba_cx", "juniper", "other",
+    # Ping-only devices (no SSH)
+    "ups", "hvac", "camera", "printer", "ping_only", "internet",
+}
 
 # Vendors that support SSH config backup — trigger an immediate backup on first add
 SSH_BACKUP_VENDORS = {"cisco", "aruba_cx", "juniper"}
+
+# Ping-only vendors — SSH is never attempted regardless of ssh_enabled flag
+PING_ONLY_VENDORS = {"ups", "hvac", "camera", "printer", "ping_only", "internet"}
 
 # Device limits per subscription plan
 PLAN_LIMITS: dict[str, int] = {
@@ -47,11 +55,17 @@ PLAN_LIMITS: dict[str, int] = {
 
 # Default netmiko device_type per vendor
 VENDOR_DEFAULT_TYPE: dict[str, str] = {
-    "cisco":    "cisco_ios",
-    "aruba_cx": "aruba_aoscx",    # AOS-CX platform (not legacy ProCurve)
-    "juniper":  "juniper_junos",
-    "other":    "linux",
-    "internet": "ping_only",
+    "cisco":     "cisco_ios",
+    "aruba_cx":  "aruba_aoscx",    # AOS-CX platform (not legacy ProCurve)
+    "juniper":   "juniper_junos",
+    "other":     "linux",
+    # Ping-only — no SSH connection attempted
+    "ups":       "ping_only",
+    "hvac":      "ping_only",
+    "camera":    "ping_only",
+    "printer":   "ping_only",
+    "ping_only": "ping_only",
+    "internet":  "ping_only",
 }
 
 
@@ -204,6 +218,10 @@ async def add_device_config(
             ),
         )
 
+    # ── Force SSH off for ping-only vendors ──────────────────────────────────
+    if payload.vendor in PING_ONLY_VENDORS:
+        payload.ssh_enabled = False
+
     # ── SSH backup plan gate ─────────────────────────────────────────────────
     if payload.ssh_enabled and plan == "free":
         raise HTTPException(
@@ -319,6 +337,11 @@ async def update_device_config(
         raise HTTPException(status_code=404, detail="Device not found")
 
     updates = payload.model_dump(exclude_unset=True)
+
+    # ── Force SSH off for ping-only vendors ──────────────────────────────────
+    effective_vendor = updates.get("vendor", row.vendor)
+    if effective_vendor in PING_ONLY_VENDORS:
+        updates["ssh_enabled"] = False
 
     # ── SSH backup plan gate ─────────────────────────────────────────────────
     if updates.get("ssh_enabled") is True and ctx.get("plan", "free") == "free":
