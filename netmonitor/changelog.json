@@ -1,19 +1,64 @@
 {
-  "latest": "1.0.0",
+  "latest": "1.2",
   "releases": [
     {
-      "version": "1.0.0",
-      "date": "2026-05-30",
-      "label": "Initial Release",
+      "version": "1.2",
+      "label": "Uptime tracking & email alerts",
+      "date": "2026-05-31",
+      "changes": {
+        "added": [
+          "24-hour uptime bars on device list — live percentage and color-coded bar per device",
+          "SMTP email alerts — get notified the moment a device goes down or comes back up",
+          "Ping-only device types: UPS, HVAC, camera, printer, internet — SSH disabled automatically",
+          "CSV import now supports all ping-only vendor types",
+          "Team member roles: owner, admin, viewer with per-site access control",
+          "Live View Link — shareable read-only dashboard URL for non-members"
+        ],
+        "fixed": [
+          "CSV import validation rejected valid ping-only vendor names",
+          "Device status badge showed stale data after maintenance mode was toggled"
+        ],
+        "changed": [
+          "Dashboard header redesigned — site name, agent health (CPU/RAM/Temp), and tab bar now match the real layout",
+          "Status labels simplified to UP / DOWN / MAINTENANCE for consistency"
+        ]
+      }
+    },
+    {
+      "version": "1.1",
+      "label": "Config backups & maintenance mode",
+      "date": "2026-03-15",
+      "changes": {
+        "added": [
+          "Automated SSH config pull — weekly backup of running-config per device",
+          "Config change detection — alerts when a device's running-config hash changes",
+          "Maintenance mode — suppress alerts for devices undergoing planned work",
+          "SSH error reporting — last_ssh_error and last_ssh_at tracked per device",
+          "Delete device endpoint for removing stale or decommissioned entries"
+        ],
+        "fixed": [
+          "Devices with no recent heartbeat incorrectly showed as UP instead of unknown",
+          "Config backup rejected valid Cisco configs containing extended show headers"
+        ],
+        "changed": [
+          "Agent heartbeat interval reduced from 10 minutes to 5 minutes",
+          "Ping timeout increased from 1s to 2s to reduce false-down alerts on slow links"
+        ]
+      }
+    },
+    {
+      "version": "1.0",
+      "label": "Initial release",
+      "date": "2026-01-20",
       "changes": {
         "added": [
           "ICMP ping monitoring for all configured devices — up/down status updates every 60 seconds",
-          "SSH config backup for Cisco IOS, Aruba, and generic SSH-capable devices",
-          "Agent heartbeat with CPU, RAM, and temperature metrics (Raspberry Pi temperature supported)",
-          "Automatic device list sync — agent fetches devices from the cloud, no manual re-entry needed after migration",
-          "Multi-group device organisation with CSV bulk import (up to 500 devices)",
+          "SSH config backup for Cisco IOS, Aruba CX, Juniper, and generic SSH-capable devices",
+          "Agent heartbeat with CPU, RAM, and temperature metrics — Raspberry Pi thermal sensor supported",
+          "Automatic device list sync — agent fetches devices from the cloud, no manual re-entry needed",
+          "CSV bulk import and export — load your full device inventory from a spreadsheet",
           "Alert history stored in the cloud — survives agent restarts and hardware changes",
-          "Docker image published to Docker Hub for Raspberry Pi arm64 and x86 amd64 platforms",
+          "Docker image published to Docker Hub for Raspberry Pi arm64 and x86 amd64",
           "Automated Docker image builds via GitHub Actions on every agent code change",
           "Read-only share link — generate a view-only URL for teammates without a dashboard login"
         ],

@@ -561,6 +561,25 @@ body.view-mode #navUser{display:none!important;}
   text-underline-offset:2px;cursor:pointer;}
 #emailSetupBanner a:hover{opacity:0.8;}
 
+/* ── Update available banner ────────────────────────────────────────────── */
+#updateAvailBanner{display:none;padding:9px 2rem;background:rgba(0,212,184,0.07);
+  border-bottom:0.5px solid rgba(0,212,184,0.22);
+  font-size:0.78rem;color:#6dcfc3;align-items:center;gap:8px;}
+#updateAvailBanner strong{color:var(--accent);}
+#updateAvailBanner a{color:var(--accent);font-weight:600;text-decoration:underline;
+  text-underline-offset:2px;text-decoration-line:underline;}
+#updateAvailBanner a:hover{opacity:0.8;}
+.upd-dismiss{margin-left:auto;background:none;border:none;
+  color:rgba(0,212,184,0.4);font-size:1.1rem;cursor:pointer;padding:0 4px;line-height:1;}
+.upd-dismiss:hover{color:var(--accent);}
+
+/* ── Agent version badge in health card ─────────────────────────────────── */
+.ahc-ver{font-family:var(--mono);font-size:0.62rem;color:var(--text-dim);
+  padding:2px 7px;border-radius:4px;background:rgba(255,255,255,0.04);
+  border:0.5px solid var(--border);cursor:default;}
+.ahc-ver-upd{color:#ffc107 !important;border-color:rgba(255,189,46,0.35) !important;
+  background:rgba(255,189,46,0.07) !important;}
+
 /* ── Settings pane — accordion ──────────────────────────────────────────── */
 .settings-pane{max-width:640px;padding:2rem 1.5rem;}
 .settings-section{background:var(--surface2);border:0.5px solid var(--border);
@@ -929,6 +948,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   <div class="agent-health-card" id="agentHealthCard">
     <div class="ahc-inner">
       <span class="ahc-model" id="ahcModel" title=""></span>
+      <span class="ahc-ver" id="ahcVer" style="display:none;" title=""></span>
       <div class="ahc-metrics" id="ahcMetrics">
         <!-- CPU -->
         <div class="ahc-metric" id="ahc-cpu">
@@ -956,6 +976,14 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   <div id="emailSetupBanner">
     ⚠ Email alerts are not configured — device down alerts won't send until you set up email delivery.
     &nbsp;<a onclick="switchTab('settings')">Set up now in ⚙ Settings →</a>
+  </div>
+
+  <!-- Update available banner — shown when agent version is behind latest -->
+  <div id="updateAvailBanner">
+    <span>⚡</span>
+    <span>Agent update available — <strong id="updBannerVer"></strong> is ready.</span>
+    <a href="/netmonitor/upgrade">Update now →</a>
+    <button class="upd-dismiss" onclick="dismissUpdateBanner()" title="Dismiss">×</button>
   </div>
 
   <!-- Tab bar -->
@@ -2243,6 +2271,57 @@ function updateAgentHealth(data) {
   } else {
     if (tempEl) tempEl.style.display = 'none';
   }
+
+  // Check agent version against latest — updates badge + banner
+  if (data.agent_version) checkAgentVersion(data.agent_version);
+}
+
+// ── Agent version check — banner + health card badge ─────────────────────────
+let _latestAgentVer = null;
+let _verCheckDone   = false;
+
+async function checkAgentVersion(agentVer) {
+  if (!agentVer || agentVer === 'unknown') return;
+
+  // Fetch changelog.json once per page load
+  if (!_verCheckDone) {
+    _verCheckDone = true;
+    try {
+      const cl = await fetch('/netmonitor/changelog.json');
+      if (cl.ok) { const d = await cl.json(); _latestAgentVer = d.latest || null; }
+    } catch(e) {}
+  }
+
+  // Version badge in agent health card
+  const verEl = document.getElementById('ahcVer');
+  if (verEl) {
+    verEl.textContent = 'v' + agentVer;
+    verEl.style.display = '';
+    const outdated = _latestAgentVer && agentVer !== _latestAgentVer;
+    verEl.classList.toggle('ahc-ver-upd', !!outdated);
+    verEl.title = outdated
+      ? ('v' + _latestAgentVer + ' available — click for update guide')
+      : 'Agent is up to date';
+    if (outdated) verEl.style.cursor = 'pointer';
+    verEl.onclick = outdated ? () => { window.location.href = '/netmonitor/upgrade'; } : null;
+  }
+
+  // Update banner — only shown to owners/admins, not viewers
+  if (typeof _userRole !== 'undefined' && _userRole === 'viewer') return;
+  const banner = document.getElementById('updateAvailBanner');
+  if (!banner) return;
+  if (!_latestAgentVer || agentVer === _latestAgentVer) { banner.style.display = 'none'; return; }
+  // Don't re-show if already dismissed for this latest version this session
+  if (sessionStorage.getItem('updBannerDismissed') === _latestAgentVer) return;
+  const span = document.getElementById('updBannerVer');
+  if (span) span.textContent = 'v' + _latestAgentVer;
+  banner.style.display = 'flex';
+}
+
+function dismissUpdateBanner() {
+  const banner = document.getElementById('updateAvailBanner');
+  if (banner) banner.style.display = 'none';
+  if (_latestAgentVer) sessionStorage.setItem('updBannerDismissed', _latestAgentVer);
 }
 
 function navToTab(tab) {

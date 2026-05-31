@@ -13,19 +13,28 @@ POST /api/v1/agent/ssh-status
     Record SSH pull success/failure for a device.
     Clears last_ssh_error on success; stores error message on failure.
     Returns 200 OK.
+
+POST /api/v1/agent/command
+    Queue a command (e.g. "update") for the agent to pick up.
+    Owner / admin only.
+
+GET /api/v1/agent/pending-commands
+    Agent polls this to pick up any queued command.
+    Returns the pending command (if any) and clears it atomically.
 """
 
 import logging
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Literal, Optional
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth import AuthContext
+from auth import AuthContext, require_admin_or_owner
 from database import get_db
-from models import Device
+from models import AgentHeartbeat, Device
 from schemas import Heartbeat, SshStatusReport
 from state import upsert_heartbeat
 
@@ -129,3 +138,96 @@ async def ssh_status(
 
     await db.commit()
     return {"ok": True}
+
+
+# ── POST /agent/command ───────────────────────────────────────────────────────
+
+class AgentCommandRequest(BaseModel):
+    """Body for POST /agent/command."""
+    command: Literal["update"]
+
+
+@router.post("/agent/command", status_code=status.HTTP_200_OK)
+async def queue_agent_command(
+    body: AgentCommandRequest,
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Queue a command for the agent to execute on its next poll.
+
+    Only ``"update"`` is supported — instructs the agent to run
+    ``docker compose pull && docker compose up -d`` on its host.
+
+    The command is stored on the site's AgentHeartbeat row and consumed
+    (cleared) by GET /agent/pending-commands when the agent picks it up.
+
+    Args:
+        body: ``{"command": "update"}``
+        ctx: Auth context — owner or admin role required.
+        db: Async database session.
+
+    Returns:
+        ``{"ok": True, "command": "update"}``
+
+    Raises:
+        HTTP 403: If the caller is not an owner or admin.
+        HTTP 404: If no heartbeat row exists for this site
+                  (agent has never connected).
+    """
+    require_admin_or_owner(ctx)
+    site_id = ctx["site_id"]
+
+    result = await db.execute(
+        select(AgentHeartbeat).where(AgentHeartbeat.site_id == site_id)
+    )
+    hb = result.scalar_one_or_none()
+    if hb is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No agent heartbeat found for this site. "
+                   "Connect an agent first before queuing commands.",
+        )
+
+    hb.pending_command = body.command
+    await db.commit()
+    logger.info("[CMD] Queued command=%r for site=%s", body.command, site_id)
+    return {"ok": True, "command": body.command}
+
+
+# ── GET /agent/pending-commands ───────────────────────────────────────────────
+
+@router.get("/agent/pending-commands", status_code=status.HTTP_200_OK)
+async def get_pending_commands(
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Return and atomically clear any pending command for this site.
+
+    Called by the agent on every poll cycle (typically every 60 seconds).
+    If a command is present it is returned **and cleared** in the same
+    transaction — the agent will not see it again on the next poll.
+
+    Args:
+        ctx: Auth context with site_id.
+        db: Async database session.
+
+    Returns:
+        ``{"command": "update"}`` when a command is queued, or
+        ``{"command": null}`` when the queue is empty.
+    """
+    site_id = ctx["site_id"]
+
+    result = await db.execute(
+        select(AgentHeartbeat).where(AgentHeartbeat.site_id == site_id)
+    )
+    hb = result.scalar_one_or_none()
+    if hb is None or hb.pending_command is None:
+        return {"command": None}
+
+    cmd = hb.pending_command
+    hb.pending_command = None   # consume — agent sees it exactly once
+    await db.commit()
+    logger.info("[CMD] Delivered command=%r to agent site=%s", cmd, site_id)
+    return {"command": cmd}

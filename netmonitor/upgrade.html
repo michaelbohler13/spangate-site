@@ -94,6 +94,16 @@
   .version-update-cmd-label{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#a07830;font-family:var(--mono);}
   .version-update-cmd pre{padding:0.9rem 1.1rem;overflow-x:auto;margin:0;}
   .version-update-cmd code{font-size:0.78rem;line-height:1.6;color:#cdd9e5;font-family:var(--mono);}
+  .upd-plat-btn{font-size:0.6rem;font-weight:600;color:var(--text-dim);background:none;border:0.5px solid transparent;border-radius:4px;padding:2px 8px;cursor:pointer;font-family:var(--mono);letter-spacing:0.02em;transition:all 0.15s;}
+  .upd-plat-btn:hover{color:var(--text-muted);border-color:var(--border);}
+  .upd-plat-btn.active{color:#ffc107;border-color:rgba(255,189,46,0.35);background:rgba(255,189,46,0.07);}
+
+  /* ── Remote trigger button ── */
+  .trigger-update-btn{display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;font-weight:600;color:var(--text);background:rgba(0,212,184,0.1);border:0.5px solid rgba(0,212,184,0.35);border-radius:8px;padding:8px 18px;cursor:pointer;font-family:var(--sans);transition:all 0.15s;letter-spacing:-0.01em;}
+  .trigger-update-btn:hover{background:rgba(0,212,184,0.18);border-color:rgba(0,212,184,0.55);}
+  .trigger-update-btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .trigger-update-btn.sent{background:rgba(0,212,184,0.06);color:var(--accent);border-color:rgba(0,212,184,0.25);cursor:default;}
+  .trigger-update-status{font-size:0.78rem;color:var(--text-muted);}
 
   /* ── UPDATE TABS ── */
   .update-tabs{margin-bottom:2rem;}
@@ -271,12 +281,25 @@
     </div>
     <!-- shown only when an update is available -->
     <div id="vUpdateCmd" style="display:none;">
+      <!-- Remote trigger button (Phase B1 — works once agent supports polling) -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;flex-wrap:wrap;">
+        <button class="trigger-update-btn" id="triggerUpdateBtn" onclick="triggerRemoteUpdate()">
+          ⚡ Trigger Update
+        </button>
+        <span class="trigger-update-status" id="triggerUpdateStatus"></span>
+      </div>
+      <!-- Command block with platform tabs -->
       <div class="version-update-cmd">
         <div class="version-update-cmd-bar">
-          <span class="version-update-cmd-label">⚡ Update command — run on your agent device</span>
-          <button class="copy-btn" onclick="copyUpdateCmd(this)">Copy</button>
+          <span class="version-update-cmd-label">or run manually on your agent device</span>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="upd-plat-btn active" onclick="switchUpdatePlat('pi',this)">🍓 Pi</button>
+            <button class="upd-plat-btn" onclick="switchUpdatePlat('mac',this)">⌘ Mac</button>
+            <button class="upd-plat-btn" onclick="switchUpdatePlat('windows',this)">⊞ Win</button>
+            <button class="copy-btn" id="vUpdateCopyBtn" onclick="copyUpdateCmd(this)" style="margin-left:4px;">Copy</button>
+          </div>
         </div>
-        <pre class="version-update-cmd"><code>cd ~/spangate-agent && docker compose pull && docker compose up -d</code></pre>
+        <pre id="vUpdateCmdPre"><code id="vUpdateCmdCode">cd ~/spangate-agent && docker compose pull && docker compose up -d</code></pre>
       </div>
     </div>
   </div>
@@ -905,12 +928,73 @@ function toggleChangelog(head) {
   if (chevron) chevron.classList.toggle('open', !isOpen);
 }
 
+/* ── Platform-aware update command in version card ── */
+const UPDATE_CMDS = {
+  pi:      'cd ~/spangate-agent && docker compose pull && docker compose up -d',
+  mac:     'cd ~/spangate-agent && docker compose pull && docker compose up -d',
+  windows: 'cd "$env:USERPROFILE\\spangate-agent"\ndocker compose pull\ndocker compose up -d',
+};
+let _updatePlat = 'pi';
+
+function switchUpdatePlat(plat, btn) {
+  _updatePlat = plat;
+  document.querySelectorAll('.upd-plat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const codeEl = document.getElementById('vUpdateCmdCode');
+  if (codeEl) codeEl.textContent = UPDATE_CMDS[plat];
+}
+
 function copyUpdateCmd(btn) {
-  const cmd = 'cd ~/spangate-agent && docker compose pull && docker compose up -d';
+  const cmd = UPDATE_CMDS[_updatePlat] || UPDATE_CMDS.pi;
   navigator.clipboard.writeText(cmd).then(() => {
     btn.textContent = 'Copied!'; btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
   }).catch(() => { btn.textContent = 'Failed'; setTimeout(() => btn.textContent = 'Copy', 2000); });
+}
+
+/* ── Remote trigger update ── */
+async function triggerRemoteUpdate() {
+  const apiKey = _getApiKey();
+  const btn    = document.getElementById('triggerUpdateBtn');
+  const status = document.getElementById('triggerUpdateStatus');
+
+  if (!apiKey) {
+    if (status) { status.textContent = 'Sign in to use remote trigger.'; status.style.color = '#ff9500'; }
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
+  if (status) { status.textContent = ''; }
+
+  try {
+    const res = await fetch(`${BACKEND}/api/v1/agent/command`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: 'update' }),
+    });
+
+    if (res.ok) {
+      if (btn) { btn.textContent = '✓ Update queued'; btn.classList.add('sent'); btn.disabled = false; }
+      if (status) {
+        status.textContent = 'Agent will pull the update within 5 minutes. Check the version card after the next heartbeat.';
+        status.style.color = 'var(--accent)';
+      }
+    } else if (res.status === 404) {
+      if (btn) { btn.disabled = false; btn.textContent = '⚡ Trigger Update'; }
+      if (status) {
+        status.textContent = 'No agent connected yet. Run the manual command below to install.';
+        status.style.color = '#ffc107';
+      }
+    } else if (res.status === 403) {
+      if (btn) { btn.disabled = false; btn.textContent = '⚡ Trigger Update'; }
+      if (status) { status.textContent = 'Viewer accounts cannot trigger updates.'; status.style.color = '#ff9500'; }
+    } else {
+      throw new Error(res.status);
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Trigger Update'; }
+    if (status) { status.textContent = 'Could not reach backend — use the manual command below.'; status.style.color = '#8b949e'; }
+  }
 }
 
 loadVersionInfo();
