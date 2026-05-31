@@ -221,6 +221,10 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .s-unknown{background:rgba(255,255,255,0.06);color:var(--text-muted);border:0.5px solid rgba(255,255,255,0.15);}
 .s-configured{background:rgba(167,139,250,0.1);color:#a78bfa;border:0.5px solid rgba(167,139,250,0.3);}
 .s-maintenance{background:rgba(255,193,7,0.12);color:#ffc107;border:0.5px solid rgba(255,193,7,0.35);}
+.uptime-wrap{display:flex;align-items:center;gap:4px;margin-top:3px;}
+.uptime-track{flex:1;height:2px;background:var(--surface3);border-radius:1px;overflow:hidden;min-width:38px;}
+.uptime-fill{height:100%;border-radius:1px;transition:width 0.4s ease;}
+.uptime-pct{font-family:var(--mono);font-size:0.54rem;color:var(--text-dim);white-space:nowrap;}
 .v-cisco{color:#2997ff;} .v-aruba{color:#ff6b2b;} .v-juniper{color:#30d158;}
 .v-internet{color:#a78bfa;} .v-other{color:var(--text-muted);} .v-ping{color:#f59e0b;}
 .hn{font-family:var(--mono);font-size:0.78rem;color:var(--text);}
@@ -2494,6 +2498,17 @@ function renderDevices() {
     const vcls        = vendorClass(vendor);
     const lastSeen    = d.last_seen ? new Date(d.last_seen).toLocaleString() : (cfg ? 'Not seen yet' : '—');
 
+    // 24-hour uptime bar
+    const uptime24 = d.uptime_24h ?? null;
+    const uptimeBar = uptime24 !== null ? (() => {
+      const pct   = uptime24.toFixed(1);
+      const color = uptime24 >= 99 ? '#00d4b8'
+                  : uptime24 >= 90 ? '#28c840'
+                  : uptime24 >= 70 ? '#ff9500'
+                  : '#ff5f57';
+      return `<div class="uptime-wrap"><div class="uptime-track"><div class="uptime-fill" style="width:${pct}%;background:${color};"></div></div><span class="uptime-pct">${pct}%</span></div>`;
+    })() : '';
+
     const maintBtn = `<button class="dev-action-btn dev-maint-btn write-only${isMaint ? ' active' : ''}" onclick="toggleMaintenance('${esc(hostname)}',${isMaint},event)" title="${isMaint ? 'Remove from maintenance' : 'Put in maintenance mode'}">🔧</button>`;
     const actionCell = cfg
       ? `${maintBtn}<button class="dev-action-btn dev-edit-btn write-only" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
@@ -2516,7 +2531,7 @@ function renderDevices() {
 
     let rows = `
     <tr class="dev-row${isExp?' expanded':''}" onclick="toggleDevice('${esc(hostname)}')">
-      <td><span class="status-badge ${scls}">${sIcon} ${sLabel}</span></td>
+      <td><span class="status-badge ${scls}">${sIcon} ${sLabel}</span>${uptimeBar}</td>
       <td><span class="hn">${esc(hostname)}</span>${sshErrBadge}<span class="chevron">›</span></td>
       <td><span class="ip-cell">${esc(ip)}</span></td>
       <td><span class="${vcls}">${esc(vendorLabel(vendor))}</span></td>

@@ -12,6 +12,8 @@ GET /api/v1/devices/{hostname}
 """
 
 import logging
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -117,6 +119,67 @@ async def list_devices(
             for row in cfg_result.all()
         }
 
+    # ── 24-hour uptime — calculated from ping state-change alerts ────────────────
+    # One batch query; no per-device round-trips.
+    # Algorithm: walk ping_down / ping_up events chronologically, summing downtime
+    # windows.  The starting state at T-24h is inferred from the first event type:
+    #   ping_down → device was UP just before it → was UP at window start
+    #   ping_up   → device was DOWN just before it → was DOWN at window start
+    # Devices with no events in the window keep their current status for all 24h.
+    uptime_map: dict[int, Optional[float]] = {}
+    if devices:
+        now_utc      = datetime.now(timezone.utc)
+        window_start = now_utc - timedelta(hours=24)
+
+        up_rows = await db.execute(
+            select(Alert.device_id, Alert.alert_type, Alert.created_at)
+            .where(
+                Alert.device_id.in_([d.id for d in devices]),
+                Alert.alert_type.in_(["ping_down", "ping_up"]),
+                Alert.created_at >= window_start,
+            )
+            .order_by(Alert.device_id, Alert.created_at)
+        )
+
+        # Group by device
+        device_alerts: dict[int, list[tuple[str, datetime]]] = defaultdict(list)
+        for row in up_rows.all():
+            device_alerts[int(row.device_id)].append((row.alert_type, row.created_at))
+
+        for device in devices:
+            if device.status == "unknown":
+                uptime_map[device.id] = None
+                continue
+
+            alerts = device_alerts.get(device.id, [])
+
+            if not alerts:
+                # No state changes in window — device held its current status all 24h
+                uptime_map[device.id] = 100.0 if device.status == "up" else 0.0
+                continue
+
+            # Infer starting state from first event type
+            currently_up = (alerts[0][0] == "ping_down")
+            down_secs    = 0.0
+            last_ts      = window_start
+
+            for alert_type, ts in alerts:
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                if alert_type == "ping_down" and currently_up:
+                    currently_up = False
+                    last_ts      = ts
+                elif alert_type == "ping_up" and not currently_up:
+                    down_secs   += (ts - last_ts).total_seconds()
+                    currently_up = True
+                    last_ts      = ts
+
+            if not currently_up:
+                down_secs += (now_utc - last_ts).total_seconds()
+
+            pct = max(0.0, min(100.0, (86400.0 - down_secs) / 86400.0 * 100.0))
+            uptime_map[device.id] = round(pct, 1)
+
     response: list[DeviceStatus] = []
     for device in devices:
         cfg = config_map.get(device.id)
@@ -133,6 +196,7 @@ async def list_devices(
                 last_ssh_error=device.last_ssh_error,
                 last_ssh_at=device.last_ssh_at,
                 maintenance=device.maintenance,
+                uptime_24h=uptime_map.get(device.id),
             )
         )
 

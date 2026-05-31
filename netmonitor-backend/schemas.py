@@ -92,6 +92,7 @@ class DeviceStatus(BaseModel):
     last_ssh_error:   Optional[str]      = None
     last_ssh_at:      Optional[datetime] = None
     maintenance:      bool               = False
+    uptime_24h:       Optional[float]    = None   # 0.0–100.0, % of last 24h the device was up
 
 
 class SshStatusReport(BaseModel):
