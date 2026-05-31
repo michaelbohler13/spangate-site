@@ -252,6 +252,47 @@ async def add_device_config(
     return _to_out(row)
 
 
+# ── PATCH /device-configs/group-rename ────────────────────────────────────────
+# MUST be registered before PATCH /device-configs/{device_id} — FastAPI matches
+# routes in registration order and {device_id} would shadow this static path.
+
+class GroupRenameIn(BaseModel):
+    old_name: str = Field(..., max_length=255)
+    new_name: str = Field(..., max_length=255)
+
+    @field_validator("new_name")
+    @classmethod
+    def val_new_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("New group name cannot be empty")
+        return v
+
+
+@router.patch("/device-configs/group-rename", status_code=200)
+async def rename_group(
+    payload: GroupRenameIn,
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Rename a group — updates all devices in the group at once."""
+    result = await db.execute(
+        update(DeviceConfig)
+        .where(
+            DeviceConfig.site_id    == ctx["site_id"],
+            DeviceConfig.group_name == payload.old_name,
+        )
+        .values(group_name=payload.new_name)
+    )
+    await db.commit()
+    count = result.rowcount
+    logger.info(
+        "[GROUP-RENAME] site=%s '%s' → '%s' (%d device(s))",
+        ctx["site_id"], payload.old_name, payload.new_name, count,
+    )
+    return {"ok": True, "updated": count}
+
+
 # ── PATCH /device-configs/{id} ────────────────────────────────────────────────
 
 @router.patch("/device-configs/{device_id}", response_model=DeviceConfigOut)
@@ -325,45 +366,6 @@ async def delete_device_config(
     await db.delete(row)
     await db.commit()
     logger.info("Device removed: site=%s id=%d hostname=%s", ctx["site_id"], device_id, hostname)
-
-
-# ── PATCH /device-configs/group-rename ────────────────────────────────────────
-
-class GroupRenameIn(BaseModel):
-    old_name: str = Field(..., max_length=255)
-    new_name: str = Field(..., max_length=255)
-
-    @field_validator("new_name")
-    @classmethod
-    def val_new_name(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("New group name cannot be empty")
-        return v
-
-
-@router.patch("/device-configs/group-rename", status_code=200)
-async def rename_group(
-    payload: GroupRenameIn,
-    ctx: AuthContext,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """Rename a group — updates all devices in the group at once."""
-    result = await db.execute(
-        update(DeviceConfig)
-        .where(
-            DeviceConfig.site_id   == ctx["site_id"],
-            DeviceConfig.group_name == payload.old_name,
-        )
-        .values(group_name=payload.new_name)
-    )
-    await db.commit()
-    count = result.rowcount
-    logger.info(
-        "[GROUP-RENAME] site=%s '%s' → '%s' (%d device(s))",
-        ctx["site_id"], payload.old_name, payload.new_name, count,
-    )
-    return {"ok": True, "updated": count}
 
 
 # ── GET /plan ─────────────────────────────────────────────────────────────────
