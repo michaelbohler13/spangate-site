@@ -1094,6 +1094,11 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <button class="btn btn-outline" onclick="saveDefaultSshCreds()"
                   style="font-size:0.82rem;padding:9px 18px;">Save</button>
+          <button class="btn btn-ghost" onclick="bulkClearSshCreds()"
+                  style="font-size:0.82rem;padding:9px 18px;">Clear all per-device credentials</button>
+        </div>
+        <div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-dim);line-height:1.5;">
+          "Clear all" removes individual device credentials so every device falls back to the default above.
         </div>
         <div id="defaultSshMsg" style="margin-top:0.6rem;font-size:0.78rem;
              line-height:1.55;display:none;"></div>
@@ -3778,6 +3783,40 @@ async function saveDefaultSshCreds() {
   }
   msg.style.display = 'block';
   setTimeout(() => { msg.style.display = 'none'; }, 5000);
+}
+
+async function bulkClearSshCreds() {
+  if (!apiKey) return;
+  const msg = document.getElementById('defaultSshMsg');
+
+  if (!confirm('Remove per-device SSH credentials from all devices?\n\nEvery device will fall back to the site default. This cannot be undone.')) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/device-configs/bulk-clear-ssh`, {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      msg.textContent = `✓ Cleared per-device credentials on ${data.cleared} device${data.cleared !== 1 ? 's' : ''} — all now use the site default.`;
+      msg.style.color = 'var(--accent)';
+      // Refresh local device config cache so the edit modal reflects cleared state
+      try {
+        const dcRes = await fetch(`${API_BASE}/api/v1/device-configs`, {
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+        });
+        if (dcRes.ok) deviceConfigs = await dcRes.json();
+      } catch(e) { /* non-fatal */ }
+    } else {
+      msg.textContent = data.detail || 'Failed to clear credentials.';
+      msg.style.color = '#f87171';
+    }
+  } catch(e) {
+    msg.textContent = 'Network error — try again.';
+    msg.style.color = '#f87171';
+  }
+  msg.style.display = 'block';
+  setTimeout(() => { msg.style.display = 'none'; }, 8000);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

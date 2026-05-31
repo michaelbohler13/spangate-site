@@ -238,6 +238,32 @@ async def add_device_config(
     return _to_out(row)
 
 
+# ── POST /device-configs/bulk-clear-ssh ──────────────────────────────────────
+
+@router.post("/device-configs/bulk-clear-ssh", status_code=200)
+async def bulk_clear_ssh_creds(
+    ctx: AuthContext,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Clear ssh_username and ssh_password on every device for this site.
+    Devices will fall back to the site-wide default SSH credentials.
+    """
+    from sqlalchemy import update as sa_update
+    result = await db.execute(
+        sa_update(DeviceConfig)
+        .where(DeviceConfig.site_id == ctx["site_id"])
+        .values(ssh_username=None, ssh_password=None)
+    )
+    await db.commit()
+    cleared = result.rowcount
+    logger.info(
+        "[BULK-CLEAR-SSH] Cleared per-device SSH creds on %d devices for site %s",
+        cleared, ctx["site_id"],
+    )
+    return {"ok": True, "cleared": cleared}
+
+
 # ── PATCH /device-configs/{id} ────────────────────────────────────────────────
 
 @router.patch("/device-configs/{device_id}", response_model=DeviceConfigOut)
