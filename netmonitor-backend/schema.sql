@@ -174,3 +174,38 @@ create index if not exists ix_ssh_cred_profiles_site_name
 alter table device_configs
     add column if not exists credential_profile_id bigint
     references ssh_credential_profiles(id) on delete set null;
+
+-- 2026-05-30: Team members — invited users with limited roles
+create table if not exists site_members (
+    id               bigserial    primary key,
+    site_id          text         not null,
+    owner_user_id    text         not null,           -- UUID of the site owner in nm_profiles
+    invited_email    text         not null,
+    invited_user_id  text         default null,       -- UUID of accepted member (set on accept)
+    role             text         not null default 'viewer',  -- admin | viewer
+    member_api_key   text         unique default null,
+    invite_token     text         unique default null,
+    status           text         not null default 'pending', -- pending | active | removed
+    invited_at       timestamptz  not null default now(),
+    accepted_at      timestamptz  default null
+);
+
+create index if not exists ix_site_members_site_id
+    on site_members (site_id);
+
+create index if not exists ix_site_members_member_api_key
+    on site_members (member_api_key);
+
+create index if not exists ix_site_members_invite_token
+    on site_members (invite_token);
+
+-- Enable RLS; service role bypasses it for backend queries
+alter table site_members enable row level security;
+
+-- Members can only read their own row (frontend JS would use anon key — not applicable here)
+-- All backend writes use the service role key and bypass RLS anyway.
+create policy "site_members: owner all"
+    on site_members for all using (auth.uid()::text = owner_user_id);
+
+create policy "site_members: member read own"
+    on site_members for select using (auth.uid()::text = invited_user_id);

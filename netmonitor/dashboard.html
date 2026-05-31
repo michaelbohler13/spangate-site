@@ -591,6 +591,55 @@ body.view-mode #navUser{display:none!important;}
   color:#ff5f57;border-radius:8px;padding:6px 14px;font-size:0.8rem;
   cursor:pointer;transition:background 0.15s;}
 .btn-danger:hover{background:rgba(255,95,87,0.1);}
+
+/* ── Role-based visibility ───────────────────────────────────────────────── */
+/* Viewers are read-only — hide all write controls */
+.role-viewer .write-only        { display:none !important; }
+/* Non-owners cannot manage the team or see the agent API key */
+.role-viewer .owner-only,
+.role-admin  .owner-only        { display:none !important; }
+/* Hide Settings tab button for viewers (they have no write access) */
+.role-viewer #mt-settings       { display:none !important; }
+
+/* ── Team member badge in nav ────────────────────────────────────────────── */
+.nav-role-badge{font-size:0.68rem;font-weight:600;letter-spacing:0.05em;
+  text-transform:uppercase;font-family:var(--mono);padding:2px 8px;
+  border-radius:4px;background:rgba(0,212,184,0.08);color:#00d4b8;
+  border:0.5px solid rgba(0,212,184,0.25);margin-right:6px;}
+.nav-role-badge.role-admin{background:rgba(91,141,238,0.08);color:#5b8dee;
+  border-color:rgba(91,141,238,0.25);}
+
+/* ── Team management in Settings ────────────────────────────────────────── */
+.team-member-row{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  background:var(--surface3);border-radius:8px;margin-bottom:6px;}
+.team-member-email{flex:1;font-size:0.82rem;color:var(--text);}
+.team-member-status{font-size:0.7rem;font-family:var(--mono);color:var(--text-dim);}
+.team-role-sel{background:var(--surface3);border:0.5px solid var(--border-bright);
+  border-radius:5px;color:var(--text-muted);font-size:0.75rem;padding:3px 6px;
+  cursor:pointer;outline:none;}
+.team-role-sel:focus{border-color:var(--accent);}
+.team-remove-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;
+  font-size:0.78rem;padding:3px 6px;border-radius:4px;transition:all 0.15s;}
+.team-remove-btn:hover{color:#ff5f57;background:rgba(255,95,87,0.08);}
+.team-invite-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.team-invite-input{flex:1;min-width:160px;background:var(--surface3);
+  border:0.5px solid var(--border-bright);border-radius:7px;color:var(--text);
+  font-family:var(--sans);font-size:0.83rem;padding:8px 11px;outline:none;}
+.team-invite-input:focus{border-color:var(--accent);}
+.team-role-select{background:var(--surface3);border:0.5px solid var(--border-bright);
+  border-radius:7px;color:var(--text-muted);font-size:0.83rem;padding:8px 10px;
+  cursor:pointer;outline:none;}
+.team-role-select:focus{border-color:var(--accent);}
+.team-seat-info{font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;}
+.team-invite-link{font-size:0.75rem;font-family:var(--mono);
+  background:var(--surface3);border:0.5px solid var(--border);border-radius:6px;
+  padding:6px 10px;word-break:break-all;color:var(--text-muted);margin-top:8px;}
+.team-pending-badge{font-size:0.65rem;font-family:var(--mono);font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;
+  background:rgba(255,180,0,0.1);color:#ffb400;border:0.5px solid rgba(255,180,0,0.3);}
+.team-active-badge{font-size:0.65rem;font-family:var(--mono);font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;
+  background:rgba(0,212,184,0.08);color:#00d4b8;border:0.5px solid rgba(0,212,184,0.25);}
 </style>
 </head>
 <body>
@@ -924,8 +973,8 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
       </span>
       <button class="btn btn-ghost" onclick="manualRefresh()" style="font-size:0.78rem;padding:6px 14px;margin-right:10px;">↻ Refresh</button>
       <button id="exportCsvBtn" class="btn btn-ghost" onclick="exportDeviceCsv()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬇ Export CSV</button>
-      <button id="importCsvBtn" class="btn btn-ghost" onclick="openImportModal()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬆ Import CSV</button>
-      <button id="addDeviceBtn" class="btn btn-outline" onclick="openAddDevice()" style="font-size:0.8rem;padding:7px 18px;">+ Add Device</button>
+      <button id="importCsvBtn" class="btn btn-ghost write-only" onclick="openImportModal()" style="font-size:0.8rem;padding:7px 18px;margin-right:8px;">⬆ Import CSV</button>
+      <button id="addDeviceBtn" class="btn btn-outline write-only" onclick="openAddDevice()" style="font-size:0.8rem;padding:7px 18px;">+ Add Device</button>
     </div>
     <div class="dev-search-wrap">
       <span class="dev-search-icon">🔍</span>
@@ -1164,6 +1213,38 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div></div>
       </div>
 
+      <!-- Team Members (owner-only) -->
+      <div class="settings-section owner-only" id="acc-team">
+        <button class="acc-header" onclick="toggleAccordion('acc-team')">
+          <span class="settings-heading">Team Members</span>
+          <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
+        </button>
+        <div class="acc-body"><div class="acc-body-inner">
+        <div class="settings-desc">
+          Invite team members to view or manage your site.
+          <strong>Admins</strong> can add/edit devices and update settings.
+          <strong>Viewers</strong> are read-only.
+        </div>
+        <div class="team-seat-info" id="teamSeatInfo"></div>
+        <div id="teamMembersList"></div>
+
+        <!-- Invite form -->
+        <div class="team-invite-row">
+          <input id="teamInviteEmail" class="team-invite-input" type="email"
+                 placeholder="colleague@example.com" autocomplete="off"/>
+          <select id="teamInviteRole" class="team-role-select">
+            <option value="viewer">Viewer</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button class="btn btn-outline" onclick="sendTeamInvite()"
+                  style="font-size:0.82rem;padding:8px 16px;flex-shrink:0;">Invite</button>
+        </div>
+        <div id="teamMsg" style="margin-top:0.6rem;font-size:0.78rem;line-height:1.55;display:none;"></div>
+        <!-- Invite link display (when no SMTP configured) -->
+        <div id="teamInviteLink" style="display:none;"></div>
+        </div></div>
+      </div>
+
       <!-- View Link -->
       <div class="settings-section" id="acc-view-link">
         <button class="acc-header" onclick="toggleAccordion('acc-view-link')">
@@ -1201,8 +1282,8 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </div></div><!-- /acc-body-inner /acc-body -->
       </div>
 
-      <!-- Agent API Key -->
-      <div class="settings-section" id="acc-api-key">
+      <!-- Agent API Key (owner only — team members use their own member_api_key) -->
+      <div class="settings-section owner-only" id="acc-api-key">
         <button class="acc-header" onclick="toggleAccordion('acc-api-key')">
           <span class="settings-heading">Agent API Key</span>
           <svg class="acc-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>
@@ -1507,6 +1588,7 @@ let expandedDevice = null;
 let editingDeviceId = null;
 let apiKey         = null;
 let accountEmail   = '';
+let _myRole        = 'owner';   // 'owner' | 'admin' | 'viewer'
 let accountUserId  = null;
 let currentStep    = 1;
 let activeTab      = 'devices';
@@ -1584,7 +1666,7 @@ async function initApp() {
   const sae = document.getElementById('settingsAcctEmail');
   if (sae) sae.textContent = accountEmail;
 
-  // Load API key from Supabase profiles table
+  // ── 1. Try to load as site owner ─────────────────────────────────────────
   if (db) {
     const { data: profile } = await db
       .from('nm_profiles')
@@ -1592,15 +1674,62 @@ async function initApp() {
       .eq('id', user.id)
       .maybeSingle();
     if (profile?.api_key) {
-      apiKey = profile.api_key;
+      apiKey   = profile.api_key;
+      _myRole  = 'owner';
       injectApiKey(apiKey);
     }
   }
 
-  // No API key yet — prompt user to go to Settings
+  // ── 2. If not an owner, try team member access (member_api_key) ───────────
+  if (!apiKey && db) {
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      if (session?.access_token) {
+        const res = await fetch(`${API_BASE}/api/v1/team/my-access`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.memberships && data.memberships.length > 0) {
+            // TODO: show site picker if multiple memberships
+            const m = data.memberships[0];
+            apiKey  = m.member_api_key;
+            _myRole = m.role;
+            // Store so page refreshes don't lose the member key
+            try {
+              localStorage.setItem('spangate_api_key', apiKey);
+              localStorage.setItem('spangate_role',    _myRole);
+            } catch(e) {}
+          }
+        }
+      }
+    } catch(e) { /* team access check failed — will show no-key banner */ }
+  }
+
+  // ── Apply role-based CSS class ────────────────────────────────────────────
+  if (_myRole === 'viewer') {
+    document.body.classList.add('role-viewer');
+  } else if (_myRole === 'admin') {
+    document.body.classList.add('role-admin');
+  }
+
+  // Show role badge in nav for non-owners
+  if (_myRole !== 'owner') {
+    const nu2 = document.getElementById('navUser');
+    if (nu2) {
+      const badge = document.createElement('span');
+      badge.className = `nav-role-badge${_myRole === 'admin' ? ' role-admin' : ''}`;
+      badge.textContent = _myRole;
+      nu2.parentNode.insertBefore(badge, nu2);
+    }
+  }
+
+  // ── No API key — show appropriate message ─────────────────────────────────
   if (!apiKey) {
     showNoKeyBanner();
-    showOnboarding();
+    if (_myRole === 'owner') {
+      showOnboarding();
+    }
     return;
   }
 
@@ -2336,11 +2465,11 @@ function renderDevices() {
     const vcls        = vendorClass(vendor);
     const lastSeen    = d.last_seen ? new Date(d.last_seen).toLocaleString() : (cfg ? 'Not seen yet' : '—');
 
-    const maintBtn = `<button class="dev-action-btn dev-maint-btn${isMaint ? ' active' : ''}" onclick="toggleMaintenance('${esc(hostname)}',${isMaint},event)" title="${isMaint ? 'Remove from maintenance' : 'Put in maintenance mode'}">🔧</button>`;
+    const maintBtn = `<button class="dev-action-btn dev-maint-btn write-only${isMaint ? ' active' : ''}" onclick="toggleMaintenance('${esc(hostname)}',${isMaint},event)" title="${isMaint ? 'Remove from maintenance' : 'Put in maintenance mode'}">🔧</button>`;
     const actionCell = cfg
-      ? `${maintBtn}<button class="dev-action-btn dev-edit-btn" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
-        ><button class="dev-action-btn dev-del-btn" onclick="deleteDevice(${cfg.id},'${esc(hostname)}',event)" title="Remove device">✕</button>`
-      : `${maintBtn}<button class="dev-action-btn dev-del-btn" onclick="deleteLiveDevice('${esc(hostname)}',event)" title="Remove device">✕</button>`;
+      ? `${maintBtn}<button class="dev-action-btn dev-edit-btn write-only" onclick="openEditDevice(${cfg.id},event)" title="Edit device">✎</button
+        ><button class="dev-action-btn dev-del-btn write-only" onclick="deleteDevice(${cfg.id},'${esc(hostname)}',event)" title="Remove device">✕</button>`
+      : `${maintBtn}<button class="dev-action-btn dev-del-btn write-only" onclick="deleteLiveDevice('${esc(hostname)}',event)" title="Remove device">✕</button>`;
 
     // SSH error badge — only for ssh_enabled devices that have an error
     const sshErrTip  = d.last_ssh_error ? esc(d.last_ssh_error) : '';
@@ -2391,7 +2520,7 @@ function renderDevices() {
       // Backup action bar — only for ssh_enabled configured devices
       const backupBar = cfg?.ssh_enabled
         ? `<div class="acc-backup-bar">
-             <button id="bk-btn-${cfg.id}" class="backup-now-btn"
+             <button id="bk-btn-${cfg.id}" class="backup-now-btn write-only"
                onclick="event.stopPropagation();requestBackup(${cfg.id},'${esc(hostname)}')">⚡ Backup Now</button>${
              d.last_config_hash
                ? `<button class="view-backup-btn"
@@ -2442,7 +2571,7 @@ function renderDevices() {
       // Inline rename mode — row click disabled while input is active
       html += `<tr class="grp-row ${worstCls}"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span><input id="grpRenameInput" class="grp-rename-input" value="${esc(_renameGroupDraft)}" onclick="event.stopPropagation();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveGroupRename();}if(event.key==='Escape')cancelGroupRename();" /><button class="grp-rename-save" onclick="saveGroupRename();event.stopPropagation();">✓ Save</button><button class="grp-rename-cancel" onclick="cancelGroupRename();event.stopPropagation();">✕</button></td></tr>`;
     } else {
-      html += `<tr class="grp-row ${worstCls}" data-gn="${esc(gn)}" onclick="toggleGroup(this.dataset.gn)"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}<button class="grp-rename-btn" data-gn="${esc(gn)}" onclick="startGroupRename(this.dataset.gn,event)" title="Rename group">✎</button></td></tr>`;
+      html += `<tr class="grp-row ${worstCls}" data-gn="${esc(gn)}" onclick="toggleGroup(this.dataset.gn)"><td colspan="8"><span class="grp-toggle">${icon}</span><span class="grp-dot ${dotCls}"></span>${esc(gn)}<span class="grp-count">(${hostnames.length})</span>${pills}<button class="grp-rename-btn write-only" data-gn="${esc(gn)}" onclick="startGroupRename(this.dataset.gn,event)" title="Rename group">✎</button></td></tr>`;
     }
     if (!isCollapsed) hostnames.forEach(h => { html += deviceRow(h); });
   });
@@ -3905,6 +4034,132 @@ function _populateCredProfileDropdown(selectedVal) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TEAM MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadTeamMembers() {
+  if (!apiKey || _myRole !== 'owner') return;
+  const listEl  = document.getElementById('teamMembersList');
+  const seatEl  = document.getElementById('teamSeatInfo');
+  if (!listEl) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/team/members`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (seatEl) {
+      seatEl.textContent =
+        `${data.seats_used} of ${data.seat_limit} seat${data.seat_limit === 1 ? '' : 's'} used` +
+        (data.seat_limit === 1 ? ' — upgrade your plan to invite team members' : '');
+    }
+
+    if (!data.members.length) {
+      listEl.innerHTML = '<p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:8px;">No team members yet.</p>';
+      return;
+    }
+
+    listEl.innerHTML = data.members.map(m => `
+      <div class="team-member-row" id="tm-row-${m.id}">
+        <span class="team-member-email">${esc(m.invited_email)}</span>
+        <span class="${m.status === 'active' ? 'team-active-badge' : 'team-pending-badge'}">${m.status}</span>
+        <select class="team-role-sel" onchange="changeTeamRole(${m.id}, this.value)">
+          <option value="viewer"${m.role === 'viewer' ? ' selected' : ''}>Viewer</option>
+          <option value="admin"${m.role  === 'admin'  ? ' selected' : ''}>Admin</option>
+        </select>
+        <button class="team-remove-btn" onclick="removeTeamMember(${m.id},'${esc(m.invited_email)}')" title="Remove member">✕</button>
+      </div>
+    `).join('');
+  } catch(e) { /* silent */ }
+}
+
+async function sendTeamInvite() {
+  const email = document.getElementById('teamInviteEmail')?.value.trim();
+  const role  = document.getElementById('teamInviteRole')?.value || 'viewer';
+  const msg   = document.getElementById('teamMsg');
+  const linkEl = document.getElementById('teamInviteLink');
+  if (!email) { _showTeamMsg('Enter an email address.', false); return; }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/team/invite`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, role }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      _showTeamMsg(data.detail || 'Could not send invite.', false);
+      return;
+    }
+
+    document.getElementById('teamInviteEmail').value = '';
+
+    if (data.email_sent) {
+      _showTeamMsg(`Invite email sent to ${email}.`, true);
+      if (linkEl) linkEl.style.display = 'none';
+    } else {
+      _showTeamMsg(`Invite created. SMTP not configured — share the link below manually.`, true);
+      if (linkEl) {
+        linkEl.innerHTML = `<div class="team-invite-link">${esc(data.invite_url)}
+          <button onclick="navigator.clipboard.writeText('${esc(data.invite_url)}');this.textContent='Copied ✓';setTimeout(()=>this.textContent='Copy',2000);"
+            style="margin-left:10px;background:none;border:0.5px solid var(--border-bright);border-radius:4px;color:var(--text-muted);cursor:pointer;font-size:0.72rem;padding:2px 7px;">Copy</button>
+        </div>`;
+        linkEl.style.display = 'block';
+      }
+    }
+    await loadTeamMembers();
+  } catch(e) {
+    _showTeamMsg('Network error — try again.', false);
+  }
+}
+
+async function changeTeamRole(memberId, newRole) {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/team/members/${memberId}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole }),
+    });
+    if (res.ok) {
+      _showTeamMsg(`Role updated to ${newRole}.`, true);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      _showTeamMsg(data.detail || 'Could not update role.', false);
+      await loadTeamMembers(); // re-render to restore old value
+    }
+  } catch(e) { _showTeamMsg('Network error — try again.', false); }
+}
+
+async function removeTeamMember(memberId, email) {
+  if (!confirm(`Remove ${email} from your site?\n\nThey will lose access immediately.`)) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/team/members/${memberId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    if (res.ok) {
+      _showTeamMsg(`${email} has been removed.`, true);
+      await loadTeamMembers();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      _showTeamMsg(data.detail || 'Could not remove member.', false);
+    }
+  } catch(e) { _showTeamMsg('Network error — try again.', false); }
+}
+
+function _showTeamMsg(text, ok) {
+  const el = document.getElementById('teamMsg');
+  if (!el) return;
+  el.textContent   = text;
+  el.style.color   = ok ? 'var(--accent)' : '#f87171';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 7000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SETTINGS — ACCORDION
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3933,6 +4188,7 @@ const _ACC_IDS = [
   'acc-alert-notifications',
   'acc-default-ssh',
   'acc-ssh-profiles',
+  'acc-team',
   'acc-view-link',
   'acc-api-key',
 ];
@@ -3942,7 +4198,11 @@ function toggleAccordion(id) {
   // Close all
   _ACC_IDS.forEach(aid => document.getElementById(aid)?.classList.remove('open'));
   // If it was closed, open it now
-  if (!isOpen) document.getElementById(id).classList.add('open');
+  if (!isOpen) {
+    document.getElementById(id)?.classList.add('open');
+    // Lazy-load team members when Team accordion opens
+    if (id === 'acc-team') loadTeamMembers();
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

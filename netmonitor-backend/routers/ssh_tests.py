@@ -30,7 +30,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth import AuthContext
+from auth import AuthContext, require_admin_or_owner
 from database import get_db
 from models import SshCredentialProfile, SshTest
 
@@ -72,6 +72,7 @@ async def create_ssh_test(
     Returns:
         ``{"test_id": <id>}`` — use this to poll GET /test-ssh/{test_id}.
     """
+    require_admin_or_owner(ctx)
     # ── Resolve credentials ────────────────────────────────────────────────────
     ssh_username = body.ssh_username or ""
     ssh_password = body.ssh_password or ""
@@ -93,13 +94,15 @@ async def create_ssh_test(
 
     elif body.use_site_default:
         # Site-wide fallback — fetch from nm_profiles via Supabase
+        # Use owner_user_id so admin members can also use the site default
         try:
             from supabase import create_client
+            _owner_id = ctx.get("owner_user_id") or ctx["user_id"]
             _sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
             nm  = (
                 _sb.table("nm_profiles")
                    .select("default_ssh_user,default_ssh_password")
-                   .eq("id", ctx["user_id"])
+                   .eq("id", _owner_id)
                    .single()
                    .execute()
             )

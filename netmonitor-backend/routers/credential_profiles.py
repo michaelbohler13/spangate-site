@@ -22,7 +22,7 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth import AuthContext
+from auth import AuthContext, require_admin_or_owner
 from database import get_db
 from models import DeviceConfig, SshCredentialProfile
 
@@ -130,6 +130,7 @@ async def create_profile(
     db: AsyncSession = Depends(get_db),
 ) -> ProfileOut:
     """Create a new named SSH credential profile."""
+    require_admin_or_owner(ctx)
     row = SshCredentialProfile(
         site_id=ctx["site_id"],
         name=payload.name,
@@ -160,6 +161,7 @@ async def update_profile(
     db: AsyncSession = Depends(get_db),
 ) -> ProfileOut:
     """Update name and/or credentials on an existing profile."""
+    require_admin_or_owner(ctx)
     result = await db.execute(
         select(SshCredentialProfile).where(
             SshCredentialProfile.id == profile_id,
@@ -209,6 +211,7 @@ async def delete_profile(
     Delete a credential profile.  Devices using it automatically fall back to
     the site default (credential_profile_id → NULL via ON DELETE SET NULL).
     """
+    require_admin_or_owner(ctx)
     result = await db.execute(
         select(SshCredentialProfile).where(
             SshCredentialProfile.id == profile_id,

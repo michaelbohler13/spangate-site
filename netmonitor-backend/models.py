@@ -10,6 +10,7 @@ configs                  — running-config snapshots (30-day retention)
 config_diffs             — detected config changes with unified diff text (30-day retention)
 alerts                   — ping and config-change alert log (30-day retention)
 ssh_credential_profiles  — named SSH credential sets assignable to devices
+site_members             — team members invited to a site (admin / viewer roles)
 """
 
 from datetime import datetime
@@ -363,3 +364,44 @@ class SshTest(Base):
 
     def __repr__(self) -> str:
         return f"<SshTest id={self.id} site={self.site_id!r} ip={self.ip!r} status={self.status!r}>"
+
+
+# ── SiteMember ────────────────────────────────────────────────────────────────
+
+class SiteMember(Base):
+    """
+    A team member invited to access a site.
+
+    Roles: "admin" (read-write, no team management) | "viewer" (read-only).
+    The original site owner is always stored in nm_profiles — not here.
+
+    Lifecycle:
+      status="pending"  — invite token generated, email sent / link shared
+      status="active"   — invite accepted, member_api_key generated and stored
+      status="removed"  — owner revoked access (member_api_key nulled out)
+    """
+
+    __tablename__ = "site_members"
+
+    id:              Mapped[int]           = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    site_id:         Mapped[str]           = mapped_column(String(255), nullable=False, index=True)
+    owner_user_id:   Mapped[str]           = mapped_column(String(255), nullable=False)  # UUID of the site owner
+    invited_email:   Mapped[str]           = mapped_column(String(255), nullable=False)
+    invited_user_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)   # set on accept
+    role:            Mapped[str]           = mapped_column(String(20),  nullable=False, default="viewer")
+    member_api_key:  Mapped[Optional[str]] = mapped_column(String(255), nullable=True,  unique=True)
+    invite_token:    Mapped[Optional[str]] = mapped_column(String(255), nullable=True,  unique=True)
+    status:          Mapped[str]           = mapped_column(String(20),  nullable=False, default="pending")
+    invited_at:      Mapped[datetime]      = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    accepted_at:     Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_site_members_site_id", "site_id"),
+        Index("ix_site_members_member_api_key", "member_api_key", unique=True),
+        Index("ix_site_members_invite_token",   "invite_token",   unique=True),
+    )
+
+    def __repr__(self) -> str:
+        return f"<SiteMember site={self.site_id!r} email={self.invited_email!r} role={self.role!r}>"

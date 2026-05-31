@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accept Invitation — SpanGate Network Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg:#0d1117; --bg2:#0a0a0a; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#222222;
+    --border:rgba(255,255,255,0.08); --border-bright:rgba(255,255,255,0.15);
+    --text:#f5f5f7; --text-muted:#a1a1a6; --text-dim:#6e6e73;
+    --accent:#00d4b8; --teal:#2a8a78;
+    --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{-webkit-font-smoothing:antialiased;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;
+       display:flex;align-items:center;justify-content:center;padding:2rem;}
+
+  .card{
+    background:var(--surface2);border:0.5px solid var(--border-bright);
+    border-radius:16px;padding:2.5rem 2rem;max-width:440px;width:100%;
+    box-shadow:0 0 48px rgba(0,0,0,0.5);
+  }
+
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:1.75rem;}
+  .brand-dot{width:26px;height:26px;border-radius:7px;background:rgba(0,212,184,0.15);
+             border:0.5px solid rgba(0,212,184,0.3);display:flex;align-items:center;
+             justify-content:center;}
+  .brand-dot svg{width:14px;height:14px;stroke:#00d4b8;fill:none;stroke-width:2;
+                 stroke-linecap:round;stroke-linejoin:round;}
+  .brand-name{font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+
+  h1{font-size:1.4rem;font-weight:600;letter-spacing:-0.025em;margin-bottom:0.5rem;}
+  .sub{font-size:0.85rem;color:var(--text-muted);line-height:1.6;margin-bottom:1.5rem;}
+
+  .invite-box{
+    background:rgba(0,212,184,0.05);border:0.5px solid rgba(0,212,184,0.2);
+    border-radius:10px;padding:1rem 1.125rem;margin-bottom:1.5rem;
+  }
+  .invite-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  .invite-row:last-child{margin-bottom:0;}
+  .invite-label{font-size:0.7rem;font-weight:600;letter-spacing:0.06em;
+                text-transform:uppercase;color:var(--text-dim);font-family:var(--mono);
+                min-width:60px;}
+  .invite-val{font-size:0.88rem;color:var(--text);}
+  .role-badge{
+    display:inline-block;font-size:0.7rem;font-weight:600;letter-spacing:0.05em;
+    text-transform:uppercase;font-family:var(--mono);
+    padding:2px 8px;border-radius:4px;
+    background:rgba(0,212,184,0.1);color:#00d4b8;border:0.5px solid rgba(0,212,184,0.3);
+  }
+  .role-badge.admin{background:rgba(91,141,238,0.1);color:#5b8dee;border-color:rgba(91,141,238,0.3);}
+
+  .btn{
+    display:block;width:100%;padding:11px 0;border-radius:9px;font-size:0.9rem;
+    font-weight:600;font-family:var(--sans);cursor:pointer;text-align:center;
+    text-decoration:none;transition:all 0.15s;border:none;
+    background:linear-gradient(135deg,#00d4b8 0%,#00a898 100%);color:#0d1117;
+    margin-bottom:10px;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:0.45;cursor:not-allowed;filter:none;}
+  .btn-ghost{
+    background:transparent;color:var(--text-muted);
+    border:0.5px solid var(--border-bright);
+  }
+  .btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,0.25);background:rgba(255,255,255,0.03);}
+
+  .msg{font-size:0.82rem;line-height:1.55;padding:10px 12px;border-radius:7px;
+       display:none;margin-top:12px;}
+  .msg.ok{background:rgba(0,212,184,0.08);border:0.5px solid rgba(0,212,184,0.2);color:#00d4b8;}
+  .msg.err{background:rgba(255,95,87,0.08);border:0.5px solid rgba(255,95,87,0.2);color:#ff5f57;}
+  .msg.info{background:rgba(255,255,255,0.04);border:0.5px solid var(--border);color:var(--text-muted);}
+
+  .divider{border:none;border-top:0.5px solid var(--border);margin:1.25rem 0;}
+
+  .login-form input{
+    display:block;width:100%;background:var(--surface3);border:0.5px solid var(--border-bright);
+    border-radius:8px;color:var(--text);font-family:var(--sans);font-size:0.88rem;
+    padding:10px 12px;outline:none;margin-bottom:10px;
+  }
+  .login-form input:focus{border-color:var(--accent);}
+  .login-form input::placeholder{color:var(--text-dim);}
+
+  .small{font-size:0.75rem;color:var(--text-dim);text-align:center;line-height:1.5;margin-top:8px;}
+  .small a{color:var(--accent);text-decoration:none;}
+  .small a:hover{text-decoration:underline;}
+
+  #stateLoading,#stateInvalid,#stateLogin,#stateAccept,#stateDone{display:none;}
+  .spinner{display:inline-block;width:22px;height:22px;border:2px solid rgba(0,212,184,0.2);
+           border-top-color:#00d4b8;border-radius:50%;animation:spin 0.7s linear infinite;
+           margin:0 auto 12px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<div class="card" id="mainCard">
+  <!-- Loading -->
+  <div id="stateLoading" style="text-align:center;padding:1rem 0;">
+    <div class="spinner"></div>
+    <p style="color:var(--text-muted);font-size:0.88rem;">Loading invitation…</p>
+  </div>
+
+  <!-- Invalid token -->
+  <div id="stateInvalid">
+    <div class="brand">
+      <div class="brand-dot">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <span class="brand-name">SpanGate Network Monitor</span>
+    </div>
+    <h1>Invite not found</h1>
+    <p class="sub">This invitation link is invalid, has already been accepted, or has expired.
+      Contact the site owner for a new invite.</p>
+    <a href="../index.html" class="btn btn-ghost">Back to SpanGate</a>
+  </div>
+
+  <!-- Login to accept -->
+  <div id="stateLogin">
+    <div class="brand">
+      <div class="brand-dot">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <span class="brand-name">SpanGate Network Monitor</span>
+    </div>
+    <h1>You're invited!</h1>
+    <p class="sub">Sign in (or create a free account) to accept your invitation.</p>
+    <div class="invite-box" id="loginInviteBox"></div>
+
+    <div class="login-form" id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email address" autocomplete="email"/>
+      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password"/>
+      <button class="btn" id="loginBtn" onclick="doLogin()">Sign In &amp; Accept</button>
+      <p class="small">No account yet? <a href="#" onclick="showSignup();return false;">Create one →</a></p>
+    </div>
+
+    <div id="signupForm" style="display:none;" class="login-form">
+      <input type="email"    id="signupEmail"    placeholder="Email address" autocomplete="email"/>
+      <input type="password" id="signupPassword" placeholder="Create a password (8+ chars)" autocomplete="new-password"/>
+      <button class="btn" id="signupBtn" onclick="doSignup()">Create Account &amp; Accept</button>
+      <p class="small">Already have an account? <a href="#" onclick="showLogin();return false;">Sign in →</a></p>
+    </div>
+
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- Accept (already logged in) -->
+  <div id="stateAccept">
+    <div class="brand">
+      <div class="brand-dot">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <span class="brand-name">SpanGate Network Monitor</span>
+    </div>
+    <h1>You're invited!</h1>
+    <p class="sub" id="acceptSub">You've been invited to join a site. Accept to get access.</p>
+    <div class="invite-box" id="acceptInviteBox"></div>
+    <button class="btn" id="acceptBtn" onclick="doAccept()">Accept Invitation</button>
+    <button class="btn btn-ghost" onclick="declineInvite()">Decline</button>
+    <div class="msg" id="acceptMsg"></div>
+  </div>
+
+  <!-- Done -->
+  <div id="stateDone" style="text-align:center;padding:1rem 0;">
+    <div style="font-size:2.5rem;margin-bottom:16px;">✅</div>
+    <h1 style="margin-bottom:8px;">You're in!</h1>
+    <p class="sub" style="margin-bottom:1.5rem;" id="doneMsg">Your access is ready.</p>
+    <a class="btn" id="doneBtn" href="dashboard.html">Open Dashboard →</a>
+  </div>
+</div>
+
+<script>
+const API_BASE      = 'https://spangate-site-r81b.vercel.app';
+const SUPABASE_URL  = 'https://tiviipaamwvfjvoscnyk.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdmlpcGFhbXd2Zmp2b3NjbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDEyODIsImV4cCI6MjA5NDExNzI4Mn0.wBicrt3P5QzQw8sYA87CYxEv--I-KlhnqrsMfcw2irs';
+
+const db    = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const token = new URLSearchParams(location.search).get('token') || '';
+
+let inviteInfo = null;   // { invited_email, role, site_name }
+
+// ── Show/hide states ───────────────────────────────────────────────────────────
+
+function showState(name) {
+  ['stateLoading','stateInvalid','stateLogin','stateAccept','stateDone'].forEach(id => {
+    document.getElementById(id).style.display = id === name ? '' : 'none';
+  });
+}
+
+function inviteBoxHtml(info) {
+  const roleClass = info.role === 'admin' ? 'role-badge admin' : 'role-badge';
+  return `
+    <div class="invite-row">
+      <span class="invite-label">Site</span>
+      <span class="invite-val">${esc(info.site_name)}</span>
+    </div>
+    <div class="invite-row">
+      <span class="invite-label">Role</span>
+      <span class="${roleClass}">${esc(info.role)}</span>
+    </div>
+    <div class="invite-row">
+      <span class="invite-label">Email</span>
+      <span class="invite-val" style="color:var(--text-muted);font-size:0.82rem;">${esc(info.invited_email)}</span>
+    </div>
+  `;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+async function init() {
+  if (!token) { showState('stateInvalid'); return; }
+  showState('stateLoading');
+
+  // Fetch invite info
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/team/accept/${token}`);
+    if (!res.ok) { showState('stateInvalid'); return; }
+    inviteInfo = await res.json();
+  } catch(e) {
+    showState('stateInvalid'); return;
+  }
+
+  // Check if already logged in
+  const { data: { session } } = await db.auth.getSession();
+
+  if (session) {
+    // Already logged in — show accept button
+    document.getElementById('acceptSub').textContent =
+      `You're signed in as ${session.user.email}. Accept the invitation to join ${inviteInfo.site_name}.`;
+    document.getElementById('acceptInviteBox').innerHTML = inviteBoxHtml(inviteInfo);
+    showState('stateAccept');
+  } else {
+    // Not logged in — show login form
+    document.getElementById('loginEmail').value = inviteInfo.invited_email;
+    document.getElementById('loginInviteBox').innerHTML = inviteBoxHtml(inviteInfo);
+    showState('stateLogin');
+  }
+}
+
+// ── Login / Signup ─────────────────────────────────────────────────────────────
+
+function showMsg(el, text, type) {
+  el.textContent = text;
+  el.className = `msg ${type}`;
+  el.style.display = 'block';
+}
+
+function showLogin() {
+  document.getElementById('loginForm').style.display = '';
+  document.getElementById('signupForm').style.display = 'none';
+}
+
+function showSignup() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('signupForm').style.display = '';
+}
+
+async function doLogin() {
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const msg      = document.getElementById('loginMsg');
+  const btn      = document.getElementById('loginBtn');
+  if (!email || !password) { showMsg(msg, 'Enter your email and password.', 'err'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  const { error, data } = await db.auth.signInWithPassword({ email, password });
+  if (error) {
+    showMsg(msg, error.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Sign In & Accept';
+    return;
+  }
+  await acceptWithSession(data.session);
+}
+
+async function doSignup() {
+  const email    = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const msg      = document.getElementById('loginMsg');
+  const btn      = document.getElementById('signupBtn');
+  if (!email || !password) { showMsg(msg, 'Enter your email and a password.', 'err'); return; }
+  if (password.length < 8) { showMsg(msg, 'Password must be at least 8 characters.', 'err'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+
+  const { error, data } = await db.auth.signUp({ email, password });
+  if (error) {
+    showMsg(msg, error.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Create Account & Accept';
+    return;
+  }
+  if (!data.session) {
+    // Email confirmation required
+    showMsg(msg,
+      'Check your email for a confirmation link, then come back to this page.',
+      'info');
+    btn.disabled = false;
+    btn.textContent = 'Create Account & Accept';
+    return;
+  }
+  await acceptWithSession(data.session);
+}
+
+// ── Accept ─────────────────────────────────────────────────────────────────────
+
+async function doAccept() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { showState('stateLogin'); return; }
+  await acceptWithSession(session);
+}
+
+async function acceptWithSession(session) {
+  const msg = document.getElementById('acceptMsg') || document.getElementById('loginMsg');
+  const btn = document.getElementById('acceptBtn') || document.getElementById('loginBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Accepting…'; }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/team/accept/${token}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      const txt = data.detail || 'Could not accept invite. Try again.';
+      if (msg) showMsg(msg, txt, 'err');
+      if (btn) { btn.disabled = false; btn.textContent = 'Accept Invitation'; }
+      return;
+    }
+
+    // Store the member_api_key for dashboard use
+    try {
+      localStorage.setItem('spangate_api_key',    data.member_api_key);
+      localStorage.setItem('spangate_role',        data.role);
+      localStorage.setItem('spangate_site_id',     data.site_id);
+    } catch(e) {}
+
+    document.getElementById('doneMsg').textContent =
+      `You've joined ${inviteInfo?.site_name || 'the site'} as ${data.role}.`;
+    showState('stateDone');
+
+  } catch(e) {
+    if (msg) showMsg(msg, 'Network error. Check your connection and try again.', 'err');
+    if (btn) { btn.disabled = false; btn.textContent = 'Accept Invitation'; }
+  }
+}
+
+function declineInvite() {
+  window.location.href = '../index.html';
+}
+
+// Listen for auth state changes (e.g. after email confirmation + page reload)
+db.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session && inviteInfo) {
+    document.getElementById('acceptSub').textContent =
+      `You're signed in as ${session.user.email}. Accept the invitation to join ${inviteInfo.site_name}.`;
+    document.getElementById('acceptInviteBox').innerHTML = inviteBoxHtml(inviteInfo);
+    showState('stateAccept');
+  }
+});
+
+init();
+</script>
+</body>
+</html>

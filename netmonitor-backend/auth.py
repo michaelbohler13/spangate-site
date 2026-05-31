@@ -2,13 +2,18 @@
 auth.py — SpanGate Network Monitor Backend
 API-key authentication dependency.
 
+Two-tier key lookup
+-------------------
+1. nm_profiles (site owners)
+   The owner's api_key → role="owner"
+
+2. site_members (admin / viewer team members)
+   A member's member_api_key → role="admin" or "viewer"
+   The member's owner_user_id is also injected so Settings and other
+   endpoints that write to nm_profiles operate on the correct owner row.
+
 The agent sends:
     Authorization: Bearer <raw_api_key>
-
-We validate the key by querying the `nm_profiles` table in Supabase for a row
-where `api_key` matches.  On success we attach site_id to request state and
-return an auth context dict for use in route handlers.  On failure we raise
-HTTP 401.
 
 Required Supabase table (run in SQL editor if not present):
     create table if not exists nm_profiles (
@@ -56,20 +61,20 @@ async def verify_api_key(
     """
     FastAPI dependency that validates a Bearer API key against Supabase.
 
-    Looks up the raw key in the ``nm_profiles`` table (``api_key`` column).
-    On success, attaches ``site_id`` and ``user_id`` to ``request.state``
-    and returns an auth context dict.
+    Lookup order:
+      1. nm_profiles.api_key         → role="owner"
+      2. site_members.member_api_key → role="admin" or "viewer"
 
     Args:
         request: FastAPI request (used to write state).
         authorization: Raw Authorization header value.
 
     Returns:
-        dict with keys: user_id (str), site_id (str).
+        dict with keys: user_id, site_id, plan, role, owner_user_id.
 
     Raises:
         HTTPException 401: If the header is missing, malformed, or the key
-            is not found in the nm_profiles table.
+            is not found in either table.
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
@@ -80,8 +85,10 @@ async def verify_api_key(
 
     raw_key = authorization.removeprefix("Bearer ").strip()
 
+    # ── 1. Try nm_profiles (owner) ────────────────────────────────────────────
+    client = _get_supabase()
+    profile = None
     try:
-        client = _get_supabase()
         result = (
             client.table("nm_profiles")
             .select("id, site_id, plan")
@@ -92,8 +99,7 @@ async def verify_api_key(
         profile = result.data
     except Exception as exc:
         # Fallback: plan column may not exist yet (migration pending).
-        # Retry without it so auth never breaks on a missing optional column.
-        logger.warning("Supabase auth lookup failed (%s) — retrying without plan", exc)
+        logger.warning("Supabase nm_profiles lookup failed (%s) — retrying without plan", exc)
         try:
             result = (
                 client.table("nm_profiles")
@@ -104,29 +110,91 @@ async def verify_api_key(
             )
             profile = result.data
             if profile:
-                profile["plan"] = "free"   # safe default until migration runs
+                profile["plan"] = "free"
         except Exception as exc2:
-            logger.warning("Supabase auth retry also failed: %s", exc2)
+            logger.debug("nm_profiles retry also failed: %s", exc2)
             profile = None
 
-    if not profile:
+    if profile:
+        site_id      = profile.get("site_id") or profile["id"]
+        user_id      = profile["id"]
+        plan         = profile.get("plan") or "free"
+
+        request.state.user_id       = user_id
+        request.state.site_id       = site_id
+        request.state.plan          = plan
+        request.state.role          = "owner"
+        request.state.owner_user_id = user_id
+
+        return {
+            "user_id":       user_id,
+            "site_id":       site_id,
+            "plan":          plan,
+            "role":          "owner",
+            "owner_user_id": user_id,
+        }
+
+    # ── 2. Try site_members (admin / viewer) ─────────────────────────────────
+    member = None
+    try:
+        mresult = (
+            client.table("site_members")
+            .select("id, site_id, role, status, owner_user_id")
+            .eq("member_api_key", raw_key)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        )
+        member = mresult.data[0] if mresult.data else None
+    except Exception as exc:
+        logger.debug("site_members lookup failed: %s", exc)
+        member = None
+
+    if member:
+        site_id        = member["site_id"]
+        role           = member.get("role") or "viewer"
+        owner_user_id  = member.get("owner_user_id") or ""
+
+        request.state.user_id       = str(member["id"])
+        request.state.site_id       = site_id
+        request.state.plan          = "free"   # member uses owner's plan; look up if needed
+        request.state.role          = role
+        request.state.owner_user_id = owner_user_id
+
+        return {
+            "user_id":       str(member["id"]),
+            "site_id":       site_id,
+            "plan":          "free",
+            "role":          role,
+            "owner_user_id": owner_user_id,
+        }
+
+    # ── Neither matched ───────────────────────────────────────────────────────
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid API key",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+# ── Role helpers ──────────────────────────────────────────────────────────────
+
+def require_owner(ctx: dict) -> None:
+    """Raise HTTP 403 unless the caller is the site owner."""
+    if ctx.get("role") != "owner":
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the site owner can perform this action.",
         )
 
-    # site_id falls back to the user's profile id if not explicitly set
-    site_id = profile.get("site_id") or profile["id"]
-    user_id = profile["id"]
-    plan    = profile.get("plan") or "free"
 
-    # Attach to request state so middleware and other deps can read it
-    request.state.user_id = user_id
-    request.state.site_id = site_id
-    request.state.plan    = plan
-
-    return {"user_id": user_id, "site_id": site_id, "plan": plan}
+def require_admin_or_owner(ctx: dict) -> None:
+    """Raise HTTP 403 unless the caller is an owner or admin."""
+    if ctx.get("role") not in ("owner", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Admin or owner role required.",
+        )
 
 
 # Convenience type alias — use in route signatures as:  ctx: AuthContext

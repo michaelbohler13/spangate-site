@@ -24,7 +24,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from auth import AuthContext
+from auth import AuthContext, require_admin_or_owner
 from database import get_db
 from models import DeviceConfig, SshCredentialProfile
 
@@ -186,6 +186,7 @@ async def add_device_config(
     db: AsyncSession = Depends(get_db),
 ) -> DeviceConfigOut:
     """Add a new device to the site's monitoring list."""
+    require_admin_or_owner(ctx)
     # ── Plan limit check ─────────────────────────────────────────────────────
     plan  = ctx.get("plan", "free")
     limit = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
@@ -276,6 +277,7 @@ async def rename_group(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Rename a group — updates all devices in the group at once."""
+    require_admin_or_owner(ctx)
     result = await db.execute(
         update(DeviceConfig)
         .where(
@@ -303,6 +305,7 @@ async def update_device_config(
     db: AsyncSession = Depends(get_db),
 ) -> DeviceConfigOut:
     """Update one or more fields on an existing device."""
+    require_admin_or_owner(ctx)
     result = await db.execute(
         select(DeviceConfig)
         .where(
@@ -352,6 +355,7 @@ async def delete_device_config(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Remove a device from the site's monitoring list."""
+    require_admin_or_owner(ctx)
     result = await db.execute(
         select(DeviceConfig).where(
             DeviceConfig.id == device_id,
@@ -411,6 +415,7 @@ async def request_backup(
     Sets backup_requested_at = now().  The agent polls /agent/pending-backups
     every 60 seconds, picks up this flag, triggers an SSH pull, then calls
     /agent/clear-backup-request to clear the flag.
+    Admin and owner roles can request backups; viewers cannot.
 
     Args:
         device_id: PK of the device_configs row.
@@ -421,9 +426,11 @@ async def request_backup(
         ``{"ok": True, "hostname": ...}``
 
     Raises:
+        HTTPException 403: Caller is a viewer (read-only).
         HTTPException 404: Device not found.
         HTTPException 400: SSH is not enabled for this device.
     """
+    require_admin_or_owner(ctx)
     result = await db.execute(
         select(DeviceConfig).where(
             DeviceConfig.id == device_id,

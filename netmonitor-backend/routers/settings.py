@@ -31,7 +31,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, field_validator
 from supabase import Client, create_client
 
-from auth import AuthContext
+from auth import AuthContext, require_admin_or_owner
 from email_service import SmtpConfig, send_test_alert_email
 
 logger = logging.getLogger(__name__)
@@ -118,7 +118,11 @@ async def get_settings(ctx: AuthContext) -> dict:
 
     SMTP password is not returned — smtp_password_set indicates
     whether a password is stored so the UI can show a placeholder.
+    Accessible to admins and owners (viewers are blocked by role check).
     """
+    require_admin_or_owner(ctx)
+    # Use owner_user_id so admin members read the owner's settings profile
+    owner_id = ctx.get("owner_user_id") or ctx["user_id"]
     client = _get_supabase()
     try:
         result = (
@@ -128,13 +132,13 @@ async def get_settings(ctx: AuthContext) -> dict:
                 "smtp_host,smtp_port,smtp_user,smtp_password,smtp_from,"
                 "default_ssh_user,default_ssh_password"
             )
-            .eq("id", ctx["user_id"])
+            .eq("id", owner_id)
             .single()
             .execute()
         )
         data = result.data or {}
     except Exception as exc:
-        logger.warning("[SETTINGS] Failed to fetch settings for %s: %s", ctx["user_id"], exc)
+        logger.warning("[SETTINGS] Failed to fetch settings for %s: %s", owner_id, exc)
         data = {}
 
     return {
@@ -160,7 +164,10 @@ async def update_settings(body: SettingsUpdate, ctx: AuthContext) -> dict:
     Only fields explicitly included in the request body are written.
     Empty strings clear the field (stored as NULL).
     Omitting smtp_password leaves it unchanged.
+    Accessible to admins and owners; admins write to the owner's profile.
     """
+    require_admin_or_owner(ctx)
+    owner_id = ctx.get("owner_user_id") or ctx["user_id"]
     client = _get_supabase()
     updates: dict = {}
 
@@ -197,11 +204,11 @@ async def update_settings(body: SettingsUpdate, ctx: AuthContext) -> dict:
     try:
         client.table("nm_profiles") \
               .update(updates) \
-              .eq("id", ctx["user_id"]) \
+              .eq("id", owner_id) \
               .execute()
-        logger.info("[SETTINGS] Updated %s for user %s", list(updates.keys()), ctx["user_id"])
+        logger.info("[SETTINGS] Updated %s for user %s", list(updates.keys()), owner_id)
     except Exception as exc:
-        logger.error("[SETTINGS] Failed to update settings for %s: %s", ctx["user_id"], exc)
+        logger.error("[SETTINGS] Failed to update settings for %s: %s", owner_id, exc)
         raise HTTPException(status_code=500, detail="Failed to save settings")
 
     return {"ok": True}
@@ -221,7 +228,9 @@ async def test_email(ctx: AuthContext) -> dict:
     Returns:
         {"ok": True, "sent_to": "<address>"} on success.
     """
-    client = _get_supabase()
+    require_admin_or_owner(ctx)
+    owner_id = ctx.get("owner_user_id") or ctx["user_id"]
+    client   = _get_supabase()
 
     # ── Fetch settings + alert email in one call ──────────────────────────────
     try:
@@ -231,13 +240,13 @@ async def test_email(ctx: AuthContext) -> dict:
                 "alert_email,email_provider,"
                 "smtp_host,smtp_port,smtp_user,smtp_password,smtp_from"
             )
-            .eq("id", ctx["user_id"])
+            .eq("id", owner_id)
             .single()
             .execute()
         )
         data = result.data or {}
     except Exception as exc:
-        logger.warning("[SETTINGS] test-email: could not fetch settings for %s: %s", ctx["user_id"], exc)
+        logger.warning("[SETTINGS] test-email: could not fetch settings for %s: %s", owner_id, exc)
         data = {}
 
     # ── Build SMTP config if applicable ──────────────────────────────────────
@@ -264,7 +273,7 @@ async def test_email(ctx: AuthContext) -> dict:
             from auth import _get_supabase as _auth_supabase
             auth_client = _auth_supabase()
             response = await asyncio.to_thread(
-                auth_client.auth.admin.get_user_by_id, ctx["user_id"]
+                auth_client.auth.admin.get_user_by_id, owner_id
             )
             to_email = (response.user.email or "") if (response and response.user) else ""
         except Exception as exc:
