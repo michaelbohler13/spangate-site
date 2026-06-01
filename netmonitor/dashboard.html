@@ -816,6 +816,13 @@ body.view-mode #navUser{display:none!important;}
 <div id="onboarding">
 <div class="ob-card fade-in">
 
+  <!-- Dismiss button — always visible, top-right corner -->
+  <button onclick="skipOnboarding()" title="Do this later"
+    style="position:absolute;top:12px;right:14px;background:none;border:none;
+           color:var(--text-dim);font-size:1.2rem;cursor:pointer;line-height:1;
+           padding:4px 6px;border-radius:6px;transition:color 0.15s;z-index:10;"
+    onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-dim)'">×</button>
+
   <!-- Progress bar -->
   <div class="ob-progress">
     <div class="ob-seg active" id="seg1"></div>
@@ -990,7 +997,10 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   </div><!-- /step2 body -->
   <div class="ob-footer" id="foot3" style="display:none;">
     <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
-    <button class="btn btn-primary" onclick="goStep(4)">Next: Wait for connection →</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="skipOnboarding()" style="font-size:0.82rem;padding:9px 16px;">Do this later</button>
+      <button class="btn btn-primary" onclick="goStep(4)">Next: Wait for connection →</button>
+    </div>
   </div>
 
   <!-- ── STEP 4 — Waiting ──────────────────────────────────────────────────── -->
@@ -1018,7 +1028,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   </div>
   <div class="ob-footer" id="foot4" style="display:none;">
     <button class="btn btn-ghost" onclick="goStep(3)">← Back</button>
-    <span></span>
+    <button class="btn btn-ghost" onclick="skipOnboarding()" style="font-size:0.82rem;padding:9px 16px;">Do this later</button>
   </div>
 
 </div><!-- /ob-card -->
@@ -2223,6 +2233,19 @@ function showOnboarding() {
   document.getElementById('onboarding').style.display = 'flex';
   document.getElementById('dashboard').style.display  = 'none';
   goStep(1);
+}
+
+function skipOnboarding() {
+  document.getElementById('onboarding').style.display = 'none';
+  // If we have multiple sites, go back to All Sites so the user can pick another.
+  // Otherwise just show the (empty) dashboard for this site.
+  if (_allSites.length >= 2) {
+    _showAllSites();
+    _loadSitesSummary();
+  } else {
+    showDashboard(false, null);
+    startLiveRefresh();
+  }
 }
 
 function goStep(n) {
