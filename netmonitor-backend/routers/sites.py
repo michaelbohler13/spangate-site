@@ -41,7 +41,8 @@ _supabase: Client | None = None
 
 PLAN_SITE_LIMITS: dict[str, int] = {
     "free":       1,
-    "pro":        5,
+    "starter":    2,
+    "pro":        10,
     "enterprise": 25,
     "msp":        999,
 }

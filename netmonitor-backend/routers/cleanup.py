@@ -12,9 +12,13 @@ GET /api/v1/admin/cleanup
 
 Retention policy
 ----------------
-Free plan   : alerts and configs older than 30 days deleted
-Paid plans  : alerts and configs older than 365 days deleted
-All plans   : configs trimmed to at most MAX_CONFIGS_PER_DEVICE per device
+Free      : alerts older than 30 days deleted
+Starter   : alerts older than 90 days deleted
+Pro/Enterprise/MSP : alerts older than 365 days deleted
+All plans : configs trimmed to MAX_CONFIGS_PER_DEVICE (free=1, paid=4)
+
+Note: plan is read from the `sites` table (Phase 3+) with fallback to
+`nm_profiles` for legacy single-site accounts.
 """
 
 import logging
@@ -32,9 +36,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Admin"])
 
 # ── Retention constants ───────────────────────────────────────────────────────
-_RETENTION_DAYS_FREE    = 30    # alerts / configs kept for free-plan sites
-_RETENTION_DAYS_PAID    = 365   # alerts / configs kept for paid-plan sites
-_MAX_CONFIGS_PER_DEVICE = 4     # keep the 4 most recent backups per device (~1/week = ~4/month)
+_RETENTION_DAYS_FREE    = 30    # free plan alert history
+_RETENTION_DAYS_STARTER = 90    # starter plan alert history
+_RETENTION_DAYS_PAID    = 365   # pro / enterprise / msp alert history
+_MAX_CONFIGS_FREE       = 1     # free plan: current config only, no diff
+_MAX_CONFIGS_PAID       = 4     # paid plans: 4 weeks rolling history + download
 
 
 def _verify_cron_secret(authorization: str | None = Header(default=None)) -> None:
@@ -80,9 +86,22 @@ async def run_cleanup(
     Returns:
         Dict with counts of deleted rows per table and pass.
     """
-    now           = datetime.now(timezone.utc)
-    cutoff_paid   = now - timedelta(days=_RETENTION_DAYS_PAID)
-    cutoff_free   = now - timedelta(days=_RETENTION_DAYS_FREE)
+    now             = datetime.now(timezone.utc)
+    cutoff_paid     = now - timedelta(days=_RETENTION_DAYS_PAID)
+    cutoff_starter  = now - timedelta(days=_RETENTION_DAYS_STARTER)
+    cutoff_free     = now - timedelta(days=_RETENTION_DAYS_FREE)
+
+    # Helper CTE: resolve each site's plan from the `sites` table (Phase 3+)
+    # with fallback to `nm_profiles` for legacy single-site accounts.
+    # Returns: site_id, plan
+    _SITE_PLAN_CTE = """
+        WITH site_plans AS (
+            SELECT id AS site_id, COALESCE(plan, 'free') AS plan FROM sites
+            UNION
+            SELECT site_id, COALESCE(plan, 'free') AS plan FROM nm_profiles
+            WHERE site_id NOT IN (SELECT id FROM sites)
+        )
+    """
 
     # ── Pass 1: global 365-day ceiling (all plans) ───────────────────────────
     r_alerts_paid = await db.execute(
@@ -95,40 +114,72 @@ async def run_cleanup(
         delete(ConfigDiff).where(ConfigDiff.detected_at < cutoff_paid)
     )
 
-    # ── Pass 2: 30-day cap for free-plan sites ───────────────────────────────
-    # nm_profiles lives in the same Supabase Postgres instance — query it
-    # via raw SQL so we don't need a separate ORM model for it.
-    r_alerts_free = await db.execute(text("""
+    # ── Pass 2a: 30-day cap for free sites ───────────────────────────────────
+    r_alerts_free = await db.execute(text(_SITE_PLAN_CTE + """
         DELETE FROM alerts
         WHERE created_at < :cutoff_free
           AND site_id IN (
-              SELECT site_id FROM nm_profiles
-              WHERE plan IS NULL OR plan = 'free'
+              SELECT site_id FROM site_plans WHERE plan = 'free'
           )
     """), {"cutoff_free": cutoff_free})
 
-    r_configs_free = await db.execute(text("""
-        DELETE FROM configs
-        WHERE pulled_at < :cutoff_free
-          AND device_id IN (
-              SELECT d.id FROM devices d
-              JOIN nm_profiles p ON p.site_id = d.site_id
-              WHERE p.plan IS NULL OR p.plan = 'free'
-          )
-    """), {"cutoff_free": cutoff_free})
-
-    r_diffs_free = await db.execute(text("""
+    r_diffs_free = await db.execute(text(_SITE_PLAN_CTE + """
         DELETE FROM config_diffs
         WHERE detected_at < :cutoff_free
           AND device_id IN (
               SELECT d.id FROM devices d
-              JOIN nm_profiles p ON p.site_id = d.site_id
-              WHERE p.plan IS NULL OR p.plan = 'free'
+              JOIN site_plans sp ON sp.site_id = d.site_id
+              WHERE sp.plan = 'free'
           )
     """), {"cutoff_free": cutoff_free})
 
-    # ── Pass 3: per-device count trim (paid only — free sites can't back up) ─
-    r_configs_trim = await db.execute(text("""
+    # ── Pass 2b: 90-day cap for starter sites ────────────────────────────────
+    r_alerts_starter = await db.execute(text(_SITE_PLAN_CTE + """
+        DELETE FROM alerts
+        WHERE created_at < :cutoff_starter
+          AND site_id IN (
+              SELECT site_id FROM site_plans WHERE plan = 'starter'
+          )
+    """), {"cutoff_starter": cutoff_starter})
+
+    r_diffs_starter = await db.execute(text(_SITE_PLAN_CTE + """
+        DELETE FROM config_diffs
+        WHERE detected_at < :cutoff_starter
+          AND device_id IN (
+              SELECT d.id FROM devices d
+              JOIN site_plans sp ON sp.site_id = d.site_id
+              WHERE sp.plan = 'starter'
+          )
+    """), {"cutoff_starter": cutoff_starter})
+
+    # ── Pass 3: per-device config count trim ─────────────────────────────────
+    # Free plan: keep only 1 config (current snapshot, no diff capability).
+    # Paid plans: keep 4 (~4 weeks rolling history).
+    r_configs_trim_free = await db.execute(text(_SITE_PLAN_CTE + """
+        DELETE FROM configs
+        WHERE device_id IN (
+            SELECT d.id FROM devices d
+            JOIN site_plans sp ON sp.site_id = d.site_id
+            WHERE sp.plan = 'free'
+        )
+        AND id NOT IN (
+            SELECT id FROM (
+                SELECT id,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY device_id ORDER BY pulled_at DESC
+                       ) AS rn
+                FROM configs
+                WHERE device_id IN (
+                    SELECT d.id FROM devices d
+                    JOIN site_plans sp ON sp.site_id = d.site_id
+                    WHERE sp.plan = 'free'
+                )
+            ) ranked
+            WHERE rn <= :max_free
+        )
+    """), {"max_free": _MAX_CONFIGS_FREE})
+
+    r_configs_trim_paid = await db.execute(text("""
         DELETE FROM configs
         WHERE id NOT IN (
             SELECT id FROM (
@@ -138,28 +189,30 @@ async def run_cleanup(
                        ) AS rn
                 FROM configs
             ) ranked
-            WHERE rn <= :max_per_device
+            WHERE rn <= :max_paid
         )
-    """), {"max_per_device": _MAX_CONFIGS_PER_DEVICE})
+    """), {"max_paid": _MAX_CONFIGS_PAID})
 
     await db.commit()
 
     deleted = {
-        "alerts_paid_ceiling":   r_alerts_paid.rowcount,
-        "alerts_free_cap":       r_alerts_free.rowcount,
-        "configs_paid_ceiling":  r_configs_paid.rowcount,
-        "configs_free_cap":      r_configs_free.rowcount,
-        "configs_trimmed":       r_configs_trim.rowcount,
-        "config_diffs_paid":     r_diffs_paid.rowcount,
-        "config_diffs_free":     r_diffs_free.rowcount,
+        "alerts_365d_ceiling":    r_alerts_paid.rowcount,
+        "alerts_free_30d":        r_alerts_free.rowcount,
+        "alerts_starter_90d":     r_alerts_starter.rowcount,
+        "configs_365d_ceiling":   r_configs_paid.rowcount,
+        "configs_trim_free_1":    r_configs_trim_free.rowcount,
+        "configs_trim_paid_4":    r_configs_trim_paid.rowcount,
+        "config_diffs_365d":      r_diffs_paid.rowcount,
+        "config_diffs_free_30d":  r_diffs_free.rowcount,
+        "config_diffs_starter_90d": r_diffs_starter.rowcount,
     }
 
     logger.info(
-        "[CLEANUP] Plan-aware purge complete. Free cutoff: %s | Paid cutoff: %s | "
-        "Max configs/device: %d | Deleted: %s",
+        "[CLEANUP] Plan-aware purge complete. "
+        "Cutoffs — free: %s | starter: %s | paid: %s | Deleted: %s",
         cutoff_free.strftime("%Y-%m-%d"),
+        cutoff_starter.strftime("%Y-%m-%d"),
         cutoff_paid.strftime("%Y-%m-%d"),
-        _MAX_CONFIGS_PER_DEVICE,
         deleted,
     )
 
@@ -167,7 +220,8 @@ async def run_cleanup(
         "ok":      True,
         "deleted": deleted,
         "cutoff":  {
-            "free": cutoff_free.isoformat(),
-            "paid": cutoff_paid.isoformat(),
+            "free":    cutoff_free.isoformat(),
+            "starter": cutoff_starter.isoformat(),
+            "paid":    cutoff_paid.isoformat(),
         },
     }

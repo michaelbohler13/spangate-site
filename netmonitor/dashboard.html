@@ -2430,15 +2430,57 @@ function updatePlanUsage(info) {
   const pct = info.device_limit > 0
     ? Math.min(100, Math.round(info.device_count / info.device_limit * 100))
     : 0;
-  const cls   = pct >= 90 ? 'crit' : pct >= 75 ? 'warn' : 'ok';
+  const cls  = pct >= 100 ? 'crit' : pct >= 80 ? 'warn' : 'ok';
   txt.textContent  = `${info.device_count} / ${info.device_limit}`;
   bar.className    = 'plan-bar ' + cls;
   bar.style.width  = pct + '%';
-  name.textContent = info.plan.charAt(0).toUpperCase() + info.plan.slice(1);
+  const planLabel  = info.plan.charAt(0).toUpperCase() + info.plan.slice(1);
+  name.textContent = planLabel;
 
-  // Gate add/import buttons when at limit
-  const atLimit   = info.device_count >= info.device_limit;
-  const limitTip  = `${info.plan.charAt(0).toUpperCase() + info.plan.slice(1)} plan limit: ${info.device_limit} devices. Upgrade to add more.`;
+  // ── Soft enforcement ──────────────────────────────────────────────────────
+  const atLimit    = info.device_count >= info.device_limit;
+  const nearLimit  = !atLimit && pct >= 80;
+  const remaining  = info.device_limit - info.device_count;
+
+  // Show/update the soft-cap warning banner
+  let softBanner = document.getElementById('softCapBanner');
+  if (!softBanner) {
+    softBanner = document.createElement('div');
+    softBanner.id = 'softCapBanner';
+    softBanner.style.cssText = `display:none;margin:0 2rem 0.75rem;padding:10px 14px;
+      border-radius:8px;font-size:0.78rem;line-height:1.5;
+      display:flex;align-items:center;gap:10px;`;
+    const devTab = document.getElementById('tab-devices');
+    if (devTab) devTab.parentNode.insertBefore(softBanner, devTab.nextSibling);
+  }
+
+  if (atLimit) {
+    softBanner.style.display = 'flex';
+    softBanner.style.background = 'rgba(255,95,87,0.08)';
+    softBanner.style.border = '0.5px solid rgba(255,95,87,0.3)';
+    softBanner.innerHTML = `<span style="font-size:1rem;">🔴</span>
+      <span style="color:#ff9492;">
+        <strong>Device limit reached</strong> — your ${planLabel} plan allows ${info.device_limit} devices.
+        Existing devices continue to be monitored.
+        <a href="/pricing.html" style="color:var(--accent);text-decoration:none;font-weight:600;">
+          Upgrade to add more →</a>
+      </span>`;
+  } else if (nearLimit) {
+    softBanner.style.display = 'flex';
+    softBanner.style.background = 'rgba(245,158,11,0.07)';
+    softBanner.style.border = '0.5px solid rgba(245,158,11,0.3)';
+    softBanner.innerHTML = `<span style="font-size:1rem;">⚠️</span>
+      <span style="color:#d4a035;">
+        <strong>Approaching device limit</strong> — ${remaining} of ${info.device_limit} remaining on your ${planLabel} plan.
+        <a href="/pricing.html" style="color:var(--accent);text-decoration:none;font-weight:600;">
+          Upgrade before you hit the wall →</a>
+      </span>`;
+  } else {
+    softBanner.style.display = 'none';
+  }
+
+  // Gate add/import buttons only when fully at limit
+  const limitTip  = `${planLabel} plan limit: ${info.device_limit} devices. Upgrade to add more.`;
   const importBtn = document.getElementById('importCsvBtn');
   const addBtn    = document.getElementById('addDeviceBtn');
   [importBtn, addBtn].forEach(btn => {
@@ -5050,7 +5092,7 @@ function _renderSiteCards() {
 
   // Add site card (only if within plan limit)
   const plan      = _allSites[0]?.plan || 'free';
-  const planLims  = { free: 1, pro: 5, enterprise: 25, msp: 999 };
+  const planLims  = { free: 1, starter: 2, pro: 10, enterprise: 25, msp: 999 };
   if (_allSites.length < (planLims[plan] || 1)) {
     html += `<div class="sc-add" onclick="openAddSiteModal()">
       <span class="sc-add-icon">+</span>

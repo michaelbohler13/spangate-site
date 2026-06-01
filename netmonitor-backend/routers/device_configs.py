@@ -45,12 +45,13 @@ SSH_BACKUP_VENDORS = {"cisco", "aruba_cx", "juniper"}
 PING_ONLY_VENDORS = {"ups", "hvac", "camera", "printer", "ping_only", "internet"}
 
 # Device limits per subscription plan
+# Free: evaluate only | Starter: $199/mo | Pro: $399/mo | Enterprise: $999/mo
 PLAN_LIMITS: dict[str, int] = {
     "free":       10,
-    "starter":    50,
-    "pro":        250,
-    "business":   500,
+    "starter":    100,
+    "pro":        500,
     "enterprise": 2000,
+    "msp":        999999,   # Phase 5 — effectively unlimited
 }
 
 # Default netmiko device_type per vendor

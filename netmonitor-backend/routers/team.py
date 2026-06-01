@@ -42,7 +42,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Team"])
 
 # Total seats including the owner
-_SEAT_LIMITS: dict[str, int] = {"free": 1, "starter": 3, "pro": 10}
+# Free: 1 | Starter: 5 | Pro: 15 | Enterprise/MSP: unlimited
+_SEAT_LIMITS: dict[str, int] = {
+    "free":       1,
+    "starter":    5,
+    "pro":        15,
+    "enterprise": 999999,
+    "msp":        999999,
+}
 
 # Where the frontend is hosted (for invite links)
 _FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://spangate.com")
