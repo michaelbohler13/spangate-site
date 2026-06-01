@@ -156,10 +156,10 @@ tbody td{padding:10px 12px;vertical-align:middle;}
 }
 .act-btn:hover{color:var(--text);border-color:var(--border2);}
 .act-drop{
-  position:absolute;right:0;top:calc(100% + 4px);min-width:175px;
+  position:fixed;min-width:175px;
   background:var(--surface);border:0.5px solid var(--border2);
   border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.5);
-  z-index:200;display:none;overflow:hidden;
+  z-index:500;display:none;overflow:hidden;
 }
 .act-drop.open{display:block;}
 .act-item{
@@ -667,11 +667,30 @@ function renderTable() {
 
 // ── Action dropdown ───────────────────────────────────────────────────────────
 function toggleActDrop(uid) {
-  // Close all open dropdowns first
+  const btn  = document.querySelector(`#aw-${uid} .act-btn`);
+  const drop = document.getElementById(`ad-${uid}`);
+  if (!btn || !drop) return;
+
+  // Close any other open dropdown
   document.querySelectorAll('.act-drop.open').forEach(d => {
-    if (d.id !== `ad-${uid}`) d.classList.remove('open');
+    if (d !== drop) d.classList.remove('open');
   });
-  document.getElementById(`ad-${uid}`)?.classList.toggle('open');
+
+  if (drop.classList.contains('open')) {
+    drop.classList.remove('open');
+    return;
+  }
+
+  // Position using fixed coords so it escapes the overflow-x:auto table-wrap
+  const rect = btn.getBoundingClientRect();
+  drop.style.top  = `${rect.bottom + 4}px`;
+  // Align right edge of dropdown to right edge of button; clamp to viewport
+  const dropW = 180;
+  const left  = Math.min(rect.right - dropW, window.innerWidth - dropW - 8);
+  drop.style.left = `${Math.max(8, left)}px`;
+  drop.style.right = 'auto';
+
+  drop.classList.add('open');
 }
 
 document.addEventListener('click', e => {

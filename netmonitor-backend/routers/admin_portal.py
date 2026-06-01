@@ -283,21 +283,30 @@ async def admin_list_users(
         logger.warning("[ADMIN] list_users: sites count failed: %s", exc)
         site_counts = {}
 
-    # ── 4. Device counts + last seen per owner (single SQL) ─────────────────
-    # device_configs holds user-configured devices (the 390 in the dashboard).
-    # agent_heartbeat.last_seen tells us when the agent last checked in.
+    # ── 4. Device counts + last seen per owner ───────────────────────────────
+    # Pre-Phase-3 devices have site_id = nm_profiles.site_id (old UUID).
+    # Post-Phase-3 devices have site_id = sites.id (new UUID from migration).
+    # We union both site_id sources so both old and new devices are counted.
     device_counts: dict[str, int] = {}
     last_seen_map: dict[str, str] = {}
     try:
         row_result = await db.execute(text("""
             SELECT
-                s.owner_user_id,
-                COUNT(DISTINCT dc.id)          AS device_count,
-                MAX(ah.last_seen)              AS last_agent_seen
-            FROM sites s
-            LEFT JOIN device_configs dc ON dc.site_id = s.id
-            LEFT JOIN agent_heartbeat ah ON ah.site_id = s.id
-            GROUP BY s.owner_user_id
+                u.owner_user_id,
+                COUNT(DISTINCT dc.id)  AS device_count,
+                MAX(ah.last_seen)      AS last_agent_seen
+            FROM (
+                -- Phase 3 sites (new UUID from sites table)
+                SELECT owner_user_id, id AS site_id FROM sites
+                UNION
+                -- Legacy site_id from nm_profiles (pre-Phase-3 devices)
+                SELECT id AS owner_user_id, site_id
+                FROM nm_profiles
+                WHERE site_id IS NOT NULL
+            ) u
+            LEFT JOIN device_configs dc ON dc.site_id = u.site_id
+            LEFT JOIN agent_heartbeat ah ON ah.site_id = u.site_id
+            GROUP BY u.owner_user_id
         """))
         for row in row_result:
             uid = row.owner_user_id
