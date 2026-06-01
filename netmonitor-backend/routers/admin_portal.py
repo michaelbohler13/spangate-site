@@ -206,7 +206,7 @@ async def admin_stats(
 
     # ── Total devices monitored ───────────────────────────────────────────────
     try:
-        dev_result = await db.execute(text("SELECT COUNT(*) FROM devices"))
+        dev_result = await db.execute(text("SELECT COUNT(*) FROM device_configs"))
         total_devices = dev_result.scalar_one() or 0
     except Exception:
         total_devices = 0
@@ -283,23 +283,25 @@ async def admin_list_users(
         logger.warning("[ADMIN] list_users: sites count failed: %s", exc)
         site_counts = {}
 
-    # ── 4. Device counts + last seen per owner (single SQL) ───────────────────
+    # ── 4. Device counts + last seen per owner (single SQL) ─────────────────
+    # device_configs holds user-configured devices (the 390 in the dashboard).
+    # agent_heartbeat.last_seen tells us when the agent last checked in.
     device_counts: dict[str, int] = {}
     last_seen_map: dict[str, str] = {}
     try:
         row_result = await db.execute(text("""
             SELECT
                 s.owner_user_id,
-                COUNT(DISTINCT d.id)          AS device_count,
-                MAX(ah.last_seen)             AS last_agent_seen
+                COUNT(DISTINCT dc.id)          AS device_count,
+                MAX(ah.last_seen)              AS last_agent_seen
             FROM sites s
-            LEFT JOIN devices d ON d.site_id = s.id
+            LEFT JOIN device_configs dc ON dc.site_id = s.id
             LEFT JOIN agent_heartbeat ah ON ah.site_id = s.id
             GROUP BY s.owner_user_id
         """))
         for row in row_result:
             uid = row.owner_user_id
-            device_counts[uid] = row.device_count or 0
+            device_counts[uid] = int(row.device_count or 0)
             if row.last_agent_seen:
                 last_seen_map[uid] = row.last_agent_seen.isoformat()
     except Exception as exc:
