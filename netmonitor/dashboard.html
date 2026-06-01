@@ -1039,19 +1039,21 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   </div>
 </div>
 
-<!-- Add Site modal -->
+<!-- Add / Rename Site modal (shared) -->
 <div id="addSiteModal">
   <div class="asm-bg" onclick="closeAddSiteModal()"></div>
   <div class="asm-box">
-    <div class="asm-title">Add a New Site</div>
-    <div class="asm-sub">A site represents one physical location monitored by a single agent (Raspberry Pi, Windows PC, or Mac). Each site gets its own API key.</div>
-    <label class="asm-label" for="asmNameInput">Site Name</label>
-    <input id="asmNameInput" class="asm-input" type="text" placeholder="e.g. Main Campus, Branch Office, Warehouse" maxlength="100"
-      onkeydown="if(event.key==='Enter')doAddSite()" autofocus />
+    <div class="asm-title" id="asmTitle">Add a New Site</div>
+    <div class="asm-sub" id="asmSub">A site represents one physical location monitored by a single agent (Raspberry Pi, Windows PC, or Mac). Each site gets its own API key.</div>
+    <div id="asmInputWrap">
+      <label class="asm-label" for="asmNameInput">Site Name</label>
+      <input id="asmNameInput" class="asm-input" type="text" placeholder="e.g. Main Campus, Branch Office, Warehouse" maxlength="100"
+        onkeydown="if(event.key==='Enter')doAsmSubmit()" autofocus />
+    </div>
     <div class="asm-msg" id="asmMsg"></div>
     <div class="asm-btns">
       <button class="btn btn-ghost" onclick="closeAddSiteModal()" style="font-size:0.82rem;padding:8px 16px;">Cancel</button>
-      <button class="btn btn-primary" id="asmCreateBtn" onclick="doAddSite()" style="font-size:0.82rem;padding:8px 18px;">Create Site</button>
+      <button class="btn btn-primary" id="asmCreateBtn" onclick="doAsmSubmit()" style="font-size:0.82rem;padding:8px 18px;">Create Site</button>
     </div>
   </div>
 </div>
@@ -1064,7 +1066,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
   <!-- Site header -->
   <div class="site-hdr">
     <div class="site-hdr-l">
-      <button class="back-btn" id="backToAllBtn" onclick="_showAllSites()">← All Sites</button>
+      <button class="back-btn" id="backToAllBtn" onclick="_showAllSites();_loadSitesSummary()">← All Sites</button>
       <div class="site-name-label" id="siteNameLabel">My Site</div>
       <div class="agent-online">
         <span class="pulse-dot"></span>
@@ -1820,6 +1822,11 @@ let _allSites      = [];   // all sites owned by the user (from Supabase)
 let _currentSiteId = null; // site_id of the currently loaded site view
 let _svSummary     = [];   // summary data for the All Sites card wall
 
+// Add/rename/delete site modal state
+let _asmMode         = 'add';  // 'add' | 'rename' | 'delete'
+let _asmRenameSiteId = null;   // siteId being renamed (rename mode only)
+let _asmDeleteSiteId = null;   // siteId being deleted (delete mode only)
+
 // Read-only share-link mode — set when ?view=TOKEN is in the URL
 const VIEW_TOKEN = new URLSearchParams(location.search).get('view');
 let _shareRefreshTimer = null;
@@ -1918,6 +1925,14 @@ async function initApp() {
         _currentSiteId = site.id;
         injectApiKey(apiKey);
         _updateSiteSwitcher();
+
+        // Show "← All Sites" back button whenever there are multiple sites,
+        // regardless of whether the user arrived here via _enterSite() or
+        // directly via page load / sessionStorage.
+        if (sites.length >= 2) {
+          const back = document.getElementById('backToAllBtn');
+          if (back) back.classList.add('visible');
+        }
       } else {
         // Multiple sites and none selected yet → show All Sites card wall
         hideLoader();
@@ -4870,7 +4885,17 @@ function _showAllSites() {
   stopLiveRefresh();
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('dashboard').style.display  = 'none';
-  document.getElementById('sitesView').style.display  = '';
+  document.getElementById('sitesView').style.display  = 'block';  // was '' — CSS default is none!
+
+  // Clear the stored site so the next page load doesn't skip straight
+  // back into a (possibly empty) site that was stored by old code.
+  sessionStorage.removeItem('sg-current-site');
+  _currentSiteId = null;
+
+  // Render cards immediately from _allSites so there's something to see
+  // while _loadSitesSummary() fetches live metrics in the background.
+  _renderSiteCards();
+
   // Update browser URL without reload — use ?allsites=1 to avoid
   // conflicting with ?view=<share-token> used by the share-link feature
   const url = new URL(location.href);
@@ -4880,21 +4905,27 @@ function _showAllSites() {
   history.pushState({ svView: 'all' }, '', url.toString());
 }
 
-/** Load summary data for all sites and render cards. */
+/** Load live summary data for all sites and refresh cards. */
 async function _loadSitesSummary() {
   if (!db) return;
   try {
     const { data: { session } } = await db.auth.getSession();
-    if (!session?.access_token) return;
+    if (!session?.access_token) {
+      // No active session — cards already rendered by _showAllSites(); nothing more to do.
+      return;
+    }
     const res = await fetch(`${API_BASE}/api/v1/sites/summary`, {
       headers: { 'Authorization': `Bearer ${session.access_token}` },
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      // Summary unavailable (backend error, etc.) — leave cards as-is from _allSites.
+      return;
+    }
     _svSummary = await res.json();
-    _renderSiteCards();
+    _renderSiteCards();   // re-render with live agent metrics
   } catch(e) {
     console.warn('[SITES] Failed to load summary:', e);
-    _renderSiteCards(); // render with whatever _allSites we have
+    // Cards were already rendered by _showAllSites(); no further action needed.
   }
 }
 
@@ -5056,23 +5087,81 @@ window.addEventListener('popstate', async (e) => {
   }
 });
 
-// ── Add Site modal ────────────────────────────────────────────────────────────
+// ── Add / Rename / Delete Site modal ─────────────────────────────────────────
 
-function openAddSiteModal() {
-  const modal = document.getElementById('addSiteModal');
-  const input = document.getElementById('asmNameInput');
-  const msg   = document.getElementById('asmMsg');
-  const btn   = document.getElementById('asmCreateBtn');
+/**
+ * Open the shared site modal.
+ * @param {string} mode        'add' | 'rename' | 'delete'
+ * @param {string|null} siteId Required for rename and delete
+ * @param {string} currentName Pre-fill for rename; site name label for delete
+ */
+function openAddSiteModal(mode = 'add', siteId = null, currentName = '') {
+  _asmMode         = mode;
+  _asmRenameSiteId = siteId;
+  _asmDeleteSiteId = siteId;
+
+  const modal     = document.getElementById('addSiteModal');
+  const inputWrap = document.getElementById('asmInputWrap');  // label+input wrapper
+  const input     = document.getElementById('asmNameInput');
+  const msg       = document.getElementById('asmMsg');
+  const btn       = document.getElementById('asmCreateBtn');
+  const title     = document.getElementById('asmTitle');
+  const sub       = document.getElementById('asmSub');
   if (!modal) return;
-  if (input)  { input.value = ''; setTimeout(() => input.focus(), 80); }
-  if (msg)    { msg.style.display = 'none'; }
-  if (btn)    { btn.textContent = 'Create Site'; btn.disabled = false; }
+
+  if (mode === 'rename') {
+    if (title)     title.textContent        = 'Rename Site';
+    if (sub)       sub.textContent          = 'Enter a new name for this site.';
+    if (input)     input.value              = currentName;
+    if (inputWrap) inputWrap.style.display  = '';
+    if (btn) {
+      btn.textContent        = 'Save Name';
+      btn.disabled           = false;
+      btn.style.background   = '';    // reset to default (teal)
+    }
+  } else if (mode === 'delete') {
+    if (title)     title.textContent        = 'Delete Site';
+    if (sub)       sub.innerHTML            =
+      `Are you sure you want to delete <strong>${esc(currentName)}</strong>?<br>
+       All device, alert, and config data for this site will be removed. This cannot be undone.`;
+    if (inputWrap) inputWrap.style.display  = 'none';   // hide name input
+    if (btn) {
+      btn.textContent        = 'Delete Site';
+      btn.disabled           = false;
+      btn.style.background   = '#c0392b';   // red for destructive action
+    }
+  } else {
+    // 'add'
+    if (title)     title.textContent        = 'Add a New Site';
+    if (sub)       sub.textContent          = 'A site represents one physical location monitored by a single agent (Raspberry Pi, Windows PC, or Mac). Each site gets its own API key.';
+    if (input)     input.value              = '';
+    if (inputWrap) inputWrap.style.display  = '';
+    if (btn) {
+      btn.textContent        = 'Create Site';
+      btn.disabled           = false;
+      btn.style.background   = '';    // reset to default (teal)
+    }
+  }
+
+  if (msg) { msg.style.display = 'none'; }
   modal.classList.add('open');
+  if (mode !== 'delete') setTimeout(() => input?.focus(), 80);
+  else setTimeout(() => btn?.focus(), 80);
 }
 
 function closeAddSiteModal() {
   const modal = document.getElementById('addSiteModal');
   if (modal) modal.classList.remove('open');
+  // Reset button style in case it was set to red
+  const btn = document.getElementById('asmCreateBtn');
+  if (btn) btn.style.background = '';
+}
+
+/** Dispatch Enter / button click to the right handler. */
+function doAsmSubmit() {
+  if (_asmMode === 'rename') doRenameSite();
+  else if (_asmMode === 'delete') doDeleteSite();
+  else doAddSite();
 }
 
 /** Render the sites list in the Settings → Sites accordion. */
@@ -5106,57 +5195,128 @@ function _renderSiteSettings() {
   }).join('');
 }
 
-async function _renameSitePrompt(siteId, currentName) {
-  const newName = prompt(`Rename site (current: "${currentName}"):`, currentName);
-  if (!newName?.trim() || newName.trim() === currentName) return;
+/** Open the rename modal (replaces the old prompt()-based approach). */
+function _renameSitePrompt(siteId, currentName) {
+  openAddSiteModal('rename', siteId, currentName);
+}
+
+/** Called by doAsmSubmit() when _asmMode === 'rename'. */
+async function doRenameSite() {
+  if (!db || !_asmRenameSiteId) return;
+  const input = document.getElementById('asmNameInput');
+  const msg   = document.getElementById('asmMsg');
+  const btn   = document.getElementById('asmCreateBtn');
+
+  const newName = input?.value.trim();
+  if (!newName) {
+    if (msg) { msg.textContent = 'Please enter a site name.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+    return;
+  }
+
+  const siteId = _asmRenameSiteId;
+  const originalName = _allSites.find(s => s.id === siteId)?.site_name || '';
+  if (newName === originalName) { closeAddSiteModal(); return; }
+
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
 
   try {
     const { data: { session } } = await db.auth.getSession();
-    if (!session?.access_token) return;
+    if (!session?.access_token) throw new Error('Not logged in');
+
     const res = await fetch(`${API_BASE}/api/v1/sites/${encodeURIComponent(siteId)}`, {
       method:  'PATCH',
       headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ site_name: newName.trim() }),
+      body:    JSON.stringify({ site_name: newName }),
     });
-    if (!res.ok) { alert('Could not rename site.'); return; }
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      if (msg) { msg.textContent = errBody.detail || 'Could not rename site.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+      if (btn) { btn.textContent = 'Save Name'; btn.disabled = false; }
+      return;
+    }
+
     const updated = await res.json();
-    // Update local list
+
+    // Update local _allSites list
     const idx = _allSites.findIndex(s => s.id === siteId);
     if (idx !== -1) _allSites[idx] = { ..._allSites[idx], site_name: updated.site_name };
-    // Update site name label if this is the current site
+
+    // Update site name label in header if this is the current site
     if (siteId === _currentSiteId) {
       const snl = document.getElementById('siteNameLabel');
       if (snl) snl.textContent = updated.site_name;
       _updateSiteSwitcher();
     }
+
+    // Refresh All Sites summary card if it has this site
+    const svIdx = _svSummary.findIndex(s => s.id === siteId);
+    if (svIdx !== -1) {
+      _svSummary[svIdx] = { ..._svSummary[svIdx], site_name: updated.site_name };
+      _renderSiteCards();
+    }
+
     _renderSiteSettings();
-  } catch(e) { alert('Network error — try again.'); }
+    closeAddSiteModal();
+
+  } catch(e) {
+    if (msg) { msg.textContent = 'Network error — try again.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+    if (btn) { btn.textContent = 'Save Name'; btn.disabled = false; }
+  }
 }
 
-async function _deleteSiteConfirm(siteId, siteName) {
-  if (!confirm(`Delete site "${siteName}"?\n\nThis removes the site and all associated device/alert/config data. This cannot be undone.`)) return;
+/** Open the delete confirmation modal (replaces the old confirm() dialog). */
+function _deleteSiteConfirm(siteId, siteName) {
+  openAddSiteModal('delete', siteId, siteName);
+}
+
+/** Called by doAsmSubmit() when _asmMode === 'delete'. */
+async function doDeleteSite() {
+  if (!db || !_asmDeleteSiteId) return;
+  const msg = document.getElementById('asmMsg');
+  const btn = document.getElementById('asmCreateBtn');
+
+  const siteId = _asmDeleteSiteId;
+
+  if (btn) { btn.textContent = 'Deleting…'; btn.disabled = true; }
 
   try {
     const { data: { session } } = await db.auth.getSession();
-    if (!session?.access_token) return;
+    if (!session?.access_token) throw new Error('Not logged in');
+
     const res = await fetch(`${API_BASE}/api/v1/sites/${encodeURIComponent(siteId)}`, {
       method:  'DELETE',
       headers: { 'Authorization': `Bearer ${session.access_token}` },
     });
+
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      alert(body.detail || 'Could not delete site.');
+      const errBody = await res.json().catch(() => ({}));
+      if (msg) { msg.textContent = errBody.detail || 'Could not delete site.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+      if (btn) { btn.textContent = 'Delete Site'; btn.disabled = false; }
       return;
     }
-    // Remove from local list
-    _allSites = _allSites.filter(s => s.id !== siteId);
-    // If we deleted the current site, switch to another
-    if (siteId === _currentSiteId && _allSites.length > 0) {
-      await _enterSite(_allSites[0].id);
-    }
+
+    // Remove from local lists
+    _allSites  = _allSites.filter(s => s.id !== siteId);
+    _svSummary = _svSummary.filter(s => s.id !== siteId);
+
+    closeAddSiteModal();
     _renderSiteSettings();
     _updateSiteSwitcher();
-  } catch(e) { alert('Network error — try again.'); }
+
+    // If the deleted site was the currently-viewed site, go to All Sites
+    if (siteId === _currentSiteId) {
+      _showAllSites();
+      _loadSitesSummary();
+    } else {
+      // Refresh card wall if it's currently visible
+      _renderSiteCards();
+    }
+
+  } catch(e) {
+    if (msg) { msg.textContent = 'Network error — try again.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+    if (btn) { btn.textContent = 'Delete Site'; btn.disabled = false; }
+  }
 }
 
 async function doAddSite() {
@@ -5190,10 +5350,18 @@ async function doAddSite() {
       return;
     }
 
-    // Add to local list and enter the new site
+    // Add to local list, update UI, then navigate to All Sites so the new
+    // site card is immediately visible.  Do NOT enter the new site —
+    // that navigated the user away from Settings and hid the new card.
     _allSites.push(body);
+    _updateSiteSwitcher();
+    _renderSiteSettings();   // refresh Sites accordion if open
     closeAddSiteModal();
-    await _enterSite(body.id);
+
+    // Navigate to All Sites card wall (works whether the user came from
+    // Settings or the "+" card on the All Sites view).
+    _showAllSites();
+    _loadSitesSummary();
 
   } catch(e) {
     if (msg) { msg.textContent = 'Network error — try again.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
