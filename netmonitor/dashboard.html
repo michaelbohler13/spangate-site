@@ -354,6 +354,11 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   color:var(--text-muted);border-radius:6px;padding:5px 14px;font-size:0.74rem;
   cursor:pointer;font-family:var(--sans);transition:all 0.15s;}
 .view-backup-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.4);}
+.dl-btn{background:transparent;border:0.5px solid var(--border-bright);
+  color:var(--text-muted);border-radius:6px;padding:5px 12px;font-size:0.74rem;
+  cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap;}
+.dl-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.4);}
+.dl-btn:disabled{opacity:0.4;cursor:not-allowed;}
 /* Backup timestamp chip shown in the Last Backup column */
 .backup-ts{background:rgba(0,212,184,0.07);border:0.5px solid rgba(0,212,184,0.25);
   color:var(--accent);border-radius:6px;padding:3px 9px;font-family:var(--mono);
@@ -1568,7 +1573,10 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
     <div class="modal-sec">
       <div class="modal-sec-hdr">
         <div class="modal-eyebrow" style="margin-bottom:0;">Full Configuration</div>
-        <button class="code-copy" style="position:static;padding:4px 12px;" onclick="cpFullCfg(this)">Copy full config</button>
+        <div style="display:flex;gap:6px;">
+          <button class="dl-btn" onclick="downloadModalConfig(this)" style="padding:4px 12px;font-size:0.72rem;">⬇ Download</button>
+          <button class="code-copy" style="position:static;padding:4px 12px;" onclick="cpFullCfg(this)">Copy</button>
+        </div>
       </div>
       <div class="full-cfg" id="modalFullCfg"></div>
     </div>
@@ -1818,7 +1826,10 @@ let resolvedAlerts = [];
 let liveDevices    = [];
 let deviceConfigs  = [];
 let expandedDevice = null;
-let editingDeviceId = null;
+let editingDeviceId  = null;
+let _modalHostname   = '';   // hostname of the config currently open in the modal
+let _modalBackupId   = null; // backup id of the config currently open in the modal
+let _modalPulledAt   = '';   // ISO timestamp of the config currently open in the modal
 let apiKey         = null;
 let accountEmail   = '';
 let _myRole        = 'owner';   // 'owner' | 'admin' | 'viewer'
@@ -1870,7 +1881,62 @@ function cpFullCfg(btn) {
   const txt = document.getElementById('modalFullCfg').textContent;
   navigator.clipboard.writeText(txt).catch(() => {});
   btn.textContent = 'Copied ✓';
-  setTimeout(() => { btn.textContent = 'Copy full config'; }, 2000);
+  setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+}
+
+/** Download the config that is currently open in the modal. */
+function downloadModalConfig(btn) {
+  const txt = document.getElementById('modalFullCfg').textContent;
+  if (!txt) return;
+  const date     = _modalPulledAt ? new Date(_modalPulledAt).toISOString().split('T')[0] : 'backup';
+  const filename = `${_modalHostname || 'config'}-${date}.txt`;
+  _triggerDownload(txt, filename);
+  if (btn) { btn.textContent = '✓ Saved'; setTimeout(() => btn.textContent = '⬇ Download', 2000); }
+}
+
+/**
+ * Download a specific config backup by ID.
+ * If the backup is already open in the modal we reuse its text; otherwise
+ * we fetch it from the API to avoid an unnecessary round-trip on View+Download.
+ */
+async function downloadConfig(hostname, backupId, pulledAt, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    let text;
+    // Reuse already-loaded text if the same backup is open in the modal
+    if (_modalBackupId === backupId && _modalHostname === hostname) {
+      text = document.getElementById('modalFullCfg').textContent;
+    }
+    if (!text) {
+      const res = await fetch(
+        `${API_BASE}/api/v1/configs/${encodeURIComponent(hostname)}/${backupId}`,
+        { headers: { 'Authorization': `Bearer ${apiKey}` } }
+      );
+      if (!res.ok) throw new Error('fetch failed');
+      const b = await res.json();
+      text = b.config_text;
+    }
+    const date     = pulledAt ? new Date(pulledAt).toISOString().split('T')[0] : 'backup';
+    const filename = `${hostname}-${date}.txt`;
+    _triggerDownload(text, filename);
+    if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.disabled = false; btn.textContent = '⬇'; }, 2000); }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇'; }
+    alert('Could not download config — please try again.');
+  }
+}
+
+/** Create a temporary anchor and trigger a file download. */
+function _triggerDownload(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 function vendorLabel(v) {
   return {
@@ -3207,10 +3273,15 @@ async function onCfgDeviceChange(hostname) {
       <th>Date &amp; Time</th><th>Hash</th><th></th>
     </tr></thead><tbody>`;
     backups.forEach(b => {
+      const safeHostname = esc(hostname);
+      const safeDate     = esc(b.pulled_at);
       html += `<tr>
         <td><span class="bk-date">${esc(new Date(b.pulled_at).toLocaleString())}</span></td>
         <td><span class="bk-hash">${esc(b.config_hash.substring(0,12))}…</span></td>
-        <td><button class="diff-btn" onclick="openModal('${esc(hostname)}',${b.id})">View</button></td>
+        <td style="display:flex;gap:6px;align-items:center;">
+          <button class="diff-btn" onclick="openModal('${safeHostname}',${b.id})">View</button>
+          <button class="dl-btn"   onclick="downloadConfig('${safeHostname}',${b.id},'${safeDate}',this)">⬇</button>
+        </td>
       </tr>`;
     });
     html += '</tbody></table>';
@@ -3226,6 +3297,10 @@ async function onCfgDeviceChange(hostname) {
 // MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 async function openModal(hostname, backupId) {
+  _modalHostname  = hostname;
+  _modalBackupId  = backupId;
+  _modalPulledAt  = '';   // filled in once the fetch completes
+
   document.getElementById('modalTitle').textContent = `${hostname} — Loading…`;
   document.getElementById('modalDiff').innerHTML    = '<div class="dl dl-ctx">Loading…</div>';
   document.getElementById('modalFullCfg').textContent = '';
@@ -3240,6 +3315,7 @@ async function openModal(hostname, backupId) {
     if (!res.ok) throw new Error('fetch failed');
     const b = await res.json();
 
+    _modalPulledAt = b.pulled_at;
     document.getElementById('modalTitle').textContent = `${hostname} — ${new Date(b.pulled_at).toLocaleString()}`;
     document.getElementById('modalFullCfg').textContent = b.config_text;
 
