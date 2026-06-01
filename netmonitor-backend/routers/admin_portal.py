@@ -288,55 +288,60 @@ async def admin_list_users(
         owner_to_site_ids = {}
 
     # ── 4. Device counts + last seen ─────────────────────────────────────────
-    # Build a flat list of (owner_user_id, site_id) pairs from BOTH sources:
-    #   a) nm_profiles.site_id  — pre-Phase-3 devices live here
-    #   b) sites.id             — post-Phase-3 (and newly created) sites
-    # Then count device_configs and agent_heartbeat via a single SQL query
-    # using those site_ids, and map the results back to owner_user_id in Python.
+    # Build site_id → owner_user_id mapping from BOTH sources so we catch
+    # legacy (nm_profiles.site_id) AND Phase-3 (sites.id) devices.
+    # Then GROUP BY in SQL with no WHERE filter (table is small), and match
+    # in Python so we can also log any orphan site_ids for debugging.
     device_counts: dict[str, int] = {}
     last_seen_map: dict[str, str] = {}
+
+    sid_to_owner: dict[str, str] = {}
+    # Legacy: nm_profiles.site_id  (pre-Phase-3 devices)
+    for uid, prof in profile_map.items():
+        legacy_sid = prof.get("site_id")
+        if legacy_sid:
+            sid_to_owner[str(legacy_sid)] = uid
+    # Phase-3: sites.id
+    for uid, sids in owner_to_site_ids.items():
+        for sid in sids:
+            sid_to_owner[str(sid)] = uid
+
+    logger.info("[ADMIN] list_users: %d site_id→owner mappings built", len(sid_to_owner))
+
     try:
-        # Build site_id → owner mapping
-        sid_to_owner: dict[str, str] = {}
-
-        # Legacy: nm_profiles.site_id  (pre-Phase-3 devices)
-        for uid, prof in profile_map.items():
-            legacy_sid = prof.get("site_id")
-            if legacy_sid:
-                sid_to_owner[legacy_sid] = uid
-
-        # Phase-3: sites.id
-        for uid, sids in owner_to_site_ids.items():
-            for sid in sids:
-                sid_to_owner[sid] = uid
-
-        all_site_ids = list(sid_to_owner.keys())
-
-        if all_site_ids:
-            # Count device_configs per site_id
-            dc_result = await db.execute(
-                text("SELECT site_id, COUNT(*) AS cnt FROM device_configs "
-                     "WHERE site_id = ANY(:ids) GROUP BY site_id"),
-                {"ids": all_site_ids},
+        # Count devices per site_id (no WHERE — table is small)
+        dc_result = await db.execute(text(
+            "SELECT site_id, COUNT(*) AS cnt FROM device_configs GROUP BY site_id"
+        ))
+        orphan_sites = []
+        for row in dc_result:
+            sid   = str(row.site_id) if row.site_id is not None else ""
+            cnt   = int(row.cnt or 0)
+            owner = sid_to_owner.get(sid)
+            if owner:
+                device_counts[owner] = device_counts.get(owner, 0) + cnt
+            else:
+                orphan_sites.append((sid, cnt))
+        if orphan_sites:
+            logger.warning(
+                "[ADMIN] list_users: %d orphan site_id(s) in device_configs not "
+                "matched to any owner: %s",
+                len(orphan_sites), orphan_sites[:5],
             )
-            for row in dc_result:
-                owner = sid_to_owner.get(row.site_id)
-                if owner:
-                    device_counts[owner] = device_counts.get(owner, 0) + int(row.cnt or 0)
 
-            # Last heartbeat per site_id
-            ah_result = await db.execute(
-                text("SELECT site_id, MAX(last_seen) AS last_seen FROM agent_heartbeat "
-                     "WHERE site_id = ANY(:ids) GROUP BY site_id"),
-                {"ids": all_site_ids},
-            )
-            for row in ah_result:
-                owner = sid_to_owner.get(row.site_id)
-                if owner and row.last_seen:
-                    existing = last_seen_map.get(owner)
-                    ts = row.last_seen.isoformat()
-                    if not existing or ts > existing:
-                        last_seen_map[owner] = ts
+        # Last heartbeat per site_id
+        ah_result = await db.execute(text(
+            "SELECT site_id, MAX(last_seen) AS last_seen "
+            "FROM agent_heartbeat GROUP BY site_id"
+        ))
+        for row in ah_result:
+            sid   = str(row.site_id) if row.site_id is not None else ""
+            owner = sid_to_owner.get(sid)
+            if owner and row.last_seen:
+                ts = row.last_seen.isoformat()
+                existing = last_seen_map.get(owner)
+                if not existing or ts > existing:
+                    last_seen_map[owner] = ts
 
     except Exception as exc:
         logger.warning("[ADMIN] list_users: device/heartbeat query failed: %s", exc)
