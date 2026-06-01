@@ -260,11 +260,11 @@ async def admin_list_users(
         logger.error("[ADMIN] list_users: auth.admin.list_users failed: %s", exc)
         auth_map = {}
 
-    # ── 2. nm_profiles ────────────────────────────────────────────────────────
+    # ── 2. nm_profiles — include site_id for legacy device lookup ────────────
     try:
         profiles_res = (
             client.table("nm_profiles")
-            .select("id, plan, account_status, suspension_reason, admin_notes")
+            .select("id, site_id, plan, account_status, suspension_reason, admin_notes")
             .execute()
         )
         profile_map = {p["id"]: p for p in (profiles_res.data or [])}
@@ -272,47 +272,72 @@ async def admin_list_users(
         logger.warning("[ADMIN] list_users: nm_profiles failed: %s", exc)
         profile_map = {}
 
-    # ── 3. Site counts per owner ──────────────────────────────────────────────
+    # ── 3. Sites — count per owner AND collect site IDs ───────────────────────
     try:
-        sites_res = client.table("sites").select("owner_user_id").execute()
+        sites_res = client.table("sites").select("id, owner_user_id").execute()
         site_counts: dict[str, int] = {}
+        owner_to_site_ids: dict[str, list[str]] = {}   # owner → Phase-3 site IDs
         for s in (sites_res.data or []):
             uid = s["owner_user_id"]
+            sid = s["id"]
             site_counts[uid] = site_counts.get(uid, 0) + 1
+            owner_to_site_ids.setdefault(uid, []).append(sid)
     except Exception as exc:
-        logger.warning("[ADMIN] list_users: sites count failed: %s", exc)
+        logger.warning("[ADMIN] list_users: sites failed: %s", exc)
         site_counts = {}
+        owner_to_site_ids = {}
 
-    # ── 4. Device counts + last seen per owner ───────────────────────────────
-    # Pre-Phase-3 devices have site_id = nm_profiles.site_id (old UUID).
-    # Post-Phase-3 devices have site_id = sites.id (new UUID from migration).
-    # We union both site_id sources so both old and new devices are counted.
+    # ── 4. Device counts + last seen ─────────────────────────────────────────
+    # Build a flat list of (owner_user_id, site_id) pairs from BOTH sources:
+    #   a) nm_profiles.site_id  — pre-Phase-3 devices live here
+    #   b) sites.id             — post-Phase-3 (and newly created) sites
+    # Then count device_configs and agent_heartbeat via a single SQL query
+    # using those site_ids, and map the results back to owner_user_id in Python.
     device_counts: dict[str, int] = {}
     last_seen_map: dict[str, str] = {}
     try:
-        row_result = await db.execute(text("""
-            SELECT
-                u.owner_user_id,
-                COUNT(DISTINCT dc.id)  AS device_count,
-                MAX(ah.last_seen)      AS last_agent_seen
-            FROM (
-                -- Phase 3 sites (new UUID from sites table)
-                SELECT owner_user_id, id AS site_id FROM sites
-                UNION
-                -- Legacy site_id from nm_profiles (pre-Phase-3 devices)
-                SELECT id AS owner_user_id, site_id
-                FROM nm_profiles
-                WHERE site_id IS NOT NULL
-            ) u
-            LEFT JOIN device_configs dc ON dc.site_id = u.site_id
-            LEFT JOIN agent_heartbeat ah ON ah.site_id = u.site_id
-            GROUP BY u.owner_user_id
-        """))
-        for row in row_result:
-            uid = row.owner_user_id
-            device_counts[uid] = int(row.device_count or 0)
-            if row.last_agent_seen:
-                last_seen_map[uid] = row.last_agent_seen.isoformat()
+        # Build site_id → owner mapping
+        sid_to_owner: dict[str, str] = {}
+
+        # Legacy: nm_profiles.site_id  (pre-Phase-3 devices)
+        for uid, prof in profile_map.items():
+            legacy_sid = prof.get("site_id")
+            if legacy_sid:
+                sid_to_owner[legacy_sid] = uid
+
+        # Phase-3: sites.id
+        for uid, sids in owner_to_site_ids.items():
+            for sid in sids:
+                sid_to_owner[sid] = uid
+
+        all_site_ids = list(sid_to_owner.keys())
+
+        if all_site_ids:
+            # Count device_configs per site_id
+            dc_result = await db.execute(
+                text("SELECT site_id, COUNT(*) AS cnt FROM device_configs "
+                     "WHERE site_id = ANY(:ids) GROUP BY site_id"),
+                {"ids": all_site_ids},
+            )
+            for row in dc_result:
+                owner = sid_to_owner.get(row.site_id)
+                if owner:
+                    device_counts[owner] = device_counts.get(owner, 0) + int(row.cnt or 0)
+
+            # Last heartbeat per site_id
+            ah_result = await db.execute(
+                text("SELECT site_id, MAX(last_seen) AS last_seen FROM agent_heartbeat "
+                     "WHERE site_id = ANY(:ids) GROUP BY site_id"),
+                {"ids": all_site_ids},
+            )
+            for row in ah_result:
+                owner = sid_to_owner.get(row.site_id)
+                if owner and row.last_seen:
+                    existing = last_seen_map.get(owner)
+                    ts = row.last_seen.isoformat()
+                    if not existing or ts > existing:
+                        last_seen_map[owner] = ts
+
     except Exception as exc:
         logger.warning("[ADMIN] list_users: device/heartbeat query failed: %s", exc)
 
