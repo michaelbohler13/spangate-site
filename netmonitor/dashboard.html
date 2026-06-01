@@ -359,6 +359,18 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
   cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap;}
 .dl-btn:hover{color:var(--accent);border-color:rgba(0,212,184,0.4);}
 .dl-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* ── Alert recipient chips ────────────────────────────────────────────────── */
+.alert-chips{display:flex;flex-wrap:wrap;gap:6px;min-height:28px;margin:0.75rem 0 0.65rem;}
+.alert-chip{display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,212,184,0.08);border:0.5px solid rgba(0,212,184,0.25);
+  border-radius:6px;padding:4px 8px 4px 10px;font-family:var(--mono);
+  font-size:0.72rem;color:var(--accent);}
+.alert-chip-x{background:none;border:none;color:var(--accent);cursor:pointer;
+  font-size:1rem;line-height:1;padding:0;opacity:0.6;transition:opacity 0.15s;}
+.alert-chip-x:hover{opacity:1;}
+.alert-chips-empty{font-size:0.75rem;color:var(--text-dim);font-family:var(--mono);
+  padding:4px 0;font-style:italic;}
 /* Backup timestamp chip shown in the Last Backup column */
 .backup-ts{background:rgba(0,212,184,0.07);border:0.5px solid rgba(0,212,184,0.25);
   color:var(--accent);border-radius:6px;padding:3px 9px;font-family:var(--mono);
@@ -1313,17 +1325,24 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         </button>
         <div class="acc-body"><div class="acc-body-inner">
         <div class="settings-desc">
-          When a device goes offline, an alert email is sent to this address.
-          Leave blank to use your account email
-          (<span id="settingsAcctEmail" style="font-family:var(--mono);font-size:0.78rem;color:var(--text-muted);"></span>).
+          Add every email address that should receive device down / recovery alerts.
+          Each person gets their own individual email — no shared inboxes.
+          Tip: you can also add a ticketing system address (e.g. helpdesk@district.edu) to auto-create tickets.
         </div>
-        <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;flex-wrap:wrap;">
-          <input id="alertEmailInput" type="email" class="dm-input"
-                 placeholder="helpdesk@yourschool.org"
-                 style="flex:1;min-width:200px;max-width:340px;" />
-          <button class="btn btn-outline" onclick="saveAlertEmail()" style="font-size:0.82rem;padding:9px 18px;white-space:nowrap;">
-            Save
-          </button>
+        <!-- Chip list -->
+        <div class="alert-chips" id="alertRecipientsChips">
+          <span class="alert-chips-empty">No recipients yet — add one below</span>
+        </div>
+        <!-- Add row -->
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input id="alertEmailAddInput" type="email" class="dm-input"
+                 placeholder="name@yourschool.org"
+                 style="flex:1;min-width:180px;max-width:300px;"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();_addAlertRecipient();}" />
+          <button class="btn btn-ghost" onclick="_addAlertRecipient()"
+                  style="font-size:0.82rem;padding:9px 14px;white-space:nowrap;">+ Add</button>
+          <button class="btn btn-outline" onclick="saveAlertEmail()"
+                  style="font-size:0.82rem;padding:9px 14px;white-space:nowrap;">Save</button>
         </div>
         <div id="alertEmailMsg" style="margin-top:0.6rem;font-size:0.78rem;display:none;"></div>
         </div></div><!-- /acc-body-inner /acc-body -->
@@ -1826,10 +1845,11 @@ let resolvedAlerts = [];
 let liveDevices    = [];
 let deviceConfigs  = [];
 let expandedDevice = null;
-let editingDeviceId  = null;
-let _modalHostname   = '';   // hostname of the config currently open in the modal
-let _modalBackupId   = null; // backup id of the config currently open in the modal
-let _modalPulledAt   = '';   // ISO timestamp of the config currently open in the modal
+let editingDeviceId   = null;
+let _modalHostname    = '';   // hostname of the config currently open in the modal
+let _modalBackupId    = null; // backup id of the config currently open in the modal
+let _modalPulledAt    = '';   // ISO timestamp of the config currently open in the modal
+let _alertRecipients  = [];   // list of alert email addresses (multi-recipient)
 let apiKey         = null;
 let accountEmail   = '';
 let _myRole        = 'owner';   // 'owner' | 'admin' | 'viewer'
@@ -4871,7 +4891,10 @@ async function sendTestEmail() {
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      msg.textContent = `✓ Test email sent to ${data.sent_to}. Check your inbox.`;
+      const count = data.count || (Array.isArray(data.sent_to) ? data.sent_to.length : 1);
+      msg.textContent = count > 1
+        ? `✓ Test email sent to ${count} recipients. Check your inboxes.`
+        : `✓ Test email sent to ${Array.isArray(data.sent_to) ? data.sent_to[0] : data.sent_to}. Check your inbox.`;
       msg.style.color = 'var(--accent)';
     } else {
       msg.textContent = data.detail || 'Failed to send test email.';
@@ -4900,35 +4923,81 @@ async function loadAlertEmailSetting() {
     });
     if (!res.ok) return;
     const data = await res.json();
-    const input = document.getElementById('alertEmailInput');
-    if (input) input.value = data.alert_email || '';
-  } catch(e) { /* silent — input stays blank */ }
+    // Parse comma-separated recipients into chips
+    const raw = data.alert_email || '';
+    _alertRecipients = raw.split(/[,;\n]+/).map(e => e.trim()).filter(e => e && e.includes('@'));
+    _renderAlertRecipients();
+  } catch(e) { /* silent — chips stay empty */ }
 }
 
+/** Render the current _alertRecipients list as chips. */
+function _renderAlertRecipients() {
+  const container = document.getElementById('alertRecipientsChips');
+  if (!container) return;
+  if (!_alertRecipients.length) {
+    container.innerHTML = '<span class="alert-chips-empty">No recipients yet — add one below</span>';
+    return;
+  }
+  container.innerHTML = _alertRecipients.map((email, i) =>
+    `<span class="alert-chip">
+       ${esc(email)}
+       <button class="alert-chip-x" onclick="_removeAlertRecipient(${i})" title="Remove">×</button>
+     </span>`
+  ).join('');
+}
+
+/** Add a new recipient from the input field. */
+function _addAlertRecipient() {
+  const input = document.getElementById('alertEmailAddInput');
+  const msg   = document.getElementById('alertEmailMsg');
+  if (!input) return;
+  const email = input.value.trim().toLowerCase();
+  if (!email) return;
+  if (!email.includes('@') || !email.includes('.')) {
+    if (msg) { msg.textContent = 'Please enter a valid email address.'; msg.style.color = '#f87171'; msg.style.display = 'block'; }
+    setTimeout(() => { if (msg) msg.style.display = 'none'; }, 3000);
+    return;
+  }
+  if (_alertRecipients.includes(email)) {
+    input.value = '';
+    return;
+  }
+  _alertRecipients.push(email);
+  input.value = '';
+  _renderAlertRecipients();
+  if (msg) msg.style.display = 'none';
+}
+
+/** Remove a recipient by index. */
+function _removeAlertRecipient(index) {
+  _alertRecipients.splice(index, 1);
+  _renderAlertRecipients();
+}
+
+/** Save the full recipient list to the backend. */
 async function saveAlertEmail() {
   if (!apiKey) return;
-  const input = document.getElementById('alertEmailInput');
-  const msg   = document.getElementById('alertEmailMsg');
-  if (!input || !msg) return;
+  const msg = document.getElementById('alertEmailMsg');
+  if (!msg) return;
 
-  const email = input.value.trim();
+  const combined = _alertRecipients.join(', ');
 
   try {
     const res = await fetch(`${API_BASE}/api/v1/settings`, {
       method:  'PATCH',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ alert_email: email }),
+      body:    JSON.stringify({ alert_email: combined }),
     });
 
     if (res.ok) {
-      msg.textContent  = email
-        ? `✓ Alerts will be sent to ${email}`
-        : `✓ Using account email (${accountEmail}) for alerts`;
-      msg.style.color  = 'var(--accent)';
+      msg.textContent = _alertRecipients.length
+        ? `✓ Alerts will be sent to ${_alertRecipients.length} recipient${_alertRecipients.length !== 1 ? 's' : ''}`
+        : '✓ Alert recipients cleared';
+      msg.style.color = 'var(--accent)';
     } else {
-      const err        = await res.json().catch(() => ({}));
-      msg.textContent  = err.detail || 'Failed to save — check email format.';
-      msg.style.color  = '#f87171';
+      const err = await res.json().catch(() => ({}));
+      msg.textContent = err.detail || 'Failed to save — try again.';
+      msg.style.color = '#f87171';
     }
   } catch(e) {
     msg.textContent = 'Network error — try again.';

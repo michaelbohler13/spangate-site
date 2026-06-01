@@ -141,6 +141,52 @@ async def _send_email(
     await asyncio.to_thread(_smtp_send_sync, to_email, subject, html, cfg)
 
 
+def _parse_recipients(to_email: str) -> list[str]:
+    """
+    Parse a comma / semicolon / newline-separated list of email addresses.
+
+    Returns a deduplicated list of valid-looking addresses (must contain @).
+    Silently skips blank entries and anything without an @.
+    """
+    import re
+    parts = re.split(r"[,;\n]+", to_email or "")
+    seen: set[str] = set()
+    result: list[str] = []
+    for part in parts:
+        addr = part.strip()
+        if addr and "@" in addr and addr not in seen:
+            seen.add(addr)
+            result.append(addr)
+    return result
+
+
+async def _send_to_all(
+    to_email: str,
+    subject:  str,
+    html:     str,
+    cfg:      SmtpConfig,
+) -> list[str]:
+    """
+    Send the same email to every address in a comma-separated recipient list.
+
+    Returns the list of addresses that were attempted so callers can log or
+    surface them to the UI.  Individual send failures are logged but do not
+    prevent delivery to other recipients.
+    """
+    recipients = _parse_recipients(to_email)
+    if not recipients:
+        return []
+
+    async def _try_one(addr: str) -> None:
+        try:
+            await _send_email(addr, subject, html, cfg)
+        except Exception as exc:
+            logger.error("[EMAIL] Failed to send to %s: %s", addr, exc)
+
+    await asyncio.gather(*[_try_one(addr) for addr in recipients])
+    return recipients
+
+
 # ── HTML templates ────────────────────────────────────────────────────────────
 
 def _ping_down_html(site_name: str, hostname: str, ip: str, ts: str) -> str:
@@ -377,9 +423,10 @@ async def send_ping_down_alert(
     html    = _ping_down_html(site_name, hostname, ip, ts)
 
     try:
-        await _send_email(to_email, subject, html, smtp_config)
+        sent_to = await _send_to_all(to_email, subject, html, smtp_config)
         _mark_alert_sent(site_id, hostname)
-        logger.info("[EMAIL] DOWN alert sent to %s for %s/%s", to_email, site_id, hostname)
+        logger.info("[EMAIL] DOWN alert sent to %s recipient(s) %s for %s/%s",
+                    len(sent_to), sent_to, site_id, hostname)
     except Exception as exc:
         logger.error("[EMAIL] Failed to send DOWN alert for %s/%s: %s", site_id, hostname, exc)
 
@@ -422,9 +469,10 @@ async def send_ping_up_alert(
     html    = _ping_up_html(site_name, hostname, ip, ts, downtime)
 
     try:
-        await _send_email(to_email, subject, html, smtp_config)
+        sent_to = await _send_to_all(to_email, subject, html, smtp_config)
         _clear_down_alert(site_id, hostname)
-        logger.info("[EMAIL] UP alert sent to %s for %s/%s (down %s)", to_email, site_id, hostname, downtime)
+        logger.info("[EMAIL] UP alert sent to %s recipient(s) %s for %s/%s (down %s)",
+                    len(sent_to), sent_to, site_id, hostname, downtime)
     except Exception as exc:
         logger.error("[EMAIL] Failed to send UP alert for %s/%s: %s", site_id, hostname, exc)
 
@@ -433,21 +481,26 @@ async def send_test_alert_email(
     *,
     to_email:    str,
     smtp_config: SmtpConfig | None = None,
-) -> None:
+) -> list[str]:
     """
-    Send a test email to verify alert delivery configuration.
+    Send a test email to every address in the recipient list.
 
     Raises on failure so the caller can return a meaningful error to the UI.
+    Returns the list of addresses that were successfully attempted.
     """
     if not smtp_config:
         raise ValueError("No SMTP configuration provided")
-    await _send_email(
+    recipients = _parse_recipients(to_email)
+    if not recipients:
+        raise ValueError("No valid recipient addresses found")
+    sent_to = await _send_to_all(
         to_email,
         "✅ SpanGate Alert — Test Email",
         _test_email_html(),
         smtp_config,
     )
-    logger.info("[EMAIL] Test alert email sent to %s", to_email)
+    logger.info("[EMAIL] Test alert email sent to %s recipient(s): %s", len(sent_to), sent_to)
+    return sent_to
 
 
 async def send_feedback_notification(

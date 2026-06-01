@@ -286,8 +286,9 @@ async def test_email(ctx: AuthContext) -> dict:
         )
 
     # ── Attempt delivery ──────────────────────────────────────────────────────
+    sent_to: list[str] = []
     try:
-        await send_test_alert_email(to_email=to_email, smtp_config=smtp_config)
+        sent_to = await send_test_alert_email(to_email=to_email, smtp_config=smtp_config)
     except smtplib.SMTPAuthenticationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -314,5 +315,9 @@ async def test_email(ctx: AuthContext) -> dict:
             detail=f"Email delivery failed: {exc}",
         )
 
-    logger.info("[SETTINGS] Test email sent to %s for user %s", to_email, ctx["user_id"])
-    return {"ok": True, "sent_to": to_email}
+    logger.info("[SETTINGS] Test email sent to %s for user %s", sent_to, ctx["user_id"])
+    return {
+        "ok":      True,
+        "sent_to": sent_to,                          # list[str]
+        "count":   len(sent_to),
+    }
