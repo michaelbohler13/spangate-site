@@ -2057,6 +2057,19 @@ async function determineState() {
   updateAgentStatus(!!data.last_heartbeat, data.last_heartbeat);
   updateAgentHealth(data);
 
+  // ── New site detection ───────────────────────────────────────────────────
+  // If the agent has NEVER connected to this site (no heartbeat at all),
+  // show the setup wizard instead of an empty dashboard.  This handles the
+  // multi-site case where a new site gets an API key immediately on creation
+  // but the user still needs to install an agent and point it at this site.
+  if (!data.last_heartbeat) {
+    showOnboarding();
+    // Jump straight to the Install step — they already have the API key,
+    // and the wizard pre-fills it into the install command automatically.
+    goStep(3);
+    return;
+  }
+
   // Fetch plan usage + credential profiles (non-blocking)
   _refreshPlanInfo();
   loadCredentialProfiles();
