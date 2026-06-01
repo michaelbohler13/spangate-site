@@ -54,6 +54,46 @@ def _get_supabase() -> Client:
     return _supabase
 
 
+def _check_account_status(client: Client, owner_user_id: str) -> None:
+    """
+    Check nm_profiles.account_status for the account owner.
+
+    Raises HTTP 403 (suspended) or 401 (banned) if restricted.
+    Fails open on Supabase errors to avoid blocking legitimate users.
+    """
+    try:
+        res = (
+            client.table("nm_profiles")
+            .select("account_status, suspension_reason")
+            .eq("id", owner_user_id)
+            .maybeSingle()
+            .execute()
+        )
+        if not res.data:
+            return
+        acct_status = res.data.get("account_status") or "active"
+        if acct_status == "suspended":
+            reason = res.data.get("suspension_reason") or ""
+            detail = "Your account has been suspended."
+            if reason:
+                detail += f" {reason}"
+            detail += " Contact support@spangate.com if you believe this is an error."
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=detail,
+            )
+        if acct_status == "banned":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Account access revoked.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.debug("account_status check failed (non-blocking): %s", exc)
+
+
 async def verify_api_key(
     request: Request,
     authorization: Annotated[str | None, Header()] = None,
@@ -102,6 +142,9 @@ async def verify_api_key(
             user_id = s["owner_user_id"]
             plan    = s.get("plan") or "free"
 
+            # Check account status before granting access
+            _check_account_status(client, user_id)
+
             request.state.user_id       = user_id
             request.state.site_id       = site_id
             request.state.plan          = plan
@@ -123,7 +166,7 @@ async def verify_api_key(
     try:
         result = (
             client.table("nm_profiles")
-            .select("id, site_id, plan")
+            .select("id, site_id, plan, account_status, suspension_reason")
             .eq("api_key", raw_key)
             .single()
             .execute()
@@ -151,6 +194,22 @@ async def verify_api_key(
         site_id      = profile.get("site_id") or profile["id"]
         user_id      = profile["id"]
         plan         = profile.get("plan") or "free"
+
+        # Check account status (already in profile for nm_profiles path)
+        acct_status = profile.get("account_status") or "active"
+        if acct_status == "suspended":
+            reason = profile.get("suspension_reason") or ""
+            detail = "Your account has been suspended."
+            if reason:
+                detail += f" {reason}"
+            detail += " Contact support@spangate.com if you believe this is an error."
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+        if acct_status == "banned":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Account access revoked.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
         request.state.user_id       = user_id
         request.state.site_id       = site_id
@@ -186,6 +245,11 @@ async def verify_api_key(
         site_id        = member["site_id"]
         role           = member.get("role") or "viewer"
         owner_user_id  = member.get("owner_user_id") or ""
+
+        # Check the OWNER's account status — if owner is suspended/banned,
+        # members also lose access to that site.
+        if owner_user_id:
+            _check_account_status(client, owner_user_id)
 
         request.state.user_id       = str(member["id"])
         request.state.site_id       = site_id

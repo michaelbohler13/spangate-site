@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpanGate Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d1117; --surface:#111827; --surface2:#1a2235; --surface3:#222d40;
+  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+  --text:#f0f4f8; --muted:#8b949e; --dim:#4b5563;
+  --accent:#00d4b8; --teal:#2a8a78;
+  --red:#ef4444; --yellow:#f59e0b; --green:#22c55e;
+  --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+
+/* ── LOGIN ───────────────────────────────────────────────────────────────── */
+#loginScreen{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);z-index:1000;
+}
+.login-box{
+  width:100%;max-width:380px;background:var(--surface);
+  border:0.5px solid var(--border2);border-radius:16px;padding:2.5rem 2rem;
+}
+.login-logo{font-size:0.7rem;font-family:var(--mono);color:var(--accent);
+  letter-spacing:0.12em;text-transform:uppercase;margin-bottom:1.5rem;}
+.login-title{font-size:1.4rem;font-weight:600;letter-spacing:-0.03em;margin-bottom:0.35rem;}
+.login-sub{font-size:0.78rem;color:var(--muted);margin-bottom:1.75rem;}
+.login-label{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--dim);font-family:var(--mono);display:block;margin-bottom:5px;}
+.login-input{
+  width:100%;background:var(--surface2);border:0.5px solid var(--border2);
+  border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:0.85rem;
+  color:var(--text);outline:none;transition:border-color 0.15s;
+}
+.login-input:focus{border-color:rgba(0,212,184,0.5);}
+.login-btn{
+  width:100%;margin-top:1.25rem;padding:11px;border-radius:8px;
+  background:var(--teal);color:#fff;border:none;font-family:var(--sans);
+  font-size:0.88rem;font-weight:600;cursor:pointer;transition:opacity 0.15s;
+}
+.login-btn:hover{opacity:0.88;}
+.login-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.login-err{font-size:0.75rem;color:var(--red);margin-top:0.75rem;display:none;}
+
+/* ── MAIN APP ─────────────────────────────────────────────────────────────── */
+#app{display:none;flex-direction:column;min-height:100vh;}
+
+/* Top bar */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:52px;background:var(--surface);
+  border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100;
+}
+.topbar-brand{font-size:0.72rem;font-family:var(--mono);color:var(--accent);
+  letter-spacing:0.1em;text-transform:uppercase;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-label{font-size:0.68rem;color:var(--dim);font-family:var(--mono);}
+.signout-btn{background:none;border:none;font-size:0.72rem;color:var(--dim);
+  cursor:pointer;font-family:var(--sans);transition:color 0.15s;}
+.signout-btn:hover{color:var(--text);}
+
+/* Stats bar */
+.statsbar{
+  display:flex;flex-wrap:wrap;gap:10px;padding:1.25rem 2rem;
+  background:var(--surface);border-bottom:0.5px solid var(--border);
+}
+.stat-card{
+  flex:1;min-width:140px;background:var(--bg);border:0.5px solid var(--border);
+  border-radius:10px;padding:0.85rem 1rem;
+}
+.stat-label{font-size:0.58rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;
+  color:var(--dim);font-family:var(--mono);margin-bottom:6px;}
+.stat-row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;}
+.stat-num{font-size:1.25rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);}
+.stat-sub{font-size:0.68rem;color:var(--muted);font-family:var(--mono);}
+.stat-breakdown{display:flex;gap:10px;flex-wrap:wrap;margin-top:5px;}
+.stat-chip{font-size:0.65rem;font-family:var(--mono);padding:2px 7px;
+  border-radius:4px;background:var(--surface2);}
+.stat-chip.active{color:var(--green);}
+.stat-chip.suspended{color:var(--yellow);}
+.stat-chip.banned{color:var(--red);}
+.stat-chip.free{color:var(--muted);}
+.stat-chip.paid{color:var(--accent);}
+.mrr-val{font-size:1.25rem;font-weight:600;letter-spacing:-0.02em;color:var(--accent);}
+
+/* Toolbar */
+.toolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:1rem 2rem;
+}
+.search-input{
+  flex:1;min-width:200px;max-width:340px;background:var(--surface2);
+  border:0.5px solid var(--border2);border-radius:8px;padding:8px 14px;
+  font-family:var(--mono);font-size:0.8rem;color:var(--text);outline:none;
+  transition:border-color 0.15s;
+}
+.search-input:focus{border-color:rgba(0,212,184,0.4);}
+.filter-sel{
+  background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;
+  padding:8px 12px;font-family:var(--mono);font-size:0.78rem;color:var(--text);
+  outline:none;cursor:pointer;
+}
+.refresh-btn{
+  background:transparent;border:0.5px solid var(--border2);border-radius:8px;
+  padding:8px 14px;font-size:0.78rem;color:var(--muted);cursor:pointer;
+  font-family:var(--sans);transition:all 0.15s;
+}
+.refresh-btn:hover{color:var(--text);border-color:var(--border2);}
+.user-count{font-size:0.72rem;color:var(--dim);font-family:var(--mono);margin-left:auto;}
+
+/* Table */
+.table-wrap{padding:0 2rem 4rem;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+thead th{
+  text-align:left;padding:8px 12px;font-size:0.58rem;font-weight:600;
+  letter-spacing:0.07em;text-transform:uppercase;color:var(--dim);
+  font-family:var(--mono);border-bottom:0.5px solid var(--border);
+  white-space:nowrap;
+}
+tbody tr{border-bottom:0.5px solid var(--border);transition:background 0.1s;}
+tbody tr:hover{background:rgba(255,255,255,0.02);}
+tbody td{padding:10px 12px;vertical-align:middle;}
+.td-email{font-family:var(--mono);font-size:0.76rem;color:var(--text);}
+.td-plan{font-size:0.7rem;}
+.plan-badge{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-family:var(--mono);font-size:0.65rem;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;
+}
+.plan-badge.free{background:rgba(75,85,99,0.3);color:var(--muted);}
+.plan-badge.starter{background:rgba(0,212,184,0.1);color:var(--accent);}
+.plan-badge.pro{background:rgba(59,130,246,0.12);color:#60a5fa;}
+.plan-badge.enterprise{background:rgba(168,85,247,0.12);color:#c084fc;}
+.plan-badge.msp{background:rgba(245,158,11,0.12);color:#fbbf24;}
+.status-dot{display:inline-flex;align-items:center;gap:5px;font-size:0.72rem;}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot.active{background:var(--green);}
+.dot.suspended{background:var(--yellow);}
+.dot.banned{background:var(--red);}
+.td-num{font-family:var(--mono);font-size:0.74rem;color:var(--muted);text-align:right;}
+.td-date{font-family:var(--mono);font-size:0.68rem;color:var(--dim);}
+.td-note{font-size:0.68rem;color:var(--muted);max-width:160px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* Actions */
+.act-wrap{position:relative;display:inline-block;}
+.act-btn{
+  background:var(--surface2);border:0.5px solid var(--border2);
+  border-radius:6px;padding:5px 12px;font-size:0.72rem;color:var(--muted);
+  cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap;
+}
+.act-btn:hover{color:var(--text);border-color:var(--border2);}
+.act-drop{
+  position:absolute;right:0;top:calc(100% + 4px);min-width:175px;
+  background:var(--surface);border:0.5px solid var(--border2);
+  border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  z-index:200;display:none;overflow:hidden;
+}
+.act-drop.open{display:block;}
+.act-item{
+  display:block;width:100%;text-align:left;padding:9px 14px;
+  background:none;border:none;font-size:0.78rem;color:var(--muted);
+  cursor:pointer;font-family:var(--sans);transition:background 0.1s;
+  white-space:nowrap;
+}
+.act-item:hover{background:rgba(255,255,255,0.04);color:var(--text);}
+.act-item.danger{color:#f87171;}
+.act-item.danger:hover{background:rgba(239,68,68,0.08);}
+.act-divider{height:0.5px;background:var(--border);margin:3px 0;}
+
+/* ── MODALS ──────────────────────────────────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:2000;
+  display:none;align-items:center;justify-content:center;padding:2rem;
+}
+.modal-overlay.open{display:flex;}
+.modal-box{
+  width:100%;max-width:440px;background:var(--surface);
+  border:0.5px solid var(--border2);border-radius:14px;overflow:hidden;
+}
+.modal-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.1rem 1.4rem;border-bottom:0.5px solid var(--border);
+}
+.modal-title{font-size:0.92rem;font-weight:600;letter-spacing:-0.02em;}
+.modal-x{
+  background:none;border:none;color:var(--dim);font-size:1.2rem;
+  cursor:pointer;transition:color 0.15s;padding:2px 6px;border-radius:4px;
+}
+.modal-x:hover{color:var(--text);}
+.modal-body{padding:1.25rem 1.4rem;}
+.modal-label{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--dim);font-family:var(--mono);display:block;margin-bottom:5px;}
+.modal-input,.modal-textarea,.modal-select{
+  width:100%;background:var(--surface2);border:0.5px solid var(--border2);
+  border-radius:8px;padding:9px 12px;font-family:var(--mono);font-size:0.82rem;
+  color:var(--text);outline:none;transition:border-color 0.15s;
+}
+.modal-input:focus,.modal-textarea:focus,.modal-select:focus{
+  border-color:rgba(0,212,184,0.45);
+}
+.modal-textarea{resize:vertical;min-height:90px;line-height:1.5;}
+.modal-select{cursor:pointer;}
+.modal-desc{font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;}
+.modal-warn{font-size:0.75rem;color:#f87171;line-height:1.55;
+  background:rgba(239,68,68,0.07);border:0.5px solid rgba(239,68,68,0.25);
+  border-radius:7px;padding:9px 12px;margin-bottom:1rem;}
+.modal-footer{
+  display:flex;gap:8px;justify-content:flex-end;
+  padding:1rem 1.4rem;border-top:0.5px solid var(--border);
+}
+.btn{
+  display:inline-flex;align-items:center;padding:8px 18px;border-radius:7px;
+  font-family:var(--sans);font-size:0.82rem;font-weight:500;
+  cursor:pointer;transition:all 0.15s;border:none;
+}
+.btn-ghost{background:transparent;color:var(--muted);border:0.5px solid var(--border2);}
+.btn-ghost:hover{color:var(--text);}
+.btn-primary{background:var(--teal);color:#fff;}
+.btn-primary:hover{opacity:0.88;}
+.btn-danger{background:#dc2626;color:#fff;}
+.btn-danger:hover{opacity:0.88;}
+.btn:disabled{opacity:0.45;cursor:not-allowed;}
+.modal-err{font-size:0.75rem;color:#f87171;margin-top:0.5rem;display:none;}
+
+/* Empty / loading states */
+.table-empty{text-align:center;padding:3rem;font-size:0.8rem;color:var(--dim);
+  font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ──────────────────────────────────────────────────────────────── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">SpanGate · Admin</div>
+    <div class="login-title">Ops Center</div>
+    <div class="login-sub">Internal use only. Enter the admin secret to continue.</div>
+    <label class="login-label" for="secretInput">Admin Secret</label>
+    <input id="secretInput" class="login-input" type="password"
+           placeholder="••••••••••••••••••••••••••••••••"
+           onkeydown="if(event.key==='Enter')doLogin()" autocomplete="off" />
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ────────────────────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">SpanGate · Ops Center</div>
+    <div class="topbar-right">
+      <span class="topbar-label" id="lastRefreshed"></span>
+      <button class="signout-btn" onclick="doSignOut()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="statsbar" id="statsBar">
+    <div class="stat-card">
+      <div class="stat-label">Users</div>
+      <div class="stat-row"><span class="stat-num" id="statTotal">—</span></div>
+      <div class="stat-breakdown">
+        <span class="stat-chip active" id="statActive">— active</span>
+        <span class="stat-chip suspended" id="statSuspended">— suspended</span>
+        <span class="stat-chip banned" id="statBanned">— banned</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Plans</div>
+      <div class="stat-breakdown" id="statPlans" style="margin-top:4px;"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Devices Monitored</div>
+      <div class="stat-row"><span class="stat-num" id="statDevices">—</span></div>
+      <div class="stat-breakdown">
+        <span class="stat-chip" id="statSites" style="color:var(--muted);">— sites</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Est. MRR</div>
+      <div class="stat-row"><span class="mrr-val" id="statMrr">—</span></div>
+      <div class="stat-breakdown">
+        <span class="stat-chip" style="color:var(--dim);">paying accounts only</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input class="search-input" id="searchInput" type="text"
+           placeholder="Search by email…" oninput="renderTable()" />
+    <select class="filter-sel" id="planFilter" onchange="renderTable()">
+      <option value="">All plans</option>
+      <option value="free">Free</option>
+      <option value="starter">Starter</option>
+      <option value="pro">Pro</option>
+      <option value="enterprise">Enterprise</option>
+    </select>
+    <select class="filter-sel" id="statusFilter" onchange="renderTable()">
+      <option value="">All statuses</option>
+      <option value="active">Active</option>
+      <option value="suspended">Suspended</option>
+      <option value="banned">Banned</option>
+    </select>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    <span class="user-count" id="userCount"></span>
+  </div>
+
+  <!-- User table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th style="text-align:right;">Sites</th>
+          <th style="text-align:right;">Devices</th>
+          <th>Last Agent</th>
+          <th>Created</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody">
+        <tr><td colspan="9" class="table-empty">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── MODALS ─────────────────────────────────────────────────────────────── -->
+
+<!-- Suspend modal -->
+<div class="modal-overlay" id="suspendModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title" id="suspendTitle">Suspend Account</span>
+      <button class="modal-x" onclick="closeModal('suspendModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc" id="suspendDesc"></div>
+      <label class="modal-label" for="suspendReason">Reason <span style="font-weight:400;color:var(--dim);">(shown to user)</span></label>
+      <input id="suspendReason" class="modal-input" type="text"
+             placeholder="e.g. Pending payment, Terms violation…" maxlength="200" />
+      <div class="modal-err" id="suspendErr"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('suspendModal')">Cancel</button>
+      <button class="btn btn-primary" id="suspendConfirmBtn" onclick="doSetStatus()">Suspend</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ban modal -->
+<div class="modal-overlay" id="banModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title">Ban Account</span>
+      <button class="modal-x" onclick="closeModal('banModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-warn">
+        Banning blocks the user from logging in entirely (Supabase auth ban).
+        Their agent also loses API access. This should be used for abuse, fraud,
+        or Terms of Service violations.
+      </div>
+      <div class="modal-desc" id="banDesc"></div>
+      <label class="modal-label" for="banReason">Reason <span style="font-weight:400;color:var(--dim);">(internal reference)</span></label>
+      <input id="banReason" class="modal-input" type="text"
+             placeholder="e.g. Payment fraud, API abuse…" maxlength="200" />
+      <div class="modal-err" id="banErr"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('banModal')">Cancel</button>
+      <button class="btn btn-danger" id="banConfirmBtn" onclick="doBan()">Ban Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Plan modal -->
+<div class="modal-overlay" id="planModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title">Change Plan</span>
+      <button class="modal-x" onclick="closeModal('planModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc" id="planDesc"></div>
+      <label class="modal-label" for="planSelect">New Plan</label>
+      <select id="planSelect" class="modal-select">
+        <option value="free">Free</option>
+        <option value="starter">Starter — $199/mo</option>
+        <option value="pro">Pro — $399/mo</option>
+        <option value="enterprise">Enterprise — $999/mo</option>
+        <option value="msp">MSP (custom)</option>
+      </select>
+      <div class="modal-err" id="planErr"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('planModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doChangePlan()">Update Plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notes modal -->
+<div class="modal-overlay" id="notesModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title">Admin Notes</span>
+      <button class="modal-x" onclick="closeModal('notesModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc" id="notesDesc" style="margin-bottom:0.75rem;"></div>
+      <label class="modal-label" for="notesInput">Notes <span style="font-weight:400;color:var(--dim);">(never shown to user)</span></label>
+      <textarea id="notesInput" class="modal-textarea"
+                placeholder="Payment status, support history, flags…"></textarea>
+      <div class="modal-err" id="notesErr"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('notesModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doSaveNotes()">Save Notes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title">Delete Account</span>
+      <button class="modal-x" onclick="closeModal('deleteModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-warn">
+        This permanently deletes the user's account, all their sites, devices,
+        alerts, and config backups. <strong>This cannot be undone.</strong>
+      </div>
+      <div class="modal-desc" id="deleteDesc" style="margin-bottom:0.85rem;"></div>
+      <label class="modal-label" for="deleteConfirmInput">Type the email address to confirm</label>
+      <input id="deleteConfirmInput" class="modal-input" type="text"
+             placeholder="user@example.com" autocomplete="off" />
+      <div class="modal-err" id="deleteErr"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
+      <button class="btn btn-danger" id="deleteConfirmBtn" onclick="doDelete()">Permanently Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const API_BASE = 'https://spangate-site-r81b.vercel.app';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let _token      = sessionStorage.getItem('sg-ops-token') || '';
+let _users      = [];    // full user list from API
+let _actionUser = null;  // user currently targeted by an open modal
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const diff = (Date.now() - new Date(iso)) / 1000;
+  if (diff < 60)  return `${Math.round(diff)}s ago`;
+  if (diff < 3600) return `${Math.round(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.round(diff/3600)}h ago`;
+  return `${Math.round(diff/86400)}d ago`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
+function adminFetch(path, opts = {}) {
+  return fetch(API_BASE + '/api/v1' + path, {
+    ...opts,
+    headers: {
+      'Authorization': `Bearer ${_token}`,
+      'Content-Type': 'application/json',
+      ...(opts.headers || {}),
+    },
+  });
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const input = document.getElementById('secretInput');
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  const secret = input.value;
+  if (!secret) return;
+
+  btn.disabled    = true;
+  btn.textContent = 'Signing in…';
+  err.style.display = 'none';
+
+  try {
+    const res = await fetch(API_BASE + '/api/v1/admin/auth', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ secret }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Invalid secret');
+    _token = data.token;
+    sessionStorage.setItem('sg-ops-token', _token);
+    showApp();
+  } catch(e) {
+    err.textContent   = e.message;
+    err.style.display = 'block';
+    btn.disabled      = false;
+    btn.textContent   = 'Sign In';
+  }
+}
+
+function doSignOut() {
+  _token = '';
+  sessionStorage.removeItem('sg-ops-token');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('secretInput').value = '';
+}
+
+// ── App init ──────────────────────────────────────────────────────────────────
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  loadAll();
+}
+
+async function loadAll() {
+  await Promise.all([loadStats(), loadUsers()]);
+  const el = document.getElementById('lastRefreshed');
+  if (el) el.textContent = `Refreshed ${new Date().toLocaleTimeString()}`;
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res  = await adminFetch('/admin/stats');
+    if (res.status === 401) { doSignOut(); return; }
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById('statTotal').textContent     = data.total_users ?? '—';
+    document.getElementById('statActive').textContent    = `${data.by_status?.active ?? 0} active`;
+    document.getElementById('statSuspended').textContent = `${data.by_status?.suspended ?? 0} suspended`;
+    document.getElementById('statBanned').textContent    = `${data.by_status?.banned ?? 0} banned`;
+    document.getElementById('statDevices').textContent   = (data.total_devices ?? 0).toLocaleString();
+    document.getElementById('statSites').textContent     = `${data.total_sites ?? 0} sites`;
+    document.getElementById('statMrr').textContent       = `$${(data.est_mrr ?? 0).toLocaleString()}`;
+
+    // Plan breakdown chips
+    const planEl = document.getElementById('statPlans');
+    const plans  = data.by_plan || {};
+    const order  = ['free','starter','pro','enterprise','msp'];
+    planEl.innerHTML = order
+      .filter(p => plans[p])
+      .map(p => `<span class="stat-chip ${p === 'free' ? 'free' : 'paid'}">${p}: ${plans[p]}</span>`)
+      .join('');
+  } catch(e) {
+    console.warn('[ADMIN] loadStats failed:', e);
+  }
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const tbody = document.getElementById('userTableBody');
+  tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Loading users…</td></tr>';
+  try {
+    const res = await adminFetch('/admin/users');
+    if (res.status === 401) { doSignOut(); return; }
+    if (!res.ok) {
+      tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Failed to load users.</td></tr>';
+      return;
+    }
+    _users = await res.json();
+    renderTable();
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="9" class="table-empty">Network error: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+function renderTable() {
+  const q      = (document.getElementById('searchInput').value || '').toLowerCase();
+  const plan   = document.getElementById('planFilter').value;
+  const status = document.getElementById('statusFilter').value;
+
+  let filtered = _users.filter(u => {
+    if (q      && !u.email.toLowerCase().includes(q)) return false;
+    if (plan   && u.plan !== plan) return false;
+    if (status && u.account_status !== status) return false;
+    return true;
+  });
+
+  document.getElementById('userCount').textContent =
+    `${filtered.length} of ${_users.length} user${_users.length !== 1 ? 's' : ''}`;
+
+  if (!filtered.length) {
+    document.getElementById('userTableBody').innerHTML =
+      '<tr><td colspan="9" class="table-empty">No users match your filters.</td></tr>';
+    return;
+  }
+
+  document.getElementById('userTableBody').innerHTML = filtered.map(u => {
+    const st     = u.account_status || 'active';
+    const plan   = u.plan || 'free';
+    const notes  = u.admin_notes || '';
+    const uid    = u.id;
+
+    const planBadge   = `<span class="plan-badge ${plan}">${plan}</span>`;
+    const statusDot   = `<span class="status-dot"><span class="dot ${st}"></span>${st}</span>`;
+
+    // Actions dropdown
+    const isActive    = st === 'active';
+    const isSuspended = st === 'suspended';
+    const isBanned    = st === 'banned';
+
+    const actions = `
+      <div class="act-wrap" id="aw-${uid}">
+        <button class="act-btn" onclick="toggleActDrop('${uid}')">Actions ▾</button>
+        <div class="act-drop" id="ad-${uid}">
+          ${isActive    ? `<button class="act-item" onclick="openSuspend('${uid}')">⚠ Suspend</button>` : ''}
+          ${isActive    ? `<button class="act-item" onclick="openBan('${uid}')">🚫 Ban</button>` : ''}
+          ${isSuspended ? `<button class="act-item" onclick="doReinstate('${uid}')">✓ Reinstate</button>` : ''}
+          ${isSuspended ? `<button class="act-item" onclick="openBan('${uid}')">🚫 Ban</button>` : ''}
+          ${isBanned    ? `<button class="act-item" onclick="doReinstate('${uid}')">✓ Unban</button>` : ''}
+          <div class="act-divider"></div>
+          <button class="act-item" onclick="openPlan('${uid}')">💳 Change Plan</button>
+          <button class="act-item" onclick="openNotes('${uid}')">📝 Notes</button>
+          <div class="act-divider"></div>
+          <button class="act-item danger" onclick="openDelete('${uid}')">🗑 Delete Account</button>
+        </div>
+      </div>`;
+
+    return `<tr>
+      <td class="td-email">${esc(u.email)}</td>
+      <td>${planBadge}</td>
+      <td>${statusDot}</td>
+      <td class="td-num">${u.sites_count ?? 0}</td>
+      <td class="td-num">${(u.device_count ?? 0).toLocaleString()}</td>
+      <td class="td-date">${timeAgo(u.last_agent_seen)}</td>
+      <td class="td-date">${fmtDate(u.created_at)}</td>
+      <td class="td-note" title="${esc(notes)}">${esc(notes) || '<span style="color:var(--dim);">—</span>'}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Action dropdown ───────────────────────────────────────────────────────────
+function toggleActDrop(uid) {
+  // Close all open dropdowns first
+  document.querySelectorAll('.act-drop.open').forEach(d => {
+    if (d.id !== `ad-${uid}`) d.classList.remove('open');
+  });
+  document.getElementById(`ad-${uid}`)?.classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.act-wrap')) {
+    document.querySelectorAll('.act-drop.open').forEach(d => d.classList.remove('open'));
+  }
+});
+
+// ── Modals ────────────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+function _getUser(uid) { return _users.find(u => u.id === uid); }
+
+// ── Suspend ───────────────────────────────────────────────────────────────────
+let _suspendTargetId = null;
+function openSuspend(uid) {
+  _suspendTargetId = uid;
+  const u = _getUser(uid);
+  document.getElementById('suspendTitle').textContent = 'Suspend Account';
+  document.getElementById('suspendDesc').textContent =
+    `Suspend ${u?.email || uid}? They will see a suspension message and lose dashboard + agent access. Reversible.`;
+  document.getElementById('suspendReason').value    = u?.suspension_reason || '';
+  document.getElementById('suspendConfirmBtn').textContent = 'Suspend';
+  document.getElementById('suspendErr').style.display = 'none';
+  closeActDrop(uid);
+  openModal('suspendModal');
+  setTimeout(() => document.getElementById('suspendReason').focus(), 80);
+}
+
+async function doSetStatus() {
+  const uid    = _suspendTargetId;
+  const reason = document.getElementById('suspendReason').value.trim();
+  const btn    = document.getElementById('suspendConfirmBtn');
+  const err    = document.getElementById('suspendErr');
+
+  btn.disabled = true; btn.textContent = 'Suspending…';
+  err.style.display = 'none';
+
+  try {
+    const res = await adminFetch(`/admin/users/${uid}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'suspended', reason }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Failed');
+    const idx = _users.findIndex(u => u.id === uid);
+    if (idx !== -1) { _users[idx].account_status = 'suspended'; _users[idx].suspension_reason = reason; }
+    closeModal('suspendModal');
+    renderTable();
+    loadStats();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Suspend';
+  }
+}
+
+// ── Ban ───────────────────────────────────────────────────────────────────────
+let _banTargetId = null;
+function openBan(uid) {
+  _banTargetId = uid;
+  const u = _getUser(uid);
+  document.getElementById('banDesc').textContent =
+    `You are about to ban ${u?.email || uid}.`;
+  document.getElementById('banReason').value    = '';
+  document.getElementById('banErr').style.display = 'none';
+  document.getElementById('banConfirmBtn').textContent = 'Ban Account';
+  document.getElementById('banConfirmBtn').disabled    = false;
+  closeActDrop(uid);
+  openModal('banModal');
+  setTimeout(() => document.getElementById('banReason').focus(), 80);
+}
+
+async function doBan() {
+  const uid    = _banTargetId;
+  const reason = document.getElementById('banReason').value.trim();
+  const btn    = document.getElementById('banConfirmBtn');
+  const err    = document.getElementById('banErr');
+
+  btn.disabled = true; btn.textContent = 'Banning…';
+  err.style.display = 'none';
+
+  try {
+    const res = await adminFetch(`/admin/users/${uid}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'banned', reason }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Failed');
+    const idx = _users.findIndex(u => u.id === uid);
+    if (idx !== -1) { _users[idx].account_status = 'banned'; _users[idx].suspension_reason = reason; }
+    closeModal('banModal');
+    renderTable();
+    loadStats();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Ban Account';
+  }
+}
+
+// ── Reinstate ─────────────────────────────────────────────────────────────────
+async function doReinstate(uid) {
+  closeActDrop(uid);
+  try {
+    const res = await adminFetch(`/admin/users/${uid}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'active', reason: '' }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Failed');
+    const idx = _users.findIndex(u => u.id === uid);
+    if (idx !== -1) { _users[idx].account_status = 'active'; _users[idx].suspension_reason = ''; }
+    renderTable();
+    loadStats();
+  } catch(e) {
+    alert('Could not reinstate: ' + e.message);
+  }
+}
+
+// ── Plan ──────────────────────────────────────────────────────────────────────
+let _planTargetId = null;
+function openPlan(uid) {
+  _planTargetId = uid;
+  const u = _getUser(uid);
+  document.getElementById('planDesc').textContent =
+    `Change plan for ${u?.email || uid}. Updates both nm_profiles and all their sites immediately.`;
+  document.getElementById('planSelect').value = u?.plan || 'free';
+  document.getElementById('planErr').style.display = 'none';
+  closeActDrop(uid);
+  openModal('planModal');
+}
+
+async function doChangePlan() {
+  const uid  = _planTargetId;
+  const plan = document.getElementById('planSelect').value;
+  const err  = document.getElementById('planErr');
+  err.style.display = 'none';
+
+  try {
+    const res = await adminFetch(`/admin/users/${uid}/plan`, {
+      method: 'PATCH',
+      body: JSON.stringify({ plan }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Failed');
+    const idx = _users.findIndex(u => u.id === uid);
+    if (idx !== -1) _users[idx].plan = plan;
+    closeModal('planModal');
+    renderTable();
+    loadStats();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+  }
+}
+
+// ── Notes ─────────────────────────────────────────────────────────────────────
+let _notesTargetId = null;
+function openNotes(uid) {
+  _notesTargetId = uid;
+  const u = _getUser(uid);
+  document.getElementById('notesDesc').textContent = u?.email || uid;
+  document.getElementById('notesInput').value      = u?.admin_notes || '';
+  document.getElementById('notesErr').style.display = 'none';
+  closeActDrop(uid);
+  openModal('notesModal');
+  setTimeout(() => document.getElementById('notesInput').focus(), 80);
+}
+
+async function doSaveNotes() {
+  const uid   = _notesTargetId;
+  const notes = document.getElementById('notesInput').value;
+  const err   = document.getElementById('notesErr');
+  err.style.display = 'none';
+
+  try {
+    const res = await adminFetch(`/admin/users/${uid}/notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Failed');
+    const idx = _users.findIndex(u => u.id === uid);
+    if (idx !== -1) _users[idx].admin_notes = notes;
+    closeModal('notesModal');
+    renderTable();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+  }
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+let _deleteTargetId = null;
+function openDelete(uid) {
+  _deleteTargetId = uid;
+  const u = _getUser(uid);
+  document.getElementById('deleteDesc').textContent =
+    `Account: ${u?.email || uid}  ·  ${u?.sites_count ?? 0} sites  ·  ${u?.device_count ?? 0} devices`;
+  document.getElementById('deleteConfirmInput').value = '';
+  document.getElementById('deleteErr').style.display  = 'none';
+  document.getElementById('deleteConfirmBtn').disabled = false;
+  closeActDrop(uid);
+  openModal('deleteModal');
+  setTimeout(() => document.getElementById('deleteConfirmInput').focus(), 80);
+}
+
+async function doDelete() {
+  const uid    = _deleteTargetId;
+  const u      = _getUser(uid);
+  const typed  = document.getElementById('deleteConfirmInput').value.trim();
+  const btn    = document.getElementById('deleteConfirmBtn');
+  const err    = document.getElementById('deleteErr');
+
+  if (typed !== u?.email) {
+    err.textContent = 'Email does not match. Type the exact email address to confirm.';
+    err.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Deleting…';
+  err.style.display = 'none';
+
+  try {
+    const res = await adminFetch(`/admin/users/${uid}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Failed');
+    _users = _users.filter(u => u.id !== uid);
+    closeModal('deleteModal');
+    renderTable();
+    loadStats();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Permanently Delete';
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function closeActDrop(uid) {
+  document.getElementById(`ad-${uid}`)?.classList.remove('open');
+}
+
+// ── Auto-login if token in sessionStorage ─────────────────────────────────────
+if (_token) {
+  showApp();
+}
+</script>
+</body>
+</html>
