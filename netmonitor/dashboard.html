@@ -455,6 +455,7 @@ nav{display:block;position:fixed;top:0;left:0;right:0;z-index:100;
 .dm-field{display:flex;flex-direction:column;gap:5px;}
 .dm-label{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
   color:var(--text-dim);font-family:var(--mono);}
+.dm-hint{font-size:0.67rem;color:var(--text-dim);line-height:1.45;margin-top:-1px;}
 .dm-input{background:var(--surface2);border:0.5px solid var(--border-bright);border-radius:8px;
   padding:8px 12px;font-family:var(--mono);font-size:0.81rem;color:var(--text);
   outline:none;transition:border-color 0.15s;width:100%;}
@@ -1577,14 +1578,16 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
         <div class="dm-field">
           <label class="dm-label" for="dmHostname">Hostname</label>
           <input id="dmHostname" class="dm-input" type="text" placeholder="core-sw-01" autocomplete="off" />
+          <div class="dm-hint">A short label shown in the dashboard and alerts — no spaces (e.g. core-sw-01, bldg-a-ap)</div>
         </div>
         <div class="dm-field">
           <label class="dm-label" for="dmIp">IP Address or Domain</label>
           <input id="dmIp" class="dm-input" type="text" placeholder="10.1.1.1 or cnn.com" autocomplete="off"
                  onblur="autoLookupHostname()" />
+          <div class="dm-hint">Must be reachable from the Pi — not necessarily from your laptop</div>
         </div>
         <div class="dm-field">
-          <label class="dm-label" for="dmVendor">Vendor</label>
+          <label class="dm-label" for="dmVendor">Vendor / Type</label>
           <div class="cfg-select-wrap" style="display:block;width:100%;">
             <select id="dmVendor" class="cfg-select dm-select" onchange="dmVendorChange()">
               <optgroup label="Network Devices (SSH capable)">
@@ -1603,10 +1606,12 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
               </optgroup>
             </select>
           </div>
+          <div class="dm-hint">Network devices support SSH config backups. Ping Only types (cameras, UPS, printers) are monitored by ping only — no SSH needed.</div>
         </div>
         <div class="dm-field" id="dmSshPortField">
           <label class="dm-label" for="dmSshPort">SSH Port</label>
           <input id="dmSshPort" class="dm-input" type="number" value="22" min="1" max="65535" />
+          <div class="dm-hint">Default is 22 — only change if your device uses a non-standard port</div>
         </div>
         <div class="dm-field" id="dmCredProfileField" style="display:none;grid-column:1/-1;">
           <label class="dm-label" for="dmCredProfile">SSH Credential Profile</label>
@@ -1616,10 +1621,12 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
               <option value="custom">Custom (per-device)</option>
             </select>
           </div>
+          <div class="dm-hint">Site Default uses the username/password set in Settings → SSH Defaults. Choose Custom to override for this device only.</div>
         </div>
         <div class="dm-field" id="dmSshUsernameField">
           <label class="dm-label" for="dmSshUsername">SSH Username</label>
           <input id="dmSshUsername" class="dm-input" type="text" placeholder="admin (optional)" autocomplete="off" />
+          <div class="dm-hint">Leave blank to use the site-wide default from Settings</div>
         </div>
         <div class="dm-field" id="dmSshPasswordField">
           <label class="dm-label" for="dmSshPassword">SSH Password</label>
@@ -1627,6 +1634,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
             <input id="dmSshPassword" class="dm-input" type="password" placeholder="optional" autocomplete="new-password" />
             <button type="button" class="pw-eye" onclick="togglePwEye('dmSshPassword',this)" tabindex="-1" aria-label="Show password"><!--eye--></button>
           </div>
+          <div class="dm-hint">Leave blank to use the site-wide default from Settings</div>
         </div>
         <!-- Edit mode only — clears per-device creds so agent falls back to site default -->
         <div id="dmClearCredsRow" style="display:none;grid-column:1/-1;margin-top:-4px;">
@@ -1661,7 +1669,7 @@ curl -fsSL https://spangate-site.vercel.app/netmonitor-agent/setup.sh | bash</pr
             <div class="dm-toggle-label">SSH Config Pull
               <span id="dmSshPaidBadge" style="display:none;margin-left:6px;font-size:0.65rem;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.12);border:0.5px solid rgba(245,158,11,0.3);border-radius:4px;padding:1px 6px;letter-spacing:0.04em;vertical-align:middle;">PAID</span>
             </div>
-            <div class="dm-toggle-desc" id="dmSshToggleDesc">Pull running config via SSH (weekly)</div>
+            <div class="dm-toggle-desc" id="dmSshToggleDesc">Agent SSHs weekly to save the running config and alert you if it changes</div>
           </div>
           <label class="dm-switch" id="dmSshSwitchLabel">
             <input type="checkbox" id="dmSshEnabled" onchange="dmSshToggleChange()">
@@ -2675,7 +2683,41 @@ function renderDevices() {
   const allHostnames = [...new Set([...Object.keys(liveMap), ...Object.keys(cfgMap)])];
 
   if (!allHostnames.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-st">No devices yet — click <strong style="color:var(--text-muted);">+ Add Device</strong> above to get started.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:0;">
+      <div style="max-width:560px;margin:2.5rem auto;padding:0 1rem;text-align:center;">
+        <div style="font-size:1.6rem;margin-bottom:0.75rem;opacity:0.4;">📡</div>
+        <div style="font-size:0.95rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);margin-bottom:0.5rem;">No devices yet</div>
+        <div style="font-size:0.8rem;color:var(--text-dim);line-height:1.65;margin-bottom:1.5rem;">
+          Add the switches, routers, cameras, UPS units, and other IP devices you want to monitor.
+          The agent on your Pi will ping each one every 60 seconds and alert you the moment something goes down.
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem;">
+          <div style="flex:1;min-width:200px;max-width:240px;background:var(--surface2);border:0.5px solid var(--border-bright);
+               border-radius:12px;padding:1.1rem 1.25rem;text-align:left;">
+            <div style="font-size:0.72rem;font-weight:600;color:var(--accent);letter-spacing:0.04em;text-transform:uppercase;
+                 font-family:var(--mono);margin-bottom:0.5rem;">Add one device</div>
+            <div style="font-size:0.78rem;color:var(--text-dim);line-height:1.55;margin-bottom:0.85rem;">
+              Enter the hostname, IP address, and device type. Works for any IP device — switches, routers, cameras, printers, UPS units.
+            </div>
+            <button class="btn btn-outline write-only" onclick="closeDeviceModal();openAddDevice()"
+                style="font-size:0.75rem;padding:6px 14px;width:100%;">+ Add Device</button>
+          </div>
+          <div style="flex:1;min-width:200px;max-width:240px;background:var(--surface2);border:0.5px solid var(--border-bright);
+               border-radius:12px;padding:1.1rem 1.25rem;text-align:left;">
+            <div style="font-size:0.72rem;font-weight:600;color:var(--accent);letter-spacing:0.04em;text-transform:uppercase;
+                 font-family:var(--mono);margin-bottom:0.5rem;">Import from spreadsheet</div>
+            <div style="font-size:0.78rem;color:var(--text-dim);line-height:1.55;margin-bottom:0.85rem;">
+              Already have your device list in Excel or Google Sheets? Export it as CSV and import it here in one step.
+            </div>
+            <button class="btn btn-ghost write-only" onclick="openImportModal()"
+                style="font-size:0.75rem;padding:6px 14px;width:100%;">⬆ Import CSV</button>
+          </div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-dim);font-family:var(--mono);">
+          Need the CSV column format? Click <strong style="color:var(--text-muted);">⬇ Export CSV</strong> above to download a blank template.
+        </div>
+      </div>
+    </td></tr>`;
     const countEl = document.getElementById('devSearchCount');
     if (countEl) { countEl.textContent = ''; countEl.style.display = 'none'; }
     return;
