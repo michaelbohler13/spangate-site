@@ -4954,7 +4954,7 @@ function _renderSiteCards() {
         ${s.temp_celsius != null ? `<span class="sc-hm"><span class="sc-hm-lbl">TEMP</span><span class="sc-hm-val">${s.temp_celsius.toFixed(1)}°C</span></span>` : ''}
       </div>` : '';
 
-    html += `<div class="site-card" onclick="_enterSite(${JSON.stringify(s.id)})">
+    html += `<div class="site-card" onclick="_enterSite('${s.id}')">
       <div class="sc-name">${esc(s.site_name)}</div>
       <div class="sc-agent">
         <span class="sc-dot ${online ? 'online' : 'offline'}"></span>
@@ -5052,7 +5052,7 @@ function _updateSiteSwitcher() {
   if (drop) {
     drop.innerHTML =
       _allSites.map(s =>
-        `<div class="ss-item${s.id === _currentSiteId ? ' active' : ''}" onclick="_switchSite(${JSON.stringify(s.id)})">${esc(s.site_name)}</div>`
+        `<div class="ss-item${s.id === _currentSiteId ? ' active' : ''}" onclick="_switchSite('${s.id}')">${esc(s.site_name)}</div>`
       ).join('') +
       '<div class="ss-sep"></div>' +
       '<div class="ss-all" onclick="_closeSiteSwitcher();_showAllSites();_loadSitesSummary();">← All Sites</div>';
@@ -5182,12 +5182,12 @@ function _renderSiteSettings() {
         <span style="font-size:0.84rem;color:var(--text);">${esc(s.site_name)}</span>
         ${isCurrent ? '<span style="font-size:0.65rem;font-family:var(--mono);color:var(--accent);margin-left:6px;letter-spacing:0.04em;">CURRENT</span>' : ''}
       </div>
-      <button onclick="_renameSitePrompt(${JSON.stringify(s.id)},${JSON.stringify(s.site_name)})"
+      <button onclick="_renameSitePrompt('${s.id}')"
         style="background:none;border:0.5px solid var(--border-bright);color:var(--text-dim);
           border-radius:5px;padding:3px 10px;font-size:0.72rem;cursor:pointer;
           font-family:var(--sans);transition:all 0.15s;"
         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-dim)'">Rename</button>
-      ${_allSites.length > 1 ? `<button onclick="_deleteSiteConfirm(${JSON.stringify(s.id)},${JSON.stringify(s.site_name)})"
+      ${_allSites.length > 1 ? `<button onclick="_deleteSiteConfirm('${s.id}')"
         style="background:none;border:0.5px solid rgba(255,95,87,0.25);color:#ff5f57;
           border-radius:5px;padding:3px 10px;font-size:0.72rem;cursor:pointer;
           font-family:var(--sans);transition:all 0.15s;">Delete</button>` : ''}
@@ -5195,9 +5195,10 @@ function _renderSiteSettings() {
   }).join('');
 }
 
-/** Open the rename modal (replaces the old prompt()-based approach). */
-function _renameSitePrompt(siteId, currentName) {
-  openAddSiteModal('rename', siteId, currentName);
+/** Open the rename modal — looks up current name from _allSites. */
+function _renameSitePrompt(siteId) {
+  const site = _allSites.find(s => s.id === siteId);
+  openAddSiteModal('rename', siteId, site?.site_name || '');
 }
 
 /** Called by doAsmSubmit() when _asmMode === 'rename'. */
@@ -5265,9 +5266,10 @@ async function doRenameSite() {
   }
 }
 
-/** Open the delete confirmation modal (replaces the old confirm() dialog). */
-function _deleteSiteConfirm(siteId, siteName) {
-  openAddSiteModal('delete', siteId, siteName);
+/** Open the delete confirmation modal — looks up site name from _allSites. */
+function _deleteSiteConfirm(siteId) {
+  const site = _allSites.find(s => s.id === siteId);
+  openAddSiteModal('delete', siteId, site?.site_name || 'this site');
 }
 
 /** Called by doAsmSubmit() when _asmMode === 'delete'. */
